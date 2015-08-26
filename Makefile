@@ -2,10 +2,12 @@
 # Makefile to build CAD tools in Verilog-to-Routing (VTR) Framework #
 #####################################################################
 
-SUBDIRS = ODIN_II vpr abc_with_bb_support libarchfpga pcre printhandler ace2 mwbm torc yosys xdlrc2vpr bnpr2xdl vtr_flow/arch/xilinx 
+SUBDIRS = ODIN_II vpr abc_with_bb_support libarchfpga pcre printhandler ace2 torc yosys xdlrc2vpr bnpr2xdl vtr_flow/arch/xilinx 
 
 all: notifications subdirs
 
+vtr_flow/arch/xilinx: vpr xdlrc2vpr
+	
 subdirs: $(SUBDIRS)
 
 $(SUBDIRS):
@@ -38,8 +40,6 @@ EXTRA_CCFLAGS = -Wno-error=unused-local-typedefs
 xdlrc2vpr bnpr2xdl: torc
 	@ $(MAKE) -C $@ --no-print-directory CC="$(CC) $(EXTRA_CCFLAGS)"
 
-vtr_flow/arch/xilinx: vpr xdlrc2vpr
-	
 notifications: 
 # checks if required packages are installed, and notifies the user if not
 	@ if cat /etc/issue | grep Ubuntu -c >>/dev/null; then if ! dpkg -l | grep exuberant-ctags -c >>/dev/null; then echo "\n\n\n\n***************************************************************\n* Required package 'ctags' not found.                         *\n* Type 'make packages' to install all packages, or            *\n* 'sudo apt-get install exuberant-ctags' to install manually. *\n***************************************************************\n\n\n\n"; fi; fi
