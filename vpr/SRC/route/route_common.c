@@ -2096,6 +2096,10 @@ connect_gnd_vcc_to_BRAM(int inet_gnd, int inet_vcc, int iblk) {
 		int islice;
 		int ptc;
 
+		/* EH: Only TBs have a blank name, ignore */
+		if (block[iblk].name == NULL)
+			return;
+
 		assert(num_slices == 1);
 
 		num_slices = block[iblk].pb->child_pbs[0][0].pb_graph_node->pb_type->num_pb;
@@ -2722,6 +2726,10 @@ fix_bram_connections(void) {
 			}
 			else if (strncmp(modeName, "RAMB18E1", 8) == 0) {
 				assert(num_children == 1);
+
+				/* EH: Only TBs have a blank name, ignore */
+				if (block[iblk].name == NULL)
+					continue;
 
 				assert(block[iblk].pb->child_pbs[0]);
 				int islice;
