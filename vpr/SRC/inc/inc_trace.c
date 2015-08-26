@@ -64,26 +64,6 @@ inc_find_mem(int *data_pin, int *data_width)
 }
 
 /**
- * Wrapper function for alloc_and_load_rr_graph_for_pb_garph_node()
- * which clobbers the rr_node global
- */
-static void 
-inc_alloc_and_load_rr_graph_for_pb_graph_node(	
-		INP t_pb_graph_node *pb_graph_node, 
-		INP const t_arch* arch, 
-		int mode, 
-		t_rr_node *local_rr_node) 
-{
-	t_rr_node *global_rr_node;
-
-	global_rr_node = rr_node;
-	rr_node = local_rr_node;
-	alloc_and_load_rr_graph_for_pb_graph_node(pb_graph_node, arch, mode);
-	rr_node = global_rr_node;
-}
-
-
-/**
  * Place a new block into the circuit, returning its index
  */
 static int 
@@ -101,13 +81,13 @@ inc_place_block(short x, short y, int type, const t_arch *arch)
 	block[iblk].type = &type_descriptors[type];
 	block[iblk].pb = (t_pb *) calloc(1, sizeof(t_pb));
 	block[iblk].pb->pb_graph_node = block[iblk].type->pb_graph_head;
-	//block[iblk].pb->rr_graph = (t_rr_node *) calloc(block[iblk].type->pb_graph_head->total_pb_pins, sizeof(t_rr_node));
-	block[iblk].pb->rr_graph = (t_rr_node*)my_calloc((block[iblk].pb->pb_graph_node->total_pb_pins * 2) 
+	num_rr_nodes = block[iblk].pb->pb_graph_node->total_pb_pins;
+	block[iblk].pb->rr_graph = rr_node = (t_rr_node*)my_calloc((num_rr_nodes * 2) 
 			+ block[iblk].type->pb_type->num_input_pins
 			+ block[iblk].type->pb_type->num_output_pins
 			+ block[iblk].type->pb_type->num_clock_pins,
 			sizeof(t_rr_node));
-	inc_alloc_and_load_rr_graph_for_pb_graph_node(block[iblk].pb->pb_graph_node, arch, 0, block[iblk].pb->rr_graph);
+	alloc_and_load_rr_graph_for_pb_graph_node(block[iblk].pb->pb_graph_node, arch, 0);
 	block[iblk].nets = (int *) malloc(block[iblk].type->num_pins*sizeof(int));
 	for (i = 0; i < block[iblk].type->num_pins; i++)
 	{
