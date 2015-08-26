@@ -102,7 +102,7 @@ inc_place_block(short x, short y, int type, const t_arch *arch)
 	block[iblk].pb = (t_pb *) calloc(1, sizeof(t_pb));
 	block[iblk].pb->pb_graph_node = block[iblk].type->pb_graph_head;
 	//block[iblk].pb->rr_graph = (t_rr_node *) calloc(block[iblk].type->pb_graph_head->total_pb_pins, sizeof(t_rr_node));
-	block[iblk].pb->rr_graph = (t_rr_node*)my_calloc((block[iblk].type->pb_graph_head->total_pb_pins * 2) 
+	block[iblk].pb->rr_graph = (t_rr_node*)my_calloc((block[iblk].pb->pb_graph_node->total_pb_pins * 2) 
 			+ block[iblk].type->pb_type->num_input_pins
 			+ block[iblk].type->pb_type->num_output_pins
 			+ block[iblk].type->pb_type->num_clock_pins,
