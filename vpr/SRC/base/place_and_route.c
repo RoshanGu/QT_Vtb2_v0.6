@@ -88,6 +88,7 @@ void place_and_route(enum e_operation operation,
 		}
 	}
 
+	begin = clock();
 	if (placer_opts.place_freq == PLACE_NEVER) {
 		/* Read the placement from a file */
 		read_place(FileNameOpts->PlaceFile, FileNameOpts->NetFile, FileNameOpts->ArchFile, nx, ny, num_blocks, block);
@@ -95,12 +96,10 @@ void place_and_route(enum e_operation operation,
 	} else {
 		assert(
 				(PLACE_ONCE == placer_opts.place_freq) || (PLACE_ALWAYS == placer_opts.place_freq));
-		//begin = clock();
 		try_place(placer_opts, annealing_sched, chan_width_dist, router_opts,
 				det_routing_arch, segment_inf, timing_inf, directs, num_directs,
 				FileNameOpts->ArchFile);
 		print_place(FileNameOpts->PlaceFile, FileNameOpts->NetFile, FileNameOpts->ArchFile);
-		//end = clock();
 	}
 	end = clock(); //added QT
 #ifdef CLOCKS_PER_SEC
