@@ -1220,7 +1220,7 @@ static boolean read_route(const char *route_file){
 
 			while(fgets(line, 1024, fp) && line[0] != '\n')
 			{
-				assert(sscanf(line, "%6s (%d,%d) %n", type, &ilow, &jlow, &i) == 3);
+				assert(sscanf(line, "Node:\t%d\t%6s (%d,%d) %n", &inode, type, &ilow, &jlow, &i) == 4);
 				pline = line + i;
 				for (i = 0; i < 7; i++)
 				{
@@ -1235,7 +1235,7 @@ static boolean read_route(const char *route_file){
 				pline += i;
 				assert(sscanf(pline, "%d  %n", &ptc_num, &i) == 1);
 				pline += i;
-				inode = get_rr_node_index(ilow, jlow, rr_type, ptc_num, rr_node_indices);
+				//inode = get_rr_node_index(ilow, jlow, rr_type, ptc_num, rr_node_indices);
 				
 				if (tptr_prev != NULL) {
 					int iedge;
@@ -1257,7 +1257,7 @@ static boolean read_route(const char *route_file){
 				assert(rr_node[inode].ptc_num == ptc_num);
 
 				*ptptr = alloc_trace_data();
-   			(*ptptr)->index = inode;
+				(*ptptr)->index = inode;
 				trace_tail[inet] = *ptptr;
 				if (rr_node[inode].type == SINK)
 				{
@@ -1283,9 +1283,11 @@ static boolean read_route(const char *route_file){
 				assert(sscanf(line,
 				    "Block %s (#%d) at (%d, %d), Pin class %d.\n",
 				    name, &bnum, &x, &y, &iclass) == 5);
-				assert(clb_net[inet].node_block[ipin] == bnum);
-				node_block_pin = clb_net[inet].node_block_pin[ipin];
-				assert(iclass == block[bnum].type->pin_class[node_block_pin]);
+				if (strcmp(clb_net[inet].name, "vcc") != 0 && strcmp(clb_net[inet].name, "gnd") != 0) {
+					assert(clb_net[inet].node_block[ipin] == bnum);
+					node_block_pin = clb_net[inet].node_block_pin[ipin];
+					assert(iclass == block[bnum].type->pin_class[node_block_pin]);
+				}
 				assert(strcmp(name, block[bnum].name) == 0);
 				assert(block[bnum].x == x);
 				assert(block[bnum].y == y);
