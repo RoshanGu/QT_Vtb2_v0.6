@@ -1,0 +1,87 @@
+# XXX is replaced with filename by run_vtr_flow.pl
+read_verilog -nolatches XXX 
+
+select -assert-any A:top
+select -clear
+
+# These commands follow the generic `synth'
+# command script inside Yosys
+# The -libdir argument allows Yosys to search the current 
+# directory for any definitions to modules it doesn't know
+# about, such as hand-instantiated (not inferred) memories
+hierarchy -check -libdir .
+proc
+
+scc -select
+select -assert-none %
+select -clear
+
+opt
+wreduce
+# Do not transform $add/$mul ops to $alu and $macc cells
+#alumacc
+share
+opt
+fsm
+opt -fast
+memory -nomap
+opt_clean
+# But instead of using the `memory_map' command, 
+# we map any memories, multipliers, and adders into 
+# VTR primitives (e.g. single_port_ram)
+#flatten
+opt -full
+#wreduce
+
+#write_ilang pre_techmap.ilang
+techmap -share_map adff2dff.v
+# Map just the multipliers 
+# (define XILINX to prevent $add (used when
+# decomposing multipliers) from being mapped
+# into .subckt adder)
+techmap -map yosys_models.v */t:$mul */t:$add */t:$sub
+techmap -map adder2xadder.v */t:adder
+# Then re-map .subckt multiply into DSP48E1
+techmap -map yosys_models_xilinx.v */t:$mem */t:xadder */t:multiply */t:bufgctrl
+memory_map
+#write_ilang post_techmap_xilinx.ilang
+#freduce
+#clean
+# Taking care to remove any undefined muxes that
+# are introduced to promote resource sharing
+opt -full
+# Then techmap all other `complex' blocks into basic
+# (lookup table) logic
+techmap 
+opt -fast
+
+flatten
+#abc -exe ABCEXE -nocleanup -dff -lut 6 -script +source,abc.rc;,resyn;,resyn2;,if,-K,6;,time;,print_stats;
+#tee -o /dev/stderr abc -nocleanup -dff -lut 6 -script +source,abc.rc;,resyn;,resyn2;,if,-K,6;,time;,print_stats;
+#tee -o /dev/stderr abc -nocleanup -dff -lut 8 -script +source,abc.rc;,resyn;,resyn2;,if,-K,8;,time;,print_stats;
+#tee -o /dev/stderr abc -lut 6 -nocleanup -dff
+#tee -o /dev/stderr abc -nocleanup -dff -lut 6 -script +strash;,ifraig,-v;,retime,-v;,strash;,dch,-vf;,if,-v;,print_stats;
+#tee -o /dev/stderr abc -dff -lut 6 -script +read_lut,ABCLUT;,strash;,ifraig,-v;,retime,-v,-M,3,-f;,retime,-v,-M,4;,strash;,dch,-vf;,if,-v,-W,5,-C,1024;,print_stats;
+tee -o /dev/stderr abc -dff -lut LUTSIZE -script +source,-x,ABCSCRIPT
+opt -fast
+
+# Re-map LUT8/7s
+techmap -map yosys_models_xilinx.v */t:$lut
+techmap -share_map xilinx/cells_map.v
+clean
+
+select -set xilinx_clocks A:top/t:FDRE %x:+FDRE[C] A:top/t:FDRE %d
+iopadmap -inpad BUFGP O:I @xilinx_clocks
+
+select -set xilinx_nonclocks A:top/w:* A:top/t:BUFGP %x:+BUFGP[I] %d
+select -list @xilinx_nonclocks
+iopadmap -bits -outpad OBUF I:O -inpad IBUF O:I @xilinx_nonclocks
+
+# Lastly, check the hierarchy for any unknown modules,
+# and purge all modules (including blackboxes) that
+# aren't used
+#hierarchy -check -purge_lib
+tee -o /dev/stdout stat
+
+#write_ilang pre_edif.ilang
+write_edif ZZZ.edif

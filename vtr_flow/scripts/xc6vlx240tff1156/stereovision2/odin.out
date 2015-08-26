@@ -1,0 +1,80 @@
+/usr/bin/time /home/osboxes/Desktop/QT-VTBv0.4/vtr_flow/../ODIN_II/odin_II.exe  -c odin_config.xml 2>&1
+Preprocessing verilog.
+--------------------------------------------------------------------
+Welcome to ODIN II version 0.1 - the better High level synthesis tools++ targetting FPGAs (mainly VPR)
+Email: jamieson.peter@gmail.com and ken@unb.ca for support issues
+
+Reading Configuration file
+Reading FPGA Architecture file
+--------------------------------------------------------------------
+High-level synthesis Begin
+Parser starting - we'll create an abstract syntax tree.  Note this tree can be viewed using GraphViz (see documentation)
+Optimizing module by AST based optimizations
+Converting AST into a Netlist. Note this netlist can be viewed using GraphViz (see documentation)
+Performing Optimizations of the Netlist
+Performing Partial Map to target device
+Outputting the netlist to the specified output format
+Successful High-level synthesis by Odin in 1.8s
+--------------------------------------------------------------------
+
+Hard Multiplier Distribution
+============================
+7 X 21 => 24
+7 X 22 => 12
+7 X 23 => 72
+7 X 24 => 36
+7 X 25 => 36
+8 X 3 => 24
+8 X 4 => 12
+8 X 5 => 72
+8 X 6 => 36
+8 X 7 => 36
+8 X 8 => 72
+8 X 9 => 24
+8 X 16 => 18
+15 X 21 => 24
+15 X 22 => 60
+15 X 23 => 24
+15 X 24 => 48
+15 X 25 => 48
+16 X 3 => 24
+16 X 4 => 60
+16 X 5 => 24
+16 X 6 => 48
+16 X 7 => 48
+16 X 8 => 66
+
+
+Total # of multipliers = 948
+
+Hard adder Distribution
+============================
+
+
+Total # of chains = 551
+
+Hard adder chain Details
+============================
+
+
+The Number of Hard Block adders in the Longest Chain: 35
+
+
+The Total Number of Hard Block adders: 14514
+
+Hard MINUS Distribution
+============================
+
+
+Total # of chains = 18
+
+Hard sub chain Details
+============================
+
+
+The Number of Hard Block subs in the Longest Chain: 33
+
+
+The Total Number of Hard Block subs: 582
+1.66user 0.11system 0:01.81elapsed 97%CPU (0avgtext+0avgdata 133672maxresident)k
+0inputs+89104outputs (0major+32796minor)pagefaults 0swaps

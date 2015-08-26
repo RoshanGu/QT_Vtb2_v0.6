@@ -1,0 +1,1167 @@
+<architecture>
+	<!-- ODIN II specific config -->
+	<models>
+		<model name="multiply">
+			<input_ports>
+				<port name="a"/>
+				<port name="b"/>
+			</input_ports>
+			<output_ports>
+				<port name="out"/>
+			</output_ports>
+		</model>
+		
+		<model name="single_port_ram">
+			<input_ports>
+				<port name="we"/> 
+				<port name="addr"/>
+				<port name="data"/>
+				<port name="clk" is_clock="1"/>
+			</input_ports>
+			<output_ports>
+				<port name="out"/>
+			</output_ports>
+		</model>
+
+		<model name="dual_port_ram">
+			<input_ports>
+				<port name="we1"/>
+				<port name="we2"/>
+				<port name="addr1"/>
+				<port name="addr2"/>
+				<port name="data1"/>
+				<port name="data2"/>
+				<port name="clk" is_clock="1"/>
+			</input_ports>
+			<output_ports>
+				<port name="out1"/> 
+				<port name="out2"/>
+			</output_ports>
+		</model>
+	</models>
+	<!-- ODIN II specific config ends -->
+ 
+	<layout width="100" height="240"/>
+	<device>
+		<sizing R_minW_nmos="6065.520020" R_minW_pmos="18138.500000" ipin_mux_trans_size="1.222260"/>
+		<timing C_ipin_cblock="0.000000e+00" T_ipin_cblock="7.247000e-11"/>
+		<area grid_logic_tile_area="14813.392"/> 
+		<chan_width_distr>
+			<io width="1.000000"/>
+			<x distr="uniform" peak="1.000000"/>
+			<y distr="uniform" peak="1.000000"/>
+		</chan_width_distr>
+		<switch_block type="wilton" fs="3"/>
+	</device>
+	<switchlist>
+		<switch type="mux" name="0" R="0.000000" Cin="0.000000e+00" Cout="0.000000e+00" Tdel="6.837e-11" mux_trans_size="2.630740" buf_size="27.645901"/>
+	</switchlist>
+	<segmentlist>
+		<segment freq="1.000000" length="4" type="unidir" Rmetal="0.000000" Cmetal="0.000000e+00">
+		<mux name="0"/>
+		<sb type="pattern">1 1 1 1 1</sb>
+		<cb type="pattern">1 1 1 1</cb>
+		</segment>
+	</segmentlist>
+	<emptylist>
+		<region startx="0" starty="2" endx="0" endy="200" incy="2"/>
+		<region startx="0" starty="201" endx="0" endy="240"/>
+		<region startx="41" starty="2" endx="41" endy="200" incy="2"/>
+		<region startx="41" starty="201" endx="41" endy="240"/>
+		<region startx="56" starty="2" endx="56" endy="200" incy="2"/>
+		<region startx="56" starty="201" endx="56" endy="240"/>
+		<region startx="101" starty="1" endx="101" endy="240"/>
+		<region startx="1" starty="0" endx="100" endy="0"/>
+		<region startx="1" starty="241" endx="100" endy="241"/>
+		<region startx="46" starty="81" endx="51" endy="160"/>
+		<region startx="97" starty="41" endx="100" endy="60"/>
+		<region startx="100" starty="81" endx="100" endy="100"/>
+		<region startx="97" starty="121" endx="100" endy="140"/>
+		<region startx="100" starty="161" endx="100" endy="180"/>
+	</emptylist>
+
+	<complexblocklist>
+		<!-- Capacity is a unique property of I/Os, it is the maximum number of I/Os that can be placed at the same (X,Y) location on the FPGA -->
+		<pb_type name="IOB" capacity="2">
+			<input name="outpad" num_pins="1"/>
+			<output name="inpad" num_pins="1"/>
+			<clock name="clock" num_pins="1"/>
+
+			<!-- IOs can operate as either inputs or outputs -->
+			<mode name="inpad">
+				<pb_type name="inpad" blif_model=".input" num_pb="1">
+					<output name="inpad" num_pins="1"/>
+				</pb_type>
+				<interconnect>
+					<direct name="inpad" input="inpad.inpad" output="IOB.inpad">
+						<!-- Tiopi LVDS_25 -->
+						<delay_constant max="1.09e-9" in_port="inpad.inpad" out_port="IOB.inpad"/>
+					</direct>
+				</interconnect>
+			</mode>
+
+			<mode name="outpad">
+				<pb_type name="outpad" blif_model=".output" num_pb="1">
+					<input name="outpad" num_pins="1"/>
+				</pb_type>
+				<interconnect>
+					<direct name="outpad" input="IOB.outpad" output="outpad.outpad">
+						<!-- Tioop LVDS_25 -->
+						<delay_constant max="1.68e-9" in_port="IOB.outpad" out_port="outpad.outpad"/>
+					</direct>
+				</interconnect>
+			</mode>
+
+			<fc_in type="frac">0.15</fc_in>
+			<fc_out type="frac">0.10</fc_out>
+
+			<!-- IOs go on the periphery of the FPGA, for consistency, 
+				make it physically equivalent on all sides so that only one definition of I/Os is needed.
+				If I do not make a physically equivalent definition, then I need to define 4 different I/Os, one for each side of the FPGA
+			-->
+			<pinlocations pattern="custom">
+				<loc side="left">IOB.outpad IOB.inpad IOB.clock</loc>
+				<loc side="top">IOB.outpad IOB.inpad IOB.clock</loc>
+				<loc side="right">IOB.outpad IOB.inpad IOB.clock</loc>
+				<loc side="bottom">IOB.outpad IOB.inpad IOB.clock</loc>
+			</pinlocations>
+
+			<gridlocations>
+				<!--<loc type="perimeter" priority="10"/>-->
+				<loc type="rel" pos="0.41" priority="10"/>
+				<loc type="rel" pos="0.56" priority="10"/>
+			</gridlocations>
+		</pb_type>
+		
+		<pb_type name="CLB">
+			<input name="I" num_pins="56" equivalent="false"/>
+			<output name="O" num_pins="24" equivalent="false"/>
+			<clock name="clk" num_pins="1"/>
+
+			<pb_type name="SLICE" num_pb="2">
+				<input name="A6_1" num_pins="6"/>
+				<input name="AX" num_pins="1"/>
+				<input name="B6_1" num_pins="6"/>
+				<input name="BX" num_pins="1"/>
+				<input name="C6_1" num_pins="6"/>
+				<input name="CX" num_pins="1"/>
+				<input name="D6_1" num_pins="6"/>
+				<input name="DX" num_pins="1"/>
+				<output name="A" num_pins="1"/>
+				<output name="AQ" num_pins="1"/>
+				<output name="AMUX" num_pins="1"/>
+				<output name="B" num_pins="1"/>
+				<output name="BQ" num_pins="1"/>
+				<output name="BMUX" num_pins="1"/>
+				<output name="C" num_pins="1"/>
+				<output name="CQ" num_pins="1"/>
+				<output name="CMUX" num_pins="1"/>
+				<output name="D" num_pins="1"/>
+				<output name="DQ" num_pins="1"/>
+				<output name="DMUX" num_pins="1"/>
+				<clock name="clk" num_pins="1"/>
+
+				<pb_type name="ble" num_pb="4">
+					<input name="A6_1" num_pins="6"/>
+					<input name="AX" num_pins="1"/>
+					<output name="A" num_pins="1"/>
+					<output name="AQ" num_pins="1"/>
+					<output name="AMUX" num_pins="1"/>
+					<clock name="clk" num_pins="1"/>
+					<pb_type name="LUT" num_pb="1">
+						<input name="A6_1" num_pins="6"/>
+						<output name="O" num_pins="2"/>
+						<mode name="O6O5LUT">
+							<pb_type name="LUT5" blif_model=".names" num_pb="2" class="lut">
+								<input name="in" num_pins="5" port_class="lut_in"/>
+								<output name="out" num_pins="1" port_class="lut_out"/>
+								<delay_matrix type="max" in_port="LUT5.in" out_port="LUT5.out">
+									<!--Tilo-->
+									0.07e-9
+									0.07e-9
+									0.07e-9
+									0.07e-9
+									0.07e-9
+								</delay_matrix>
+							</pb_type>
+							<interconnect>
+								<direct name="A5_1[0]" input="LUT.A6_1[4:0]" output="LUT5[0].in"/>
+								<direct name="A5_1[1]" input="LUT.A6_1[4:0]" output="LUT5[1].in"/>
+								<direct name="O6" input="LUT5[0].out" output="LUT.O[0]"/>
+								<direct name="O5" input="LUT5[1].out" output="LUT.O[1]"/>
+							</interconnect>
+						</mode>
+						<mode name="O6LUT">
+							<pb_type name="LUT6" blif_model=".names" num_pb="1" class="lut">
+								<input name="in" num_pins="6" port_class="lut_in"/>
+								<output name="out" num_pins="1" port_class="lut_out"/>
+								<delay_matrix type="max" in_port="LUT6.in" out_port="LUT6.out">
+									0.07e-9
+									0.07e-9
+									0.07e-9
+									0.07e-9
+									0.07e-9
+									0.07e-9
+								</delay_matrix>
+							</pb_type>
+							<interconnect>
+								<direct name="A6_1" input="LUT.A6_1" output="LUT6.in"/>
+								<direct name="O6" input="LUT6.out" output="LUT.O[0]"/>
+								<!-- LUT bypass below (does not work well with depopulated feedback!)-->
+								<!--<mux name="O6" input="LUT.A6_1[5] LUT6.out" output="LUT.O[0]"/>-->
+							</interconnect>
+						</mode>
+					</pb_type>
+					<pb_type name="FF" blif_model=".latch" num_pb="2" class="flipflop">
+						<input name="D" num_pins="1" port_class="D"/>
+						<output name="Q" num_pins="1" port_class="Q"/>
+						<clock name="clk" num_pins="1" port_class="clock"/>
+						<!-- Tdick -->
+						<T_setup value="0.43e-9" port="FF.D" clock="clk"/>
+						<!-- Tcko -->
+						<T_clock_to_Q max="0.39e-9" port="FF.Q" clock="clk"/>
+					</pb_type>
+					<interconnect>
+						<direct name="A6_1" input="ble.A6_1" output="LUT.A6_1"/>
+						<direct name="A" input="LUT.O[0]" output="ble.A"/>
+						<direct name="AQ" input="FF[0].Q" output="ble.AQ"/>
+						<mux name="FF[0].D" input="LUT.O[0] LUT.O[1] ble.AX" output="FF[0].D"/>
+						<mux name="FF[1].D" input="LUT.O[1] ble.AX" output="FF[1].D"/>
+						<mux name="AMUX" input="FF[1].Q LUT.O[0] LUT.O[1]" output="ble.AMUX">
+							<!-- Tshcko = 0.47ns - Tcko = 0.39ns -->
+							<delay_constant max="0.08e-9" in_port="FF[1].Q" out_port="ble.AMUX"/>
+							<!-- From trce: 0.191ns - Tilo=0.07ns -->
+							<!-- (Tilo delay for "An-Dn LUT to AMUX/CMUX/BMUX_A" is for F7/F8MUX) -->
+							<delay_constant max="0.12e-9" in_port="LUT.O[0]" out_port="ble.AMUX"/>
+							<delay_constant max="0.12e-9" in_port="LUT.O[1]" out_port="ble.AMUX"/>
+						</mux>
+						<complete name="clk" input="ble.clk" output="FF[1:0].clk"/>
+					 </interconnect>
+				</pb_type>
+				<interconnect>
+					<direct name="A6_1" input="SLICE.A6_1" output="ble[0].A6_1"/>
+					<direct name="AX" input="SLICE.AX" output="ble[0].AX"/>
+					<direct name="A" input="ble[0].A" output="SLICE.A"/>
+					<direct name="AQ" input="ble[0].AQ" output="SLICE.AQ"/>
+					<direct name="AMUX" input="ble[0].AMUX" output="SLICE.AMUX"/>
+					<direct name="Aclk" input="SLICE.clk" output="ble[0].clk"/>
+
+					<direct name="B6_1" input="SLICE.B6_1" output="ble[1].A6_1"/>
+					<direct name="BX" input="SLICE.BX" output="ble[1].AX"/>
+					<direct name="B" input="ble[1].A" output="SLICE.B"/>
+					<direct name="BQ" input="ble[1].AQ" output="SLICE.BQ"/>
+					<direct name="BMUX" input="ble[1].AMUX" output="SLICE.BMUX"/>
+					<direct name="Bclk" input="SLICE.clk" output="ble[1].clk"/>
+
+					<direct name="C6_1" input="SLICE.C6_1" output="ble[2].A6_1"/>
+					<direct name="CX" input="SLICE.CX" output="ble[2].AX"/>
+					<direct name="C" input="ble[2].A" output="SLICE.C"/>
+					<direct name="CQ" input="ble[2].AQ" output="SLICE.CQ"/>
+					<direct name="CMUX" input="ble[2].AMUX" output="SLICE.CMUX"/>
+					<direct name="Cclk" input="SLICE.clk" output="ble[2].clk"/>
+
+					<direct name="D6_1" input="SLICE.D6_1" output="ble[3].A6_1"/>
+					<direct name="DX" input="SLICE.DX" output="ble[3].AX"/>
+					<direct name="D" input="ble[3].A" output="SLICE.D"/>
+					<direct name="DQ" input="ble[3].AQ" output="SLICE.DQ"/>
+					<direct name="DMUX" input="ble[3].AMUX" output="SLICE.DMUX"/>
+					<direct name="Dclk" input="SLICE.clk" output="ble[3].clk"/>
+				</interconnect>
+			</pb_type>
+			<interconnect>
+				<complete name="SLICE0_A1" output="SLICE[0].A6_1[0]" input="CLB.I[0]  SLICE[0].CQ SLICE[1].AMUX SLICE[1].C"/>
+				<complete name="SLICE0_A2" output="SLICE[0].A6_1[1]" input="CLB.I[1]  SLICE[0].B SLICE[0].DMUX SLICE[1].BQ"/>
+				<complete name="SLICE0_A3" output="SLICE[0].A6_1[2]" input="CLB.I[2]  SLICE[0].AMUX SLICE[0].C SLICE[1].CQ"/>
+				<complete name="SLICE0_A4" output="SLICE[0].A6_1[3]" input="CLB.I[3]  SLICE[0].DQ SLICE[1].BMUX SLICE[1].D"/>
+				<complete name="SLICE0_A5" output="SLICE[0].A6_1[4]" input="CLB.I[4]  SLICE[0].AQ SLICE[1].A SLICE[1].CMUX"/>
+				<complete name="SLICE0_A6" output="SLICE[0].A6_1[5]" input="CLB.I[5]  SLICE[0].B SLICE[0].DMUX SLICE[1].BQ"/>
+				<complete name="SLICE0_AX" output="SLICE[0].AX"      input="CLB.I[6]                                      "/>
+				<complete name="SLICE0_B1" output="SLICE[0].B6_1[0]" input="CLB.I[7]  SLICE[0].AQ SLICE[1].A SLICE[1].CMUX"/>
+				<complete name="SLICE0_B2" output="SLICE[0].B6_1[1]" input="CLB.I[8]  SLICE[0].BMUX SLICE[0].D SLICE[1].DQ"/>
+				<complete name="SLICE0_B3" output="SLICE[0].B6_1[2]" input="CLB.I[9]  SLICE[0].A SLICE[0].CMUX SLICE[1].AQ"/>
+				<complete name="SLICE0_B4" output="SLICE[0].B6_1[3]" input="CLB.I[10] SLICE[0].BQ SLICE[1].B SLICE[1].DMUX"/>
+				<complete name="SLICE0_B5" output="SLICE[0].B6_1[4]" input="CLB.I[11] SLICE[0].CQ SLICE[1].AMUX SLICE[1].C"/>
+				<complete name="SLICE0_B6" output="SLICE[0].B6_1[5]" input="CLB.I[12] SLICE[0].BMUX SLICE[0].D SLICE[1].DQ"/>
+				<complete name="SLICE0_BX" output="SLICE[0].BX"      input="CLB.I[13]                                     "/>
+				<complete name="SLICE0_C1" output="SLICE[0].C6_1[0]" input="CLB.I[14] SLICE[0].AQ SLICE[1].A SLICE[1].CMUX"/>
+				<complete name="SLICE0_C2" output="SLICE[0].C6_1[1]" input="CLB.I[15] SLICE[0].BMUX SLICE[0].D SLICE[1].DQ"/>
+				<complete name="SLICE0_C3" output="SLICE[0].C6_1[2]" input="CLB.I[16] SLICE[0].A SLICE[0].CMUX SLICE[1].AQ"/>
+				<complete name="SLICE0_C4" output="SLICE[0].C6_1[3]" input="CLB.I[17] SLICE[0].BQ SLICE[1].B SLICE[1].DMUX"/>
+				<complete name="SLICE0_C5" output="SLICE[0].C6_1[4]" input="CLB.I[18] SLICE[0].CQ SLICE[1].AMUX SLICE[1].C"/>
+				<complete name="SLICE0_C6" output="SLICE[0].C6_1[5]" input="CLB.I[19] SLICE[0].BMUX SLICE[0].D SLICE[1].DQ"/>
+				<complete name="SLICE0_CX" output="SLICE[0].CX"      input="CLB.I[20]                                     "/>
+				<complete name="SLICE0_D1" output="SLICE[0].D6_1[0]" input="CLB.I[21] SLICE[0].CQ SLICE[1].AMUX SLICE[1].C"/>
+				<complete name="SLICE0_D2" output="SLICE[0].D6_1[1]" input="CLB.I[22] SLICE[0].B SLICE[0].DMUX SLICE[1].BQ"/>
+				<complete name="SLICE0_D3" output="SLICE[0].D6_1[2]" input="CLB.I[23] SLICE[0].AMUX SLICE[0].C SLICE[1].CQ"/>
+				<complete name="SLICE0_D4" output="SLICE[0].D6_1[3]" input="CLB.I[24] SLICE[0].DQ SLICE[1].BMUX SLICE[1].D"/>
+				<complete name="SLICE0_D5" output="SLICE[0].D6_1[4]" input="CLB.I[25] SLICE[0].AQ SLICE[1].A SLICE[1].CMUX"/>
+				<complete name="SLICE0_D6" output="SLICE[0].D6_1[5]" input="CLB.I[26] SLICE[0].B SLICE[0].DMUX SLICE[1].BQ"/>
+				<complete name="SLICE0_DX" output="SLICE[0].DX"      input="CLB.I[27]                                     "/>
+				<complete name="SLICE1_A1" output="SLICE[1].A6_1[0]" input="CLB.I[28] SLICE[0].AMUX SLICE[0].C SLICE[1].CQ"/>
+				<complete name="SLICE1_A2" output="SLICE[1].A6_1[1]" input="CLB.I[29] SLICE[0].BQ SLICE[1].B SLICE[1].DMUX"/>
+				<complete name="SLICE1_A3" output="SLICE[1].A6_1[2]" input="CLB.I[30] SLICE[0].CQ SLICE[1].AMUX SLICE[1].C"/>
+				<complete name="SLICE1_A4" output="SLICE[1].A6_1[3]" input="CLB.I[31] SLICE[0].BMUX SLICE[0].D SLICE[1].DQ"/>
+				<complete name="SLICE1_A5" output="SLICE[1].A6_1[4]" input="CLB.I[32] SLICE[0].A SLICE[0].CMUX SLICE[1].AQ"/>
+				<complete name="SLICE1_A6" output="SLICE[1].A6_1[5]" input="CLB.I[33] SLICE[0].BQ SLICE[1].B SLICE[1].DMUX"/>
+				<complete name="SLICE1_AX" output="SLICE[1].AX"      input="CLB.I[34]                                     "/>
+				<complete name="SLICE1_B1" output="SLICE[1].B6_1[0]" input="CLB.I[35] SLICE[0].A SLICE[0].CMUX SLICE[1].AQ"/>
+				<complete name="SLICE1_B2" output="SLICE[1].B6_1[1]" input="CLB.I[36] SLICE[0].DQ SLICE[1].BMUX SLICE[1].D"/>
+				<complete name="SLICE1_B3" output="SLICE[1].B6_1[2]" input="CLB.I[37] SLICE[0].AQ SLICE[1].A SLICE[1].CMUX"/>
+				<complete name="SLICE1_B4" output="SLICE[1].B6_1[3]" input="CLB.I[38] SLICE[0].B SLICE[0].DMUX SLICE[1].BQ"/>
+				<complete name="SLICE1_B5" output="SLICE[1].B6_1[4]" input="CLB.I[39] SLICE[0].AMUX SLICE[0].C SLICE[1].CQ"/>
+				<complete name="SLICE1_B6" output="SLICE[1].B6_1[5]" input="CLB.I[40] SLICE[0].DQ SLICE[1].BMUX SLICE[1].D"/>
+				<complete name="SLICE1_BX" output="SLICE[1].BX"      input="CLB.I[41]                                     "/>
+				<complete name="SLICE1_C1" output="SLICE[1].C6_1[0]" input="CLB.I[42] SLICE[0].A SLICE[0].CMUX SLICE[1].AQ"/>
+				<complete name="SLICE1_C2" output="SLICE[1].C6_1[1]" input="CLB.I[43] SLICE[0].DQ SLICE[1].BMUX SLICE[1].D"/>
+				<complete name="SLICE1_C3" output="SLICE[1].C6_1[2]" input="CLB.I[44] SLICE[0].AQ SLICE[1].A SLICE[1].CMUX"/>
+				<complete name="SLICE1_C4" output="SLICE[1].C6_1[3]" input="CLB.I[45] SLICE[0].B SLICE[0].DMUX SLICE[1].BQ"/>
+				<complete name="SLICE1_C5" output="SLICE[1].C6_1[4]" input="CLB.I[46] SLICE[0].AMUX SLICE[0].C SLICE[1].CQ"/>
+				<complete name="SLICE1_C6" output="SLICE[1].C6_1[5]" input="CLB.I[47] SLICE[0].DQ SLICE[1].BMUX SLICE[1].D"/>
+				<complete name="SLICE1_CX" output="SLICE[1].CX"      input="CLB.I[48]                                     "/>
+				<complete name="SLICE1_D1" output="SLICE[1].D6_1[0]" input="CLB.I[49] SLICE[0].AMUX SLICE[0].C SLICE[1].CQ"/>
+				<complete name="SLICE1_D2" output="SLICE[1].D6_1[1]" input="CLB.I[50] SLICE[0].BQ SLICE[1].B SLICE[1].DMUX"/>
+				<complete name="SLICE1_D3" output="SLICE[1].D6_1[2]" input="CLB.I[51] SLICE[0].CQ SLICE[1].AMUX SLICE[1].C"/>
+				<complete name="SLICE1_D4" output="SLICE[1].D6_1[3]" input="CLB.I[52] SLICE[0].BMUX SLICE[0].D SLICE[1].DQ"/>
+				<complete name="SLICE1_D5" output="SLICE[1].D6_1[4]" input="CLB.I[53] SLICE[0].A SLICE[0].CMUX SLICE[1].AQ"/>
+				<complete name="SLICE1_D6" output="SLICE[1].D6_1[5]" input="CLB.I[54] SLICE[0].BQ SLICE[1].B SLICE[1].DMUX"/>
+				<complete name="SLICE1_DX" output="SLICE[1].DX"      input="CLB.I[55]                                     "/>
+
+				<complete name="clk" input="CLB.clk" output="SLICE[1:0].clk"/>
+
+				<direct name="A" input="SLICE[1:0].A" output="CLB.O[1:0]"/>
+				<direct name="AQ" input="SLICE[1:0].AQ" output="CLB.O[3:2]"/>
+				<direct name="AMUX" input="SLICE[1:0].AMUX" output="CLB.O[5:4]"/>
+				<direct name="B" input="SLICE[1:0].B" output="CLB.O[7:6]"/>
+				<direct name="BQ" input="SLICE[1:0].BQ" output="CLB.O[9:8]"/>
+				<direct name="BMUX" input="SLICE[1:0].BMUX" output="CLB.O[11:10]"/>
+				<direct name="C" input="SLICE[1:0].C" output="CLB.O[13:12]"/>
+				<direct name="CQ" input="SLICE[1:0].CQ" output="CLB.O[15:14]"/>
+				<direct name="CMUX" input="SLICE[1:0].CMUX" output="CLB.O[17:16]"/>
+				<direct name="D" input="SLICE[1:0].D" output="CLB.O[19:18]"/>
+				<direct name="DQ" input="SLICE[1:0].DQ" output="CLB.O[21:20]"/>
+				<direct name="DMUX" input="SLICE[1:0].DMUX" output="CLB.O[23:22]"/>
+			</interconnect>
+
+			<fc_in type="frac">0.15</fc_in>
+			<fc_out type="frac">0.1</fc_out>
+
+			<pinlocations pattern="spread"/>
+			<gridlocations>
+				<loc type="fill" priority="1"/>
+			</gridlocations>
+		</pb_type>
+
+		<pb_type name="DSP48x2" height="5">
+			<input name="A0" num_pins="30"/>
+			<input name="B0" num_pins="18"/>
+			<input name="A1" num_pins="30"/>
+			<input name="B1" num_pins="18"/>
+			<output name="P0" num_pins="48"/>
+			<output name="P1" num_pins="48"/>
+
+			<pb_type name="DSP48" num_pb="2">
+				<input name="A" num_pins="30"/>
+				<input name="B" num_pins="18"/>
+				<output name="P" num_pins="48"/>
+
+				<mode name="mult_25x18">
+					<pb_type name="mult_25x18" blif_model=".subckt multiply" num_pb="1">
+						<input name="a" num_pins="25"/>
+						<input name="b" num_pins="18"/>
+						<output name="out" num_pins="43"/>
+						<!-- T_dspdo_{a,b}_{p,carryout}_mult -->
+						<delay_constant max="5.08e-9" in_port="mult_25x18.a" out_port="mult_25x18.out"/>
+						<delay_constant max="5.08e-9" in_port="mult_25x18.b" out_port="mult_25x18.out"/>
+					</pb_type>
+					<interconnect>
+						<direct name="A" input="DSP48.A[24:0]" output="mult_25x18.a"/>
+						<direct name="B" input="DSP48.B[17:0]" output="mult_25x18.b"/>
+						<direct name="P" input="mult_25x18.out" output="DSP48.P[42:0]"/>
+					</interconnect>
+				</mode>
+			</pb_type>
+			<interconnect>
+				<direct name="A0" input="DSP48x2.A0" output="DSP48[0].A"/>
+				<direct name="A1" input="DSP48x2.A1" output="DSP48[1].A"/>
+				<direct name="B0" input="DSP48x2.B0" output="DSP48[0].B"/>
+				<direct name="B1" input="DSP48x2.B1" output="DSP48[1].B"/>
+				<direct name="P0" input="DSP48[0].P" output="DSP48x2.P0"/>
+				<direct name="P1" input="DSP48[1].P" output="DSP48x2.P1"/>
+			</interconnect>
+
+			<fc_in type="frac">0.15</fc_in>
+			<fc_out type="frac">0.10</fc_out>
+			<pinlocations pattern="spread"/>
+
+			<gridlocations>
+				<loc type="rel" pos="0.08" priority="2"/>
+				<loc type="rel" pos="0.13" priority="2"/>
+				<loc type="rel" pos="0.28" priority="2"/>
+				<loc type="rel" pos="0.33" priority="2"/>
+				<loc type="rel" pos="0.64" priority="2"/>
+				<loc type="rel" pos="0.69" priority="2"/>
+				<loc type="rel" pos="0.84" priority="2"/>
+				<loc type="rel" pos="0.89" priority="2"/>
+			</gridlocations>
+		</pb_type>
+
+		<pb_type name="RAMB36" height="5">
+			<input name="ADDRA" num_pins="16"/>
+			<input name="ADDRB" num_pins="16"/>
+			<input name="DIA" num_pins="32"/>
+			<input name="DIPA" num_pins="4"/>
+			<input name="WEA" num_pins="4"/>
+			<input name="DIB" num_pins="32"/>
+			<input name="DIPB" num_pins="4"/>
+			<input name="WEB" num_pins="4"/>
+
+			<input name="ADDRA2" num_pins="14"/>
+			<input name="ADDRB2" num_pins="14"/>
+			<input name="DIA2" num_pins="16"/>
+			<input name="DIPA2" num_pins="2"/>
+			<input name="WEA2" num_pins="2"/>
+			<input name="DIB2" num_pins="16"/>
+			<input name="DIPB2" num_pins="2"/>
+			<input name="WEB2" num_pins="2"/>
+
+			<output name ="DOA" num_pins="32"/>
+			<output name ="DOPA" num_pins="4"/>
+			<output name ="DOB" num_pins="32"/>
+			<output name ="DOPB" num_pins="4"/>
+
+			<output name ="DOA2" num_pins="16"/>
+			<output name ="DOPA2" num_pins="2"/>
+			<output name ="DOB2" num_pins="16"/>
+			<output name ="DOPB2" num_pins="2"/>
+
+			<clock name="clk" num_pins="1"/>
+
+			<!-- RAMB18 -->
+			<mode name="RAMB18x2">
+				<pb_type name="RAMB18" num_pb="2">
+					<input name="ADDRA" num_pins="14" port_class="address1"/>
+					<input name="ADDRB" num_pins="14" port_class="address2"/>
+					<input name="DIA" num_pins="16" port_class="data_in1"/>
+					<input name="DIPA" num_pins="2" port_class="data_in1"/>
+					<input name="WEA" num_pins="2" port_class="write_en1"/>
+					<input name="DIB" num_pins="16" port_class="data_in2"/>
+					<input name="DIPB" num_pins="2" port_class="data_in1"/>
+					<input name="WEB" num_pins="2" port_class="write_en2"/>
+					<output name="DOA" num_pins="16" port_class="data_out1"/>
+					<output name="DOPA" num_pins="2" port_class="data_out1"/>
+					<output name="DOB" num_pins="16" port_class="data_out2"/>
+					<output name="DOPB" num_pins="2" port_class="data_out1"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<mode name="RAMB18_512x36_sp">
+						<pb_type name="RAMB18_512x36_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+							<input name="addr" num_pins="9" port_class="address"/>
+							<input name="data" num_pins="36" port_class="data_in"/>
+							<input name="we" num_pins="1" port_class="write_en"/>
+							<output name="out" num_pins="36" port_class="data_out"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<!-- Trcck_addr -->
+							<T_setup value="0.62e-9" port="RAMB18_512x36_sp.addr" clock="clk"/>
+							<!-- Trdck_d -->
+							<T_setup value="1.11e-9" port="RAMB18_512x36_sp.data" clock="clk"/>
+							<!-- Trcck_we -->
+							<T_setup value="0.52e-9" port="RAMB18_512x36_sp.we" clock="clk"/>
+							<!-- Trcko_do -->
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_512x36_sp.out" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:5]" output="RAMB18_512x36_sp.addr"/>
+							<direct name="data1" input="RAMB18.DIA[15:0]" output="RAMB18_512x36_sp.data[15:0]"/>
+							<direct name="data2" input="RAMB18.DIB[15:0]" output="RAMB18_512x36_sp.data[31:16]"/>
+							<direct name="data1p" input="RAMB18.DIPA[1:0]" output="RAMB18_512x36_sp.data[33:32]"/>
+							<direct name="data2p" input="RAMB18.DIPB[1:0]" output="RAMB18_512x36_sp.data[35:34]"/>
+							<direct name="writeen1" input="RAMB18.WEB[0]" output="RAMB18_512x36_sp.we"/>
+							<direct name="dataout1" input="RAMB18_512x36_sp.out[15:0]" output="RAMB18.DOA[15:0]"/>
+							<direct name="dataout2" input="RAMB18_512x36_sp.out[31:16]" output="RAMB18.DOB[15:0]"/>
+							<direct name="dataout1p" input="RAMB18_512x36_sp.out[33:32]" output="RAMB18.DOPA[1:0]"/>
+							<direct name="dataout2p" input="RAMB18_512x36_sp.out[35:34]" output="RAMB18.DOPB[1:0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_512x36_sp.clk"/>
+						</interconnect>
+					</mode>
+					<mode name="RAMB18_1024x18_sp">
+						<pb_type name="RAMB18_1024x18_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+							<input name="addr" num_pins="10" port_class="address"/>
+							<input name="data" num_pins="18" port_class="data_in"/>
+							<input name="we" num_pins="1" port_class="write_en"/>
+							<output name="out" num_pins="18" port_class="data_out"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<!-- Trcck_addr -->
+							<T_setup value="0.62e-9" port="RAMB18_1024x18_sp.addr" clock="clk"/>
+							<!-- Trdck_d -->
+							<T_setup value="1.11e-9" port="RAMB18_1024x18_sp.data" clock="clk"/>
+							<!-- Trcck_we -->
+							<T_setup value="0.52e-9" port="RAMB18_1024x18_sp.we" clock="clk"/>
+							<!-- Trcko_do -->
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_1024x18_sp.out" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:4]" output="RAMB18_1024x18_sp.addr"/>
+							<direct name="data1" input="RAMB18.DIA[15:0]" output="RAMB18_1024x18_sp.data[15:0]"/>
+							<direct name="data1p" input="RAMB18.DIPA[1:0]" output="RAMB18_1024x18_sp.data[17:16]"/>
+							<direct name="writeen1" input="RAMB18.WEB[0]" output="RAMB18_1024x18_sp.we"/>
+							<direct name="dataout1" input="RAMB18_1024x18_sp.out[15:0]" output="RAMB18.DOA[15:0]"/>
+							<direct name="dataout1p" input="RAMB18_1024x18_sp.out[17:16]" output="RAMB18.DOPA[1:0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_1024x18_sp.clk"/>
+						</interconnect>
+					</mode>
+					<mode name="RAMB18_2048x9_sp">
+						<pb_type name="RAMB18_2048x9_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+							<input name="addr" num_pins="11" port_class="address"/>
+							<input name="data" num_pins="9" port_class="data_in"/>
+							<input name="we" num_pins="1" port_class="write_en"/>
+							<output name="out" num_pins="9" port_class="data_out"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<T_setup value="0.62e-9" port="RAMB18_2048x9_sp.addr" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_2048x9_sp.data" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_2048x9_sp.we" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_2048x9_sp.out" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:3]" output="RAMB18_2048x9_sp.addr"/>
+							<direct name="data1" input="RAMB18.DIA[7:0]" output="RAMB18_2048x9_sp.data[7:0]"/>
+							<direct name="data1p" input="RAMB18.DIPA[0]" output="RAMB18_2048x9_sp.data[8]"/>
+							<direct name="writeen1" input="RAMB18.WEB[0]" output="RAMB18_2048x9_sp.we"/>
+							<direct name="dataout1" input="RAMB18_2048x9_sp.out[7:0]" output="RAMB18.DOA[7:0]"/>
+							<direct name="dataout1p" input="RAMB18_2048x9_sp.out[8]" output="RAMB18.DOPA[0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_2048x9_sp.clk"/>
+						</interconnect>
+					</mode>
+					<mode name="RAMB18_4096x4_sp">
+						<pb_type name="RAMB18_4096x4_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+							<input name="addr" num_pins="12" port_class="address"/>
+							<input name="data" num_pins="4" port_class="data_in"/>
+							<input name="we" num_pins="1" port_class="write_en"/>
+							<output name="out" num_pins="4" port_class="data_out"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<T_setup value="0.62e-9" port="RAMB18_4096x4_sp.addr" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_4096x4_sp.data" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_4096x4_sp.we" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_4096x4_sp.out" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:2]" output="RAMB18_4096x4_sp.addr"/>
+							<direct name="data1" input="RAMB18.DIA[3:0]" output="RAMB18_4096x4_sp.data"/>
+							<direct name="writeen1" input="RAMB18.WEB[0]" output="RAMB18_4096x4_sp.we"/>
+							<direct name="dataout1" input="RAMB18_4096x4_sp.out" output="RAMB18.DOA[3:0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_4096x4_sp.clk"/>
+						</interconnect>
+					</mode>
+					<mode name="RAMB18_8192x2_sp">
+						<pb_type name="RAMB18_8192x2_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+							<input name="addr" num_pins="13" port_class="address"/>
+							<input name="data" num_pins="2" port_class="data_in"/>
+							<input name="we" num_pins="1" port_class="write_en"/>
+							<output name="out" num_pins="2" port_class="data_out"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<T_setup value="0.62e-9" port="RAMB18_8192x2_sp.addr" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_8192x2_sp.data" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_8192x2_sp.we" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_8192x2_sp.out" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:1]" output="RAMB18_8192x2_sp.addr"/>
+							<direct name="data1" input="RAMB18.DIA[1:0]" output="RAMB18_8192x2_sp.data"/>
+							<direct name="writeen1" input="RAMB18.WEB[0]" output="RAMB18_8192x2_sp.we"/>
+							<direct name="dataout1" input="RAMB18_8192x2_sp.out" output="RAMB18.DOA[1:0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_8192x2_sp.clk"/>
+						</interconnect>
+					</mode>
+					<mode name="RAMB18_16384x1_sp">
+						<pb_type name="RAMB18_16384x1_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+							<input name="addr" num_pins="14" port_class="address"/>
+							<input name="data" num_pins="1" port_class="data_in"/>
+							<input name="we" num_pins="1" port_class="write_en"/>
+							<output name="out" num_pins="1" port_class="data_out"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<T_setup value="0.62e-9" port="RAMB18_16384x1_sp.addr" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_16384x1_sp.data" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_16384x1_sp.we" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_16384x1_sp.out" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:0]" output="RAMB18_16384x1_sp.addr"/>
+							<direct name="data1" input="RAMB18.DIA[0]" output="RAMB18_16384x1_sp.data"/>
+							<direct name="writeen1" input="RAMB18.WEB[0]" output="RAMB18_16384x1_sp.we"/>
+							<direct name="dataout1" input="RAMB18_16384x1_sp.out" output="RAMB18.DOA[0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_16384x1_sp.clk"/>
+						</interconnect>
+					</mode>
+					<!-- RAMB18 Dual-port RAM -->
+					<mode name="RAMB18_1024x18_dp">
+						<pb_type name="RAMB18_1024x18_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+							<input name="addr1" num_pins="10" port_class="address1"/>
+							<input name="addr2" num_pins="10" port_class="address2"/>
+							<input name="data1" num_pins="18" port_class="data_in1"/>
+							<input name="data2" num_pins="18" port_class="data_in2"/>
+							<input name="we1" num_pins="1" port_class="write_en1"/>
+							<input name="we2" num_pins="1" port_class="write_en2"/>
+							<output name="out1" num_pins="18" port_class="data_out1"/>
+							<output name="out2" num_pins="18" port_class="data_out2"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<T_setup value="0.62-9" port="RAMB18_1024x18_dp.addr1" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_1024x18_dp.data1" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_1024x18_dp.we1" clock="clk"/>
+							<T_setup value="0.62e-9" port="RAMB18_1024x18_dp.addr2" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_1024x18_dp.data2" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_1024x18_dp.we2" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_1024x18_dp.out1" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_1024x18_dp.out2" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:4]" output="RAMB18_1024x18_dp.addr1"/>
+							<direct name="address2" input="RAMB18.ADDRB[13:4]" output="RAMB18_1024x18_dp.addr2"/>
+							<direct name="data1" input="RAMB18.DIA[15:0]" output="RAMB18_1024x18_dp.data1[15:0]"/>
+							<direct name="data1p" input="RAMB18.DIPA[1:0]" output="RAMB18_1024x18_dp.data1[17:16]"/>
+							<direct name="data2" input="RAMB18.DIB[15:0]" output="RAMB18_1024x18_dp.data2[15:0]"/>
+							<direct name="data2p" input="RAMB18.DIPB[1:0]" output="RAMB18_1024x18_dp.data2[17:16]"/>
+							<direct name="writeen1" input="RAMB18.WEA[0]" output="RAMB18_1024x18_dp.we1"/>
+							<direct name="writeen2" input="RAMB18.WEB[0]" output="RAMB18_1024x18_dp.we2"/>
+							<direct name="dataout1" input="RAMB18_1024x18_dp.out1[15:0]" output="RAMB18.DOA[15:0]"/>
+							<direct name="dataout1p" input="RAMB18_1024x18_dp.out1[17:16]" output="RAMB18.DOPA[1:0]"/>
+							<direct name="dataout2" input="RAMB18_1024x18_dp.out2[15:0]" output="RAMB18.DOB[15:0]"/>
+							<direct name="dataout2p" input="RAMB18_1024x18_dp.out2[17:16]" output="RAMB18.DOPB[1:0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_1024x18_dp.clk"/>
+						</interconnect>
+					</mode>
+					<mode name="RAMB18_2048x9_dp">
+						<pb_type name="RAMB18_2048x9_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+							<input name="addr1" num_pins="11" port_class="address1"/>
+							<input name="addr2" num_pins="11" port_class="address2"/>
+							<input name="data1" num_pins="9" port_class="data_in1"/>
+							<input name="data2" num_pins="9" port_class="data_in2"/>
+							<input name="we1" num_pins="1" port_class="write_en1"/>
+							<input name="we2" num_pins="1" port_class="write_en2"/>
+							<output name="out1" num_pins="9" port_class="data_out1"/>
+							<output name="out2" num_pins="9" port_class="data_out2"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<T_setup value="0.62e-9" port="RAMB18_2048x9_dp.addr1" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_2048x9_dp.data1" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_2048x9_dp.we1" clock="clk"/>
+							<T_setup value="0.62e-9" port="RAMB18_2048x9_dp.addr2" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_2048x9_dp.data2" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_2048x9_dp.we2" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_2048x9_dp.out1" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_2048x9_dp.out2" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:3]" output="RAMB18_2048x9_dp.addr1"/>
+							<direct name="address2" input="RAMB18.ADDRB[13:3]" output="RAMB18_2048x9_dp.addr2"/>
+							<direct name="data1" input="RAMB18.DIA[7:0]" output="RAMB18_2048x9_dp.data1[7:0]"/>
+							<direct name="data1p" input="RAMB18.DIPA[0]" output="RAMB18_2048x9_dp.data1[8]"/>
+							<direct name="data2" input="RAMB18.DIB[7:0]" output="RAMB18_2048x9_dp.data2[7:0]"/>
+							<direct name="data2p" input="RAMB18.DIPB[0]" output="RAMB18_2048x9_dp.data2[8]"/>
+							<direct name="writeen1" input="RAMB18.WEA[0]" output="RAMB18_2048x9_dp.we1"/>
+							<direct name="writeen2" input="RAMB18.WEB[0]" output="RAMB18_2048x9_dp.we2"/>
+							<direct name="dataout1" input="RAMB18_2048x9_dp.out1[7:0]" output="RAMB18.DOA[7:0]"/>
+							<direct name="dataout1p" input="RAMB18_2048x9_dp.out1[8]" output="RAMB18.DOPA[0]"/>
+							<direct name="dataout2" input="RAMB18_2048x9_dp.out2[7:0]" output="RAMB18.DOB[7:0]"/>
+							<direct name="dataout2p" input="RAMB18_2048x9_dp.out2[8]" output="RAMB18.DOPB[0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_2048x9_dp.clk"/>
+						</interconnect>
+					</mode>
+					<mode name="RAMB18_4096x4_dp">
+						<pb_type name="RAMB18_4096x4_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+							<input name="addr1" num_pins="12" port_class="address1"/>
+							<input name="addr2" num_pins="12" port_class="address2"/>
+							<input name="data1" num_pins="4" port_class="data_in1"/>
+							<input name="data2" num_pins="4" port_class="data_in2"/>
+							<input name="we1" num_pins="1" port_class="write_en1"/>
+							<input name="we2" num_pins="1" port_class="write_en2"/>
+							<output name="out1" num_pins="4" port_class="data_out1"/>
+							<output name="out2" num_pins="4" port_class="data_out2"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<T_setup value="0.62e-9" port="RAMB18_4096x4_dp.addr1" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_4096x4_dp.data1" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_4096x4_dp.we1" clock="clk"/>
+							<T_setup value="0.62e-9" port="RAMB18_4096x4_dp.addr2" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_4096x4_dp.data2" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_4096x4_dp.we2" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_4096x4_dp.out1" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_4096x4_dp.out2" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:2]" output="RAMB18_4096x4_dp.addr1"/>
+							<direct name="address2" input="RAMB18.ADDRB[13:2]" output="RAMB18_4096x4_dp.addr2"/>
+							<direct name="data1" input="RAMB18.DIA[3:0]" output="RAMB18_4096x4_dp.data1"/>
+							<direct name="data2" input="RAMB18.DIB[3:0]" output="RAMB18_4096x4_dp.data2"/>
+							<direct name="writeen1" input="RAMB18.WEA[0]" output="RAMB18_4096x4_dp.we1"/>
+							<direct name="writeen2" input="RAMB18.WEB[0]" output="RAMB18_4096x4_dp.we2"/>
+							<direct name="dataout1" input="RAMB18_4096x4_dp.out1" output="RAMB18.DOA[3:0]"/>
+							<direct name="dataout2" input="RAMB18_4096x4_dp.out2" output="RAMB18.DOB[3:0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_4096x4_dp.clk"/>
+						</interconnect>
+					</mode>
+					<mode name="RAMB18_8192x2_dp">
+						<pb_type name="RAMB18_8192x2_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+							<input name="addr1" num_pins="13" port_class="address1"/>
+							<input name="addr2" num_pins="13" port_class="address2"/>
+							<input name="data1" num_pins="2" port_class="data_in1"/>
+							<input name="data2" num_pins="2" port_class="data_in2"/>
+							<input name="we1" num_pins="1" port_class="write_en1"/>
+							<input name="we2" num_pins="1" port_class="write_en2"/>
+							<output name="out1" num_pins="2" port_class="data_out1"/>
+							<output name="out2" num_pins="2" port_class="data_out2"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<T_setup value="0.62e-9" port="RAMB18_8192x2_dp.addr1" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_8192x2_dp.data1" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_8192x2_dp.we1" clock="clk"/>
+							<T_setup value="0.62e-9" port="RAMB18_8192x2_dp.addr2" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_8192x2_dp.data2" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_8192x2_dp.we2" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_8192x2_dp.out1" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_8192x2_dp.out2" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:1]" output="RAMB18_8192x2_dp.addr1"/>
+							<direct name="address2" input="RAMB18.ADDRB[13:1]" output="RAMB18_8192x2_dp.addr2"/>
+							<direct name="data1" input="RAMB18.DIA[1:0]" output="RAMB18_8192x2_dp.data1"/>
+							<direct name="data2" input="RAMB18.DIB[1:0]" output="RAMB18_8192x2_dp.data2"/>
+							<direct name="writeen1" input="RAMB18.WEA[0]" output="RAMB18_8192x2_dp.we1"/>
+							<direct name="writeen2" input="RAMB18.WEB[0]" output="RAMB18_8192x2_dp.we2"/>
+							<direct name="dataout1" input="RAMB18_8192x2_dp.out1" output="RAMB18.DOA[1:0]"/>
+							<direct name="dataout2" input="RAMB18_8192x2_dp.out2" output="RAMB18.DOB[1:0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_8192x2_dp.clk"/>
+						</interconnect>
+					</mode>
+					<mode name="RAMB18_16384x1_dp">
+						<pb_type name="RAMB18_16384x1_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+							<input name="addr1" num_pins="14" port_class="address1"/>
+							<input name="addr2" num_pins="14" port_class="address2"/>
+							<input name="data1" num_pins="1" port_class="data_in1"/>
+							<input name="data2" num_pins="1" port_class="data_in2"/>
+							<input name="we1" num_pins="1" port_class="write_en1"/>
+							<input name="we2" num_pins="1" port_class="write_en2"/>
+							<output name="out1" num_pins="1" port_class="data_out1"/>
+							<output name="out2" num_pins="1" port_class="data_out2"/>
+							<clock name="clk" num_pins="1" port_class="clock"/>
+							<T_setup value="0.62e-9" port="RAMB18_16384x1_dp.addr1" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_16384x1_dp.data1" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_16384x1_dp.we1" clock="clk"/>
+							<T_setup value="0.62e-9" port="RAMB18_16384x1_dp.addr2" clock="clk"/>
+							<T_setup value="1.11e-9" port="RAMB18_16384x1_dp.data2" clock="clk"/>
+							<T_setup value="0.52e-9" port="RAMB18_16384x1_dp.we2" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_16384x1_dp.out1" clock="clk"/>
+							<T_clock_to_Q max="2.08e-9" port="RAMB18_16384x1_dp.out2" clock="clk"/>
+						</pb_type>
+						<interconnect>
+							<direct name="address1" input="RAMB18.ADDRA[13:0]" output="RAMB18_16384x1_dp.addr1"/>
+							<direct name="address2" input="RAMB18.ADDRB[13:0]" output="RAMB18_16384x1_dp.addr2"/>
+							<direct name="data1" input="RAMB18.DIA[0]" output="RAMB18_16384x1_dp.data1"/>
+							<direct name="data2" input="RAMB18.DIB[0]" output="RAMB18_16384x1_dp.data2"/>
+							<direct name="writeen1" input="RAMB18.WEA[0]" output="RAMB18_16384x1_dp.we1"/>
+							<direct name="writeen2" input="RAMB18.WEB[0]" output="RAMB18_16384x1_dp.we2"/>
+							<direct name="dataout1" input="RAMB18_16384x1_dp.out1" output="RAMB18.DOA[0]"/>
+							<direct name="dataout2" input="RAMB18_16384x1_dp.out2" output="RAMB18.DOB[0]"/>
+							<direct name="clk" input="RAMB18.clk" output="RAMB18_16384x1_dp.clk"/>
+						</interconnect>
+					</mode>
+				</pb_type> 
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[13:0]" output="RAMB18[0].ADDRA"/>
+					<direct name="address1" input="RAMB36.ADDRA2[13:0]" output="RAMB18[1].ADDRA"/>
+					<direct name="address2" input="RAMB36.ADDRB[13:0]" output="RAMB18[0].ADDRB"/>
+					<direct name="address2" input="RAMB36.ADDRB2[13:0]" output="RAMB18[1].ADDRB"/>
+					<direct name="data1" input="RAMB36.DIA[15:0]" output="RAMB18[0].DIA"/>
+					<direct name="data1p" input="RAMB36.DIA2[15:0]" output="RAMB18[1].DIA"/>
+					<direct name="data1" input="RAMB36.DIPA[1:0]" output="RAMB18[0].DIPA"/>
+					<direct name="data1p" input="RAMB36.DIPA2[1:0]" output="RAMB18[1].DIPA"/>
+					<direct name="data2" input="RAMB36.DIB[15:0]" output="RAMB18[0].DIB"/>
+					<direct name="data2" input="RAMB36.DIB2[15:0]" output="RAMB18[1].DIB"/>
+					<direct name="data2p" input="RAMB36.DIPB[1:0]" output="RAMB18[0].DIPB"/>
+					<direct name="data2p" input="RAMB36.DIPB2[1:0]" output="RAMB18[1].DIPB"/>
+					<direct name="writeen1" input="RAMB36.WEA[1:0]" output="RAMB18[0].WEA"/>
+					<direct name="writeen1" input="RAMB36.WEA2[1:0]" output="RAMB18[1].WEA"/>
+					<direct name="writeen2" input="RAMB36.WEB[1:0]" output="RAMB18[0].WEB"/>
+					<direct name="writeen2" input="RAMB36.WEB2[1:0]" output="RAMB18[1].WEB"/>
+					<direct name="dataout1" input="RAMB18[0].DOA" output="RAMB36.DOA[15:0]"/>
+					<direct name="dataout1" input="RAMB18[1].DOA" output="RAMB36.DOA2[15:0]"/>
+					<direct name="dataout1p" input="RAMB18[0].DOPA" output="RAMB36.DOPA[1:0]"/>
+					<direct name="dataout1p" input="RAMB18[1].DOPA" output="RAMB36.DOPA2[1:0]"/>
+					<direct name="dataout2" input="RAMB18[0].DOB" output="RAMB36.DOB[15:0]"/>
+					<direct name="dataout2" input="RAMB18[1].DOB" output="RAMB36.DOB2[15:0]"/>
+					<direct name="dataout2p" input="RAMB18[0].DOPB" output="RAMB36.DOPB[1:0]"/>
+					<direct name="dataout2p" input="RAMB18[1].DOPB" output="RAMB36.DOPB2[1:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB18[0].clk"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB18[1].clk"/>
+				</interconnect>
+			</mode>
+			<!-- RAMB36 -->
+			<mode name="RAMB36_512x72_sp">
+				<pb_type name="RAMB36_512x72_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+					<input name="addr" num_pins="9" port_class="address"/>
+					<input name="data" num_pins="72" port_class="data_in"/>
+					<input name="we" num_pins="1" port_class="write_en"/>
+					<output name="out" num_pins="72" port_class="data_out"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_512x72_sp.addr" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_512x72_sp.data" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_512x72_sp.we" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_512x72_sp.out" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:6]" output="RAMB36_512x72_sp.addr"/>
+					<direct name="data1" input="RAMB36.DIA[31:0]" output="RAMB36_512x72_sp.data[31:0]"/>
+					<direct name="data1" input="RAMB36.DIB[31:0]" output="RAMB36_512x72_sp.data[63:32]"/>
+					<direct name="data1p" input="RAMB36.DIPA[3:0]" output="RAMB36_512x72_sp.data[67:64]"/>
+					<direct name="data1p" input="RAMB36.DIPB[3:0]" output="RAMB36_512x72_sp.data[71:68]"/>
+					<direct name="writeen1" input="RAMB36.WEB[0]" output="RAMB36_512x72_sp.we"/>
+					<direct name="dataout1" input="RAMB36_512x72_sp.out[31:0]" output="RAMB36.DOA[31:0]"/>
+					<direct name="dataout1" input="RAMB36_512x72_sp.out[63:32]" output="RAMB36.DOB[31:0]"/>
+					<direct name="dataout1p" input="RAMB36_512x72_sp.out[67:64]" output="RAMB36.DOPA[3:0]"/>
+					<direct name="dataout1p" input="RAMB36_512x72_sp.out[71:68]" output="RAMB36.DOPB[3:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_512x72_sp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_1024x36_sp">
+				<pb_type name="RAMB36_1024x36_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+					<input name="addr" num_pins="10" port_class="address"/>
+					<input name="data" num_pins="36" port_class="data_in"/>
+					<input name="we" num_pins="1" port_class="write_en"/>
+					<output name="out" num_pins="36" port_class="data_out"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_1024x36_sp.addr" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_1024x36_sp.data" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_1024x36_sp.we" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_1024x36_sp.out" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:5]" output="RAMB36_1024x36_sp.addr"/>
+					<direct name="data1" input="RAMB36.DIA[31:0]" output="RAMB36_1024x36_sp.data[31:0]"/>
+					<direct name="data1p" input="RAMB36.DIPA[3:0]" output="RAMB36_1024x36_sp.data[35:32]"/>
+					<direct name="writeen1" input="RAMB36.WEB[0]" output="RAMB36_1024x36_sp.we"/>
+					<direct name="dataout1" input="RAMB36_1024x36_sp.out[31:0]" output="RAMB36.DOA[31:0]"/>
+					<direct name="dataout1p" input="RAMB36_1024x36_sp.out[35:32]" output="RAMB36.DOPA[3:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_1024x36_sp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_2048x18_sp">
+				<pb_type name="RAMB36_2048x18_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+					<input name="addr" num_pins="11" port_class="address"/>
+					<input name="data" num_pins="18" port_class="data_in"/>
+					<input name="we" num_pins="1" port_class="write_en"/>
+					<output name="out" num_pins="18" port_class="data_out"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_2048x18_sp.addr" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_2048x18_sp.data" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_2048x18_sp.we" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_2048x18_sp.out" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:4]" output="RAMB36_2048x18_sp.addr"/>
+					<direct name="data1" input="RAMB36.DIA[15:0]" output="RAMB36_2048x18_sp.data[15:0]"/>
+					<direct name="data1p" input="RAMB36.DIPA[1:0]" output="RAMB36_2048x18_sp.data[17:16]"/>
+					<direct name="writeen1" input="RAMB36.WEB[0]" output="RAMB36_2048x18_sp.we"/>
+					<direct name="dataout1" input="RAMB36_2048x18_sp.out[15:0]" output="RAMB36.DOA[15:0]"/>
+					<direct name="dataout1p" input="RAMB36_2048x18_sp.out[17:16]" output="RAMB36.DOPA[1:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_2048x18_sp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_4096x9_sp">
+				<pb_type name="RAMB36_4096x9_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+					<input name="addr" num_pins="12" port_class="address"/>
+					<input name="data" num_pins="9" port_class="data_in"/>
+					<input name="we" num_pins="1" port_class="write_en"/>
+					<output name="out" num_pins="9" port_class="data_out"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_4096x9_sp.addr" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_4096x9_sp.data" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_4096x9_sp.we" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_4096x9_sp.out" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:3]" output="RAMB36_4096x9_sp.addr"/>
+					<direct name="data1" input="RAMB36.DIA[7:0]" output="RAMB36_4096x9_sp.data[7:0]"/>
+					<direct name="data1p" input="RAMB36.DIPA[0]" output="RAMB36_4096x9_sp.data[8]"/>
+					<direct name="writeen1" input="RAMB36.WEB[0]" output="RAMB36_4096x9_sp.we"/>
+					<direct name="dataout1" input="RAMB36_4096x9_sp.out[7:0]" output="RAMB36.DOA[7:0]"/>
+					<direct name="dataout1p" input="RAMB36_4096x9_sp.out[8]" output="RAMB36.DOPA[0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_4096x9_sp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_8192x4_sp">
+				<pb_type name="RAMB36_8192x4_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+					<input name="addr" num_pins="13" port_class="address"/>
+					<input name="data" num_pins="4" port_class="data_in"/>
+					<input name="we" num_pins="1" port_class="write_en"/>
+					<output name="out" num_pins="4" port_class="data_out"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_8192x4_sp.addr" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_8192x4_sp.data" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_8192x4_sp.we" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_8192x4_sp.out" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:2]" output="RAMB36_8192x4_sp.addr"/>
+					<direct name="data1" input="RAMB36.DIA[3:0]" output="RAMB36_8192x4_sp.data"/>
+					<direct name="writeen1" input="RAMB36.WEB[0]" output="RAMB36_8192x4_sp.we"/>
+					<direct name="dataout1" input="RAMB36_8192x4_sp.out" output="RAMB36.DOA[3:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_8192x4_sp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_16384x2_sp">
+				<pb_type name="RAMB36_16384x2_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+					<input name="addr" num_pins="14" port_class="address"/>
+					<input name="data" num_pins="2" port_class="data_in"/>
+					<input name="we" num_pins="1" port_class="write_en"/>
+					<output name="out" num_pins="2" port_class="data_out"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_16384x2_sp.addr" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_16384x2_sp.data" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_16384x2_sp.we" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_16384x2_sp.out" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:1]" output="RAMB36_16384x2_sp.addr"/>
+					<direct name="data1" input="RAMB36.DIA[1:0]" output="RAMB36_16384x2_sp.data"/>
+					<direct name="writeen1" input="RAMB36.WEB[0]" output="RAMB36_16384x2_sp.we"/>
+					<direct name="dataout1" input="RAMB36_16384x2_sp.out" output="RAMB36.DOA[1:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_16384x2_sp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_32768x1_sp">
+				<pb_type name="RAMB36_32768x1_sp" blif_model=".subckt single_port_ram" class="memory" num_pb="1">
+					<input name="addr" num_pins="15" port_class="address"/>
+					<input name="data" num_pins="1" port_class="data_in"/>
+					<input name="we" num_pins="1" port_class="write_en"/>
+					<output name="out" num_pins="1" port_class="data_out"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_32768x1_sp.addr" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_32768x1_sp.data" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_32768x1_sp.we" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_32768x1_sp.out" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:0]" output="RAMB36_32768x1_sp.addr"/>
+					<direct name="data1" input="RAMB36.DIA[0]" output="RAMB36_32768x1_sp.data"/>
+					<direct name="writeen1" input="RAMB36.WEB[0]" output="RAMB36_32768x1_sp.we"/>
+					<direct name="dataout1" input="RAMB36_32768x1_sp.out" output="RAMB36.DOA[0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_32768x1_sp.clk"/>
+				</interconnect>
+			</mode>
+			<!-- RAMB36 Dual-port RAM -->
+			<mode name="RAMB36_1024x36_dp">
+				<pb_type name="RAMB36_1024x36_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+					<input name="addr1" num_pins="10" port_class="address1"/>
+					<input name="addr2" num_pins="10" port_class="address2"/>
+					<input name="data1" num_pins="36" port_class="data_in1"/>
+					<input name="data2" num_pins="36" port_class="data_in2"/>
+					<input name="we1" num_pins="1" port_class="write_en1"/>
+					<input name="we2" num_pins="1" port_class="write_en2"/>
+					<output name="out1" num_pins="36" port_class="data_out1"/>
+					<output name="out2" num_pins="36" port_class="data_out2"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_1024x36_dp.addr1" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_1024x36_dp.data1" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_1024x36_dp.we1" clock="clk"/>
+					<T_setup value="0.62e-9" port="RAMB36_1024x36_dp.addr2" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_1024x36_dp.data2" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_1024x36_dp.we2" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_1024x36_dp.out1" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_1024x36_dp.out2" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:5]" output="RAMB36_1024x36_dp.addr1"/>
+					<direct name="address2" input="RAMB36.ADDRB[14:5]" output="RAMB36_1024x36_dp.addr2"/>
+					<direct name="data1" input="RAMB36.DIA[31:0]" output="RAMB36_1024x36_dp.data1[31:0]"/>
+					<direct name="data1p" input="RAMB36.DIPA[3:0]" output="RAMB36_1024x36_dp.data1[35:32]"/>
+					<direct name="data2" input="RAMB36.DIB[31:0]" output="RAMB36_1024x36_dp.data2[31:0]"/>
+					<direct name="data2p" input="RAMB36.DIPB[3:0]" output="RAMB36_1024x36_dp.data2[35:32]"/>
+					<direct name="writeen1" input="RAMB36.WEA[0]" output="RAMB36_1024x36_dp.we1"/>
+					<direct name="writeen2" input="RAMB36.WEB[0]" output="RAMB36_1024x36_dp.we2"/>
+					<direct name="dataout1" input="RAMB36_1024x36_dp.out1[31:0]" output="RAMB36.DOA[31:0]"/>
+					<direct name="dataout1p" input="RAMB36_1024x36_dp.out1[35:32]" output="RAMB36.DOPA[3:0]"/>
+					<direct name="dataout2" input="RAMB36_1024x36_dp.out2[31:0]" output="RAMB36.DOB[31:0]"/>
+					<direct name="dataout2p" input="RAMB36_1024x36_dp.out2[35:32]" output="RAMB36.DOPB[3:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_1024x36_dp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_2048x18_dp">
+				<pb_type name="RAMB36_2048x18_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+					<input name="addr1" num_pins="11" port_class="address1"/>
+					<input name="addr2" num_pins="11" port_class="address2"/>
+					<input name="data1" num_pins="18" port_class="data_in1"/>
+					<input name="data2" num_pins="18" port_class="data_in2"/>
+					<input name="we1" num_pins="1" port_class="write_en1"/>
+					<input name="we2" num_pins="1" port_class="write_en2"/>
+					<output name="out1" num_pins="18" port_class="data_out1"/>
+					<output name="out2" num_pins="18" port_class="data_out2"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_2048x18_dp.addr1" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_2048x18_dp.data1" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_2048x18_dp.we1" clock="clk"/>
+					<T_setup value="0.62e-9" port="RAMB36_2048x18_dp.addr2" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_2048x18_dp.data2" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_2048x18_dp.we2" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_2048x18_dp.out1" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_2048x18_dp.out2" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:4]" output="RAMB36_2048x18_dp.addr1"/>
+					<direct name="data1" input="RAMB36.DIA[15:0]" output="RAMB36_2048x18_dp.data1[15:0]"/>
+					<direct name="data1p" input="RAMB36.DIPA[1:0]" output="RAMB36_2048x18_dp.data1[17:16]"/>
+					<direct name="writeen1" input="RAMB36.WEA[0]" output="RAMB36_2048x18_dp.we1"/>
+					<direct name="dataout1" input="RAMB36_2048x18_dp.out1[15:0]" output="RAMB36.DOA[15:0]"/>
+					<direct name="dataout1p" input="RAMB36_2048x18_dp.out1[17:16]" output="RAMB36.DOPA[1:0]"/>
+					<direct name="address2" input="RAMB36.ADDRB[14:4]" output="RAMB36_2048x18_dp.addr2"/>
+					<direct name="data2" input="RAMB36.DIB[15:0]" output="RAMB36_2048x18_dp.data2[15:0]"/>
+					<direct name="data2p" input="RAMB36.DIPB[1:0]" output="RAMB36_2048x18_dp.data2[17:16]"/>
+					<direct name="writeen2" input="RAMB36.WEB[0]" output="RAMB36_2048x18_dp.we2"/>
+					<direct name="dataout2" input="RAMB36_2048x18_dp.out2[15:0]" output="RAMB36.DOB[15:0]"/>
+					<direct name="dataout2p" input="RAMB36_2048x18_dp.out2[17:16]" output="RAMB36.DOPB[1:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_2048x18_dp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_4096x9_dp">
+				<pb_type name="RAMB36_4096x9_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+					<input name="addr1" num_pins="12" port_class="address1"/>
+					<input name="addr2" num_pins="12" port_class="address2"/>
+					<input name="data1" num_pins="9" port_class="data_in1"/>
+					<input name="data2" num_pins="9" port_class="data_in2"/>
+					<input name="we1" num_pins="1" port_class="write_en1"/>
+					<input name="we2" num_pins="1" port_class="write_en2"/>
+					<output name="out1" num_pins="9" port_class="data_out1"/>
+					<output name="out2" num_pins="9" port_class="data_out2"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_4096x9_dp.addr1" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_4096x9_dp.data1" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_4096x9_dp.we1" clock="clk"/>
+					<T_setup value="0.62e-9" port="RAMB36_4096x9_dp.addr2" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_4096x9_dp.data2" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_4096x9_dp.we2" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_4096x9_dp.out1" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_4096x9_dp.out2" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:3]" output="RAMB36_4096x9_dp.addr1"/>
+					<direct name="address2" input="RAMB36.ADDRB[14:3]" output="RAMB36_4096x9_dp.addr2"/>
+					<direct name="data1" input="RAMB36.DIA[7:0]" output="RAMB36_4096x9_dp.data1[7:0]"/>
+					<direct name="data1p" input="RAMB36.DIPA[0]" output="RAMB36_4096x9_dp.data1[8]"/>
+					<direct name="data2" input="RAMB36.DIB[7:0]" output="RAMB36_4096x9_dp.data2[7:0]"/>
+					<direct name="data2p" input="RAMB36.DIPB[0]" output="RAMB36_4096x9_dp.data2[8]"/>
+					<direct name="writeen1" input="RAMB36.WEA[0]" output="RAMB36_4096x9_dp.we1"/>
+					<direct name="writeen2" input="RAMB36.WEB[0]" output="RAMB36_4096x9_dp.we2"/>
+					<direct name="dataout1" input="RAMB36_4096x9_dp.out1[7:0]" output="RAMB36.DOA[7:0]"/>
+					<direct name="dataout1p" input="RAMB36_4096x9_dp.out1[8]" output="RAMB36.DOPA[0]"/>
+					<direct name="dataout2" input="RAMB36_4096x9_dp.out2[7:0]" output="RAMB36.DOB[7:0]"/>
+					<direct name="dataout2p" input="RAMB36_4096x9_dp.out2[8]" output="RAMB36.DOPB[0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_4096x9_dp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_8192x4_dp">
+				<pb_type name="RAMB36_8192x4_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+					<input name="addr1" num_pins="13" port_class="address1"/>
+					<input name="addr2" num_pins="13" port_class="address2"/>
+					<input name="data1" num_pins="4" port_class="data_in1"/>
+					<input name="data2" num_pins="4" port_class="data_in2"/>
+					<input name="we1" num_pins="1" port_class="write_en1"/>
+					<input name="we2" num_pins="1" port_class="write_en2"/>
+					<output name="out1" num_pins="4" port_class="data_out1"/>
+					<output name="out2" num_pins="4" port_class="data_out2"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_8192x4_dp.addr1" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_8192x4_dp.data1" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_8192x4_dp.we1" clock="clk"/>
+					<T_setup value="0.62e-9" port="RAMB36_8192x4_dp.addr2" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_8192x4_dp.data2" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_8192x4_dp.we2" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_8192x4_dp.out1" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_8192x4_dp.out2" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:2]" output="RAMB36_8192x4_dp.addr1"/>
+					<direct name="address2" input="RAMB36.ADDRB[14:2]" output="RAMB36_8192x4_dp.addr2"/>
+					<direct name="data1" input="RAMB36.DIA[3:0]" output="RAMB36_8192x4_dp.data1"/>
+					<direct name="data2" input="RAMB36.DIB[3:0]" output="RAMB36_8192x4_dp.data2"/>
+					<direct name="writeen1" input="RAMB36.WEA[0]" output="RAMB36_8192x4_dp.we1"/>
+					<direct name="writeen2" input="RAMB36.WEB[0]" output="RAMB36_8192x4_dp.we2"/>
+					<direct name="dataout1" input="RAMB36_8192x4_dp.out1" output="RAMB36.DOA[3:0]"/>
+					<direct name="dataout2" input="RAMB36_8192x4_dp.out2" output="RAMB36.DOB[3:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_8192x4_dp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_16384x2_dp">
+				<pb_type name="RAMB36_16384x2_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+					<input name="addr1" num_pins="14" port_class="address1"/>
+					<input name="addr2" num_pins="14" port_class="address2"/>
+					<input name="data1" num_pins="2" port_class="data_in1"/>
+					<input name="data2" num_pins="2" port_class="data_in2"/>
+					<input name="we1" num_pins="1" port_class="write_en1"/>
+					<input name="we2" num_pins="1" port_class="write_en2"/>
+					<output name="out1" num_pins="2" port_class="data_out1"/>
+					<output name="out2" num_pins="2" port_class="data_out2"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_16384x2_dp.addr1" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_16384x2_dp.data1" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_16384x2_dp.we1" clock="clk"/>
+					<T_setup value="0.62e-9" port="RAMB36_16384x2_dp.addr2" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_16384x2_dp.data2" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_16384x2_dp.we2" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_16384x2_dp.out1" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_16384x2_dp.out2" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:1]" output="RAMB36_16384x2_dp.addr1"/>
+					<direct name="address2" input="RAMB36.ADDRB[14:1]" output="RAMB36_16384x2_dp.addr2"/>
+					<direct name="data1" input="RAMB36.DIA[1:0]" output="RAMB36_16384x2_dp.data1"/>
+					<direct name="data2" input="RAMB36.DIB[1:0]" output="RAMB36_16384x2_dp.data2"/>
+					<direct name="writeen1" input="RAMB36.WEA[0]" output="RAMB36_16384x2_dp.we1"/>
+					<direct name="writeen2" input="RAMB36.WEB[0]" output="RAMB36_16384x2_dp.we2"/>
+					<direct name="dataout1" input="RAMB36_16384x2_dp.out1" output="RAMB36.DOA[1:0]"/>
+					<direct name="dataout2" input="RAMB36_16384x2_dp.out2" output="RAMB36.DOB[1:0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_16384x2_dp.clk"/>
+				</interconnect>
+			</mode>
+			<mode name="RAMB36_32768x1_dp">
+				<pb_type name="RAMB36_32768x1_dp" blif_model=".subckt dual_port_ram" class="memory" num_pb="1">
+					<input name="addr1" num_pins="15" port_class="address1"/>
+					<input name="addr2" num_pins="15" port_class="address2"/>
+					<input name="data1" num_pins="1" port_class="data_in1"/>
+					<input name="data2" num_pins="1" port_class="data_in2"/>
+					<input name="we1" num_pins="1" port_class="write_en1"/>
+					<input name="we2" num_pins="1" port_class="write_en2"/>
+					<output name="out1" num_pins="1" port_class="data_out1"/>
+					<output name="out2" num_pins="1" port_class="data_out2"/>
+					<clock name="clk" num_pins="1" port_class="clock"/>
+					<T_setup value="0.62e-9" port="RAMB36_32768x1_dp.addr1" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_32768x1_dp.data1" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_32768x1_dp.we1" clock="clk"/>
+					<T_setup value="0.62e-9" port="RAMB36_32768x1_dp.addr2" clock="clk"/>
+					<T_setup value="1.11e-9" port="RAMB36_32768x1_dp.data2" clock="clk"/>
+					<T_setup value="0.52e-9" port="RAMB36_32768x1_dp.we2" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_32768x1_dp.out1" clock="clk"/>
+					<T_clock_to_Q max="2.08e-9" port="RAMB36_32768x1_dp.out2" clock="clk"/>
+				</pb_type>
+				<interconnect>
+					<direct name="address1" input="RAMB36.ADDRA[14:0]" output="RAMB36_32768x1_dp.addr1"/>
+					<direct name="address2" input="RAMB36.ADDRB[14:0]" output="RAMB36_32768x1_dp.addr2"/>
+					<direct name="data1" input="RAMB36.DIA[0]" output="RAMB36_32768x1_dp.data1"/>
+					<direct name="data2" input="RAMB36.DIB[0]" output="RAMB36_32768x1_dp.data2"/>
+					<direct name="writeen1" input="RAMB36.WEA[0]" output="RAMB36_32768x1_dp.we1"/>
+					<direct name="writeen2" input="RAMB36.WEB[0]" output="RAMB36_32768x1_dp.we2"/>
+					<direct name="dataout1" input="RAMB36_32768x1_dp.out1" output="RAMB36.DOA[0]"/>
+					<direct name="dataout2" input="RAMB36_32768x1_dp.out2" output="RAMB36.DOB[0]"/>
+					<direct name="clk" input="RAMB36.clk" output="RAMB36_32768x1_dp.clk"/>
+				</interconnect>
+			</mode>
+
+			<fc_in type="frac">0.15</fc_in>
+			<fc_out type="frac">0.10</fc_out>
+			<pinlocations pattern="spread"/>
+			<gridlocations>
+				<loc type="rel" pos="0.05" priority="2"/>
+				<loc type="rel" pos="0.16" priority="2"/>
+				<loc type="rel" pos="0.25" priority="2"/>
+				<loc type="rel" pos="0.36" priority="2"/>
+				<loc type="rel" pos="0.61" priority="2"/>
+				<loc type="rel" pos="0.72" priority="2"/>
+				<loc type="rel" pos="0.81" priority="2"/>
+				<loc type="rel" pos="0.92" priority="2"/>
+				<loc type="rel" pos="1" priority="2"/>
+			</gridlocations>
+		</pb_type>
+	</complexblocklist>
+</architecture>

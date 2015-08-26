@@ -1,0 +1,57 @@
+/usr/bin/time /home/osboxes/Desktop/QT-VTBv0.4/vtr_flow/../ODIN_II/odin_II.exe  -c odin_config.xml 2>&1
+Preprocessing verilog.
+--------------------------------------------------------------------
+Welcome to ODIN II version 0.1 - the better High level synthesis tools++ targetting FPGAs (mainly VPR)
+Email: jamieson.peter@gmail.com and ken@unb.ca for support issues
+
+Reading Configuration file
+Reading FPGA Architecture file
+--------------------------------------------------------------------
+High-level synthesis Begin
+Parser starting - we'll create an abstract syntax tree.  Note this tree can be viewed using GraphViz (see documentation)
+Optimizing module by AST based optimizations
+Converting AST into a Netlist. Note this netlist can be viewed using GraphViz (see documentation)
+Performing Optimizations of the Netlist
+Performing Partial Map to target device
+Outputting the netlist to the specified output format
+Successful High-level synthesis by Odin in 1.5s
+--------------------------------------------------------------------
+
+Hard Multiplier Distribution
+============================
+8 X 8 => 152
+
+
+Total # of multipliers = 152
+
+Hard adder Distribution
+============================
+
+
+Total # of chains = 219
+
+Hard adder chain Details
+============================
+
+
+The Number of Hard Block adders in the Longest Chain: 20
+
+
+The Total Number of Hard Block adders: 3734
+
+Hard MINUS Distribution
+============================
+
+
+Total # of chains = 48
+
+Hard sub chain Details
+============================
+
+
+The Number of Hard Block subs in the Longest Chain: 17
+
+
+The Total Number of Hard Block subs: 552
+1.39user 0.11system 0:01.55elapsed 97%CPU (0avgtext+0avgdata 91892maxresident)k
+0inputs+84040outputs (0major+22320minor)pagefaults 0swaps

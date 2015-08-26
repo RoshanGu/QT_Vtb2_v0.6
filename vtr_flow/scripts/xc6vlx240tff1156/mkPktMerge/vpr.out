@@ -1,0 +1,3206 @@
+/usr/bin/time /home/osboxes/Desktop/QT-VTBv0.4/vtr_flow/../vpr/vpr  xc6vlx240tff1156.xml mkPktMerge --blif_file mkPktMerge.pre-vpr.blif --timing_analysis on --timing_driven_clustering on --inc_dump_all_nets --route_chan_width 18 --nodisp --cluster_seed_type timing --gen_postsynthesis_netlist off --sdc_file "" --seed 1 --fix_pins random --allow_unrelated_clustering off 2>&1
+
+VPR FPGA Placement and Routing.
+Version: Version 7.0
+Compiled: Aug 25 2015.
+University of Toronto
+vpr@eecg.utoronto.ca
+This is free open source code under MIT license.
+
+Architecture file: xc6vlx240tff1156.xml
+Circuit name: mkPktMerge.blif
+
+Building complex block graph.
+WARNING(1): IOB[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(2): IOB[0].VCC_WIRE[0] unconnected pin in architecture.
+WARNING(3): SLICEL[0].A6_VCCONLY[0] unconnected pin in architecture.
+WARNING(4): SLICEL[0].B6_VCCONLY[0] unconnected pin in architecture.
+WARNING(5): SLICEL[0].C6_VCCONLY[0] unconnected pin in architecture.
+WARNING(6): SLICEL[0].D6_VCCONLY[0] unconnected pin in architecture.
+WARNING(7): SLICEL[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(8): SLICEL[0].VCC_WIRE[0] unconnected pin in architecture.
+WARNING(9): DSP48E1[0].A[25] unconnected pin in architecture.
+WARNING(10): DSP48E1[0].A[26] unconnected pin in architecture.
+WARNING(11): DSP48E1[0].A[27] unconnected pin in architecture.
+WARNING(12): DSP48E1[0].A[28] unconnected pin in architecture.
+WARNING(13): DSP48E1[0].A[29] unconnected pin in architecture.
+WARNING(14): DSP48E1[0].CEA1[0] unconnected pin in architecture.
+WARNING(15): DSP48E1[0].CEA2[0] unconnected pin in architecture.
+WARNING(16): DSP48E1[0].CEB1[0] unconnected pin in architecture.
+WARNING(17): DSP48E1[0].CEB2[0] unconnected pin in architecture.
+WARNING(18): DSP48E1[0].CEM[0] unconnected pin in architecture.
+WARNING(19): DSP48E1[0].CEP[0] unconnected pin in architecture.
+WARNING(20): DSP48E1[0].INMODE[0] unconnected pin in architecture.
+WARNING(21): DSP48E1[0].INMODE[1] unconnected pin in architecture.
+WARNING(22): DSP48E1[0].INMODE[2] unconnected pin in architecture.
+WARNING(23): DSP48E1[0].INMODE[3] unconnected pin in architecture.
+WARNING(24): DSP48E1[0].INMODE[4] unconnected pin in architecture.
+WARNING(25): DSP48E1[0].OPMODE[0] unconnected pin in architecture.
+WARNING(26): DSP48E1[0].OPMODE[1] unconnected pin in architecture.
+WARNING(27): DSP48E1[0].OPMODE[2] unconnected pin in architecture.
+WARNING(28): DSP48E1[0].OPMODE[3] unconnected pin in architecture.
+WARNING(29): DSP48E1[0].OPMODE[4] unconnected pin in architecture.
+WARNING(30): DSP48E1[0].OPMODE[5] unconnected pin in architecture.
+WARNING(31): DSP48E1[0].OPMODE[6] unconnected pin in architecture.
+WARNING(32): DSP48E1[0].P[43] unconnected pin in architecture.
+WARNING(33): DSP48E1[0].P[44] unconnected pin in architecture.
+WARNING(34): DSP48E1[0].P[45] unconnected pin in architecture.
+WARNING(35): DSP48E1[0].P[46] unconnected pin in architecture.
+WARNING(36): DSP48E1[0].P[47] unconnected pin in architecture.
+WARNING(37): DSP48E1[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(38): DSP48E1[0].VCC_WIRE[0] unconnected pin in architecture.
+WARNING(39): RAMB36E1[0].ADDRARDADDRL[15] unconnected pin in architecture.
+WARNING(40): RAMB36E1[0].ADDRARDADDRU[0] unconnected pin in architecture.
+WARNING(41): RAMB36E1[0].ADDRARDADDRU[1] unconnected pin in architecture.
+WARNING(42): RAMB36E1[0].ADDRARDADDRU[2] unconnected pin in architecture.
+WARNING(43): RAMB36E1[0].ADDRARDADDRU[3] unconnected pin in architecture.
+WARNING(44): RAMB36E1[0].ADDRARDADDRU[4] unconnected pin in architecture.
+WARNING(45): RAMB36E1[0].ADDRARDADDRU[5] unconnected pin in architecture.
+WARNING(46): RAMB36E1[0].ADDRARDADDRU[6] unconnected pin in architecture.
+WARNING(47): RAMB36E1[0].ADDRARDADDRU[7] unconnected pin in architecture.
+WARNING(48): RAMB36E1[0].ADDRARDADDRU[8] unconnected pin in architecture.
+WARNING(49): RAMB36E1[0].ADDRARDADDRU[9] unconnected pin in architecture.
+WARNING(50): RAMB36E1[0].ADDRARDADDRU[10] unconnected pin in architecture.
+WARNING(51): RAMB36E1[0].ADDRARDADDRU[11] unconnected pin in architecture.
+WARNING(52): RAMB36E1[0].ADDRARDADDRU[12] unconnected pin in architecture.
+WARNING(53): RAMB36E1[0].ADDRARDADDRU[13] unconnected pin in architecture.
+WARNING(54): RAMB36E1[0].ADDRARDADDRU[14] unconnected pin in architecture.
+WARNING(55): RAMB36E1[0].ADDRBWRADDRL[15] unconnected pin in architecture.
+WARNING(56): RAMB36E1[0].ADDRBWRADDRU[0] unconnected pin in architecture.
+WARNING(57): RAMB36E1[0].ADDRBWRADDRU[1] unconnected pin in architecture.
+WARNING(58): RAMB36E1[0].ADDRBWRADDRU[2] unconnected pin in architecture.
+WARNING(59): RAMB36E1[0].ADDRBWRADDRU[3] unconnected pin in architecture.
+WARNING(60): RAMB36E1[0].ADDRBWRADDRU[4] unconnected pin in architecture.
+WARNING(61): RAMB36E1[0].ADDRBWRADDRU[5] unconnected pin in architecture.
+WARNING(62): RAMB36E1[0].ADDRBWRADDRU[6] unconnected pin in architecture.
+WARNING(63): RAMB36E1[0].ADDRBWRADDRU[7] unconnected pin in architecture.
+WARNING(64): RAMB36E1[0].ADDRBWRADDRU[8] unconnected pin in architecture.
+WARNING(65): RAMB36E1[0].ADDRBWRADDRU[9] unconnected pin in architecture.
+WARNING(66): RAMB36E1[0].ADDRBWRADDRU[10] unconnected pin in architecture.
+WARNING(67): RAMB36E1[0].ADDRBWRADDRU[11] unconnected pin in architecture.
+WARNING(68): RAMB36E1[0].ADDRBWRADDRU[12] unconnected pin in architecture.
+WARNING(69): RAMB36E1[0].ADDRBWRADDRU[13] unconnected pin in architecture.
+WARNING(70): RAMB36E1[0].ADDRBWRADDRU[14] unconnected pin in architecture.
+WARNING(71): RAMB36E1[0].WEAL[1] unconnected pin in architecture.
+WARNING(72): RAMB36E1[0].WEAL[2] unconnected pin in architecture.
+WARNING(73): RAMB36E1[0].WEAL[3] unconnected pin in architecture.
+WARNING(74): RAMB36E1[0].WEAU[0] unconnected pin in architecture.
+WARNING(75): RAMB36E1[0].WEAU[1] unconnected pin in architecture.
+WARNING(76): RAMB36E1[0].WEAU[2] unconnected pin in architecture.
+WARNING(77): RAMB36E1[0].WEAU[3] unconnected pin in architecture.
+WARNING(78): RAMB36E1[0].WEBWEL[1] unconnected pin in architecture.
+WARNING(79): RAMB36E1[0].WEBWEL[2] unconnected pin in architecture.
+WARNING(80): RAMB36E1[0].WEBWEL[3] unconnected pin in architecture.
+WARNING(81): RAMB36E1[0].WEBWEL[4] unconnected pin in architecture.
+WARNING(82): RAMB36E1[0].WEBWEL[5] unconnected pin in architecture.
+WARNING(83): RAMB36E1[0].WEBWEL[6] unconnected pin in architecture.
+WARNING(84): RAMB36E1[0].WEBWEL[7] unconnected pin in architecture.
+WARNING(85): RAMB36E1[0].WEBWEU[0] unconnected pin in architecture.
+WARNING(86): RAMB36E1[0].WEBWEU[1] unconnected pin in architecture.
+WARNING(87): RAMB36E1[0].WEBWEU[2] unconnected pin in architecture.
+WARNING(88): RAMB36E1[0].WEBWEU[3] unconnected pin in architecture.
+WARNING(89): RAMB36E1[0].WEBWEU[4] unconnected pin in architecture.
+WARNING(90): RAMB36E1[0].WEBWEU[5] unconnected pin in architecture.
+WARNING(91): RAMB36E1[0].WEBWEU[6] unconnected pin in architecture.
+WARNING(92): RAMB36E1[0].WEBWEU[7] unconnected pin in architecture.
+WARNING(93): RAMB36E1[0].ENARDENL[0] unconnected pin in architecture.
+WARNING(94): RAMB36E1[0].ENARDENU[0] unconnected pin in architecture.
+WARNING(95): RAMB36E1[0].ENBWRENL[0] unconnected pin in architecture.
+WARNING(96): RAMB36E1[0].ENBWRENU[0] unconnected pin in architecture.
+WARNING(97): RAMB36E1[0].REGCEAREGCEL[0] unconnected pin in architecture.
+WARNING(98): RAMB36E1[0].REGCEAREGCEU[0] unconnected pin in architecture.
+WARNING(99): RAMB36E1[0].REGCEBL[0] unconnected pin in architecture.
+WARNING(100): RAMB36E1[0].REGCEBU[0] unconnected pin in architecture.
+WARNING(101): RAMB36E1[0].RSTRAMARSTRAMLRST[0] unconnected pin in architecture.
+WARNING(102): RAMB36E1[0].RSTRAMARSTRAMU[0] unconnected pin in architecture.
+WARNING(103): RAMB36E1[0].RSTRAMBL[0] unconnected pin in architecture.
+WARNING(104): RAMB36E1[0].RSTRAMBU[0] unconnected pin in architecture.
+WARNING(105): RAMB36E1[0].RSTREGARSTREGL[0] unconnected pin in architecture.
+WARNING(106): RAMB36E1[0].RSTREGARSTREGU[0] unconnected pin in architecture.
+WARNING(107): RAMB36E1[0].RSTREGBL[0] unconnected pin in architecture.
+WARNING(108): RAMB36E1[0].RSTREGBU[0] unconnected pin in architecture.
+WARNING(109): RAMB36E1[0].s0_WEA[1] unconnected pin in architecture.
+WARNING(110): RAMB36E1[0].s0_WEA[2] unconnected pin in architecture.
+WARNING(111): RAMB36E1[0].s0_WEA[3] unconnected pin in architecture.
+WARNING(112): RAMB36E1[0].s0_WEBWE[1] unconnected pin in architecture.
+WARNING(113): RAMB36E1[0].s0_WEBWE[2] unconnected pin in architecture.
+WARNING(114): RAMB36E1[0].s0_WEBWE[3] unconnected pin in architecture.
+WARNING(115): RAMB36E1[0].s0_WEBWE[4] unconnected pin in architecture.
+WARNING(116): RAMB36E1[0].s0_WEBWE[5] unconnected pin in architecture.
+WARNING(117): RAMB36E1[0].s0_WEBWE[6] unconnected pin in architecture.
+WARNING(118): RAMB36E1[0].s0_WEBWE[7] unconnected pin in architecture.
+WARNING(119): RAMB36E1[0].s0_ENARDEN[0] unconnected pin in architecture.
+WARNING(120): RAMB36E1[0].s0_ENBWREN[0] unconnected pin in architecture.
+WARNING(121): RAMB36E1[0].s0_ADDRATIEHIGH[0] unconnected pin in architecture.
+WARNING(122): RAMB36E1[0].s0_ADDRATIEHIGH[1] unconnected pin in architecture.
+WARNING(123): RAMB36E1[0].s0_ADDRBTIEHIGH[0] unconnected pin in architecture.
+WARNING(124): RAMB36E1[0].s0_ADDRBTIEHIGH[1] unconnected pin in architecture.
+WARNING(125): RAMB36E1[0].s0_REGCEAREGCE[0] unconnected pin in architecture.
+WARNING(126): RAMB36E1[0].s0_REGCEB[0] unconnected pin in architecture.
+WARNING(127): RAMB36E1[0].s0_RSTRAMARSTRAM[0] unconnected pin in architecture.
+WARNING(128): RAMB36E1[0].s0_RSTRAMB[0] unconnected pin in architecture.
+WARNING(129): RAMB36E1[0].s0_RSTREGARSTREG[0] unconnected pin in architecture.
+WARNING(130): RAMB36E1[0].s0_RSTREGB[0] unconnected pin in architecture.
+WARNING(131): RAMB36E1[0].s1_WEA[1] unconnected pin in architecture.
+WARNING(132): RAMB36E1[0].s1_WEA[2] unconnected pin in architecture.
+WARNING(133): RAMB36E1[0].s1_WEA[3] unconnected pin in architecture.
+WARNING(134): RAMB36E1[0].s1_WEBWE[1] unconnected pin in architecture.
+WARNING(135): RAMB36E1[0].s1_WEBWE[2] unconnected pin in architecture.
+WARNING(136): RAMB36E1[0].s1_WEBWE[3] unconnected pin in architecture.
+WARNING(137): RAMB36E1[0].s1_WEBWE[4] unconnected pin in architecture.
+WARNING(138): RAMB36E1[0].s1_WEBWE[5] unconnected pin in architecture.
+WARNING(139): RAMB36E1[0].s1_WEBWE[6] unconnected pin in architecture.
+WARNING(140): RAMB36E1[0].s1_WEBWE[7] unconnected pin in architecture.
+WARNING(141): RAMB36E1[0].s1_ENARDEN[0] unconnected pin in architecture.
+WARNING(142): RAMB36E1[0].s1_ENBWREN[0] unconnected pin in architecture.
+WARNING(143): RAMB36E1[0].s1_ADDRATIEHIGH[0] unconnected pin in architecture.
+WARNING(144): RAMB36E1[0].s1_ADDRATIEHIGH[1] unconnected pin in architecture.
+WARNING(145): RAMB36E1[0].s1_ADDRBTIEHIGH[0] unconnected pin in architecture.
+WARNING(146): RAMB36E1[0].s1_ADDRBTIEHIGH[1] unconnected pin in architecture.
+WARNING(147): RAMB36E1[0].s1_REGCEAREGCE[0] unconnected pin in architecture.
+WARNING(148): RAMB36E1[0].s1_REGCEB[0] unconnected pin in architecture.
+WARNING(149): RAMB36E1[0].s1_RSTRAMARSTRAM[0] unconnected pin in architecture.
+WARNING(150): RAMB36E1[0].s1_RSTRAMB[0] unconnected pin in architecture.
+WARNING(151): RAMB36E1[0].s1_RSTREGARSTREG[0] unconnected pin in architecture.
+WARNING(152): RAMB36E1[0].s1_RSTREGB[0] unconnected pin in architecture.
+WARNING(153): RAMB36E1[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(154): RAMB36E1[0].VCC_WIRE[0] unconnected pin in architecture.
+WARNING(155): RAMB36E1[0].CLKARDCLKU[0] unconnected pin in architecture.
+WARNING(156): RAMB36E1[0].CLKBWRCLKL[0] unconnected pin in architecture.
+WARNING(157): RAMB36E1[0].CLKBWRCLKU[0] unconnected pin in architecture.
+WARNING(158): RAMB36E1[0].s0_CLKBWRCLK[0] unconnected pin in architecture.
+WARNING(159): RAMB36E1[0].s1_CLKBWRCLK[0] unconnected pin in architecture.
+WARNING(160): RAMB36E1[0].REGCLKARDRCLKL[0] unconnected pin in architecture.
+WARNING(161): RAMB36E1[0].REGCLKARDRCLKU[0] unconnected pin in architecture.
+WARNING(162): RAMB36E1[0].REGCLKBL[0] unconnected pin in architecture.
+WARNING(163): RAMB36E1[0].REGCLKBU[0] unconnected pin in architecture.
+WARNING(164): RAMB36E1[0].s0_REGCLKARDRCLK[0] unconnected pin in architecture.
+WARNING(165): RAMB36E1[0].s0_REGCLKB[0] unconnected pin in architecture.
+WARNING(166): RAMB36E1[0].s1_REGCLKARDRCLK[0] unconnected pin in architecture.
+WARNING(167): RAMB36E1[0].s1_REGCLKB[0] unconnected pin in architecture.
+WARNING(168): RAMB18E1[0].WEA[1] unconnected pin in architecture.
+WARNING(169): RAMB18E1[0].WEA[2] unconnected pin in architecture.
+WARNING(170): RAMB18E1[0].WEA[3] unconnected pin in architecture.
+WARNING(171): RAMB18E1[0].WEBWE[1] unconnected pin in architecture.
+WARNING(172): RAMB18E1[0].WEBWE[2] unconnected pin in architecture.
+WARNING(173): RAMB18E1[0].WEBWE[3] unconnected pin in architecture.
+WARNING(174): RAMB18E1[0].WEBWE[4] unconnected pin in architecture.
+WARNING(175): RAMB18E1[0].WEBWE[5] unconnected pin in architecture.
+WARNING(176): RAMB18E1[0].WEBWE[6] unconnected pin in architecture.
+WARNING(177): RAMB18E1[0].WEBWE[7] unconnected pin in architecture.
+WARNING(178): RAMB18E1[0].CLKBWRCLK[0] unconnected pin in architecture.
+WARNING(179): RAMB18E1[1].WEA[1] unconnected pin in architecture.
+WARNING(180): RAMB18E1[1].WEA[2] unconnected pin in architecture.
+WARNING(181): RAMB18E1[1].WEA[3] unconnected pin in architecture.
+WARNING(182): RAMB18E1[1].WEBWE[1] unconnected pin in architecture.
+WARNING(183): RAMB18E1[1].WEBWE[2] unconnected pin in architecture.
+WARNING(184): RAMB18E1[1].WEBWE[3] unconnected pin in architecture.
+WARNING(185): RAMB18E1[1].WEBWE[4] unconnected pin in architecture.
+WARNING(186): RAMB18E1[1].WEBWE[5] unconnected pin in architecture.
+WARNING(187): RAMB18E1[1].WEBWE[6] unconnected pin in architecture.
+WARNING(188): RAMB18E1[1].WEBWE[7] unconnected pin in architecture.
+WARNING(189): RAMB18E1[1].CLKBWRCLK[0] unconnected pin in architecture.
+WARNING(190): BUFG[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(191): BUFG[0].VCC_WIRE[0] unconnected pin in architecture.
+Loop for doall = 0, init_parse took 2.1e-05 seconds.
+Loop for doall = 0 took 0.037485 seconds.
+Loop for doall = 1, init_parse took 0.0101 seconds.
+Loop for doall = 1 took 0.033552 seconds.
+Swept away 459 nets with no fanout.
+Net is a constant generator: gnd.
+WARNING(192): logical_block #1344 with output gnd has only 0 pin.
+WARNING(193): Block contains output -- may be a constant generator.
+0 unconnected blocks in input netlist.
+Removed 156 LUT buffers.
+Sweeped away 156 nodes.
+BLIF circuit stats:
+	1 LUTs of size 0
+	0 LUTs of size 1
+	9 LUTs of size 2
+	163 LUTs of size 3
+	9 LUTs of size 4
+	17 LUTs of size 5
+	33 LUTs of size 6
+	311 of type input
+	156 of type output
+	36 of type latch
+	232 of type names
+	0 of type lut8
+	0 of type lut7
+	1 of type bufgctrl
+	0 of type xadder
+	0 of type adder
+	459 of type dual_port_ram
+	0 of type single_port_ram
+	0 of type multiply
+Timing analysis: ON
+Circuit netlist file: mkPktMerge.net
+Circuit placement file: mkPktMerge.place
+Circuit routing file: mkPktMerge.route
+Circuit SDC file: 
+Operation: RUN_FLOW
+
+Packer: ENABLED
+Placer: ENABLED
+Router: ENABLED
+PackerOpts.allow_early_exit: FALSE
+PackerOpts.allow_unrelated_clustering: FALSE
+PackerOpts.alpha_clustering: 0.750000
+PackerOpts.aspect: 2.352941
+PackerOpts.beta_clustering: 0.900000
+PackerOpts.block_delay: 0.000000
+PackerOpts.cluster_seed_type: TIMING
+PackerOpts.connection_driven: TRUE
+PackerOpts.global_clocks: TRUE
+PackerOpts.hill_climbing_flag: FALSE
+PackerOpts.inter_cluster_net_delay: 1.000000
+PackerOpts.intra_cluster_net_delay: 0.000000
+PackerOpts.recompute_timing_after: 32767
+PackerOpts.sweep_hanging_nets_and_inputs: TRUE
+PackerOpts.timing_driven: TRUE
+
+PlacerOpts.place_freq: PLACE_ONCE
+PlacerOpts.place_algorithm: PATH_TIMING_DRIVEN_PLACE
+PlacerOpts.pad_loc_type: RANDOM
+PlacerOpts.place_cost_exp: 1.000000
+PlacerOpts.inner_loop_recompute_divider: 0
+PlacerOpts.recompute_crit_iter: 1
+PlacerOpts.timing_tradeoff: 0.500000
+PlacerOpts.td_place_exp_first: 1.000000
+PlacerOpts.td_place_exp_last: 8.000000
+PlaceOpts.seed: 1
+AnnealSched.type: AUTO_SCHED
+AnnealSched.inner_num: 1.000000
+
+RouterOpts.route_type: DETAILED
+RouterOpts.router_algorithm: TIMING_DRIVEN
+RouterOpts.base_cost_type: DELAY_NORMALIZED
+RouterOpts.fixed_channel_width: 18
+RouterOpts.acc_fac: 1.000000
+RouterOpts.bb_factor: 3
+RouterOpts.bend_cost: 0.000000
+RouterOpts.first_iter_pres_fac: 0.500000
+RouterOpts.initial_pres_fac: 0.500000
+RouterOpts.pres_fac_mult: 1.300000
+RouterOpts.max_router_iterations: 50
+RouterOpts.astar_fac: 1.200000
+RouterOpts.criticality_exp: 1.000000
+RouterOpts.max_criticality: 0.990000
+
+
+RoutingArch.directionality: UNI_DIRECTIONAL
+RoutingArch.switch_block_type: WILTON
+RoutingArch.Fs: 3
+
+Initialize packing.
+Begin packing 'mkPktMerge.pre-vpr.blif'.
+
+After removing unused inputs...
+	total blocks: 1195, total nets: 1039, total inputs: 311, total outputs: 156
+Begin prepacking.
+Finish prepacking.
+Using inter-cluster delay: 0
+
+SDC file '' blank or not found.
+
+Defaulting to: constrain all 0 inputs and 0 outputs on the netlist clock.
+Optimize this clock to run as fast as possible.
+WARNING(194): Pin on block top^CLK_BUFG.i[0] not used
+WARNING(195): 1 unused pins 
+Complex block 0: cb.top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~83, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 1: cb.top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~134, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 2: cb.top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~14, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 3: cb.top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~2, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 4: cb.top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~0, type: RAMB36E1
+	....................................................................................................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 5: cb.top^MULTI_PORT_MUX~1660^MUX_2~2523, type: SLICEL
+	.......
+Passed route at end.
+Complex block 6: cb.top^MULTI_PORT_MUX~1660^MUX_2~2635, type: SLICEL
+	................................
+Passed route at end.
+Complex block 7: cb.top^MULTI_PORT_MUX~1660^MUX_2~2638, type: SLICEL
+	................................
+Passed route at end.
+Complex block 8: cb.top^MULTI_PORT_MUX~1660^MUX_2~2591, type: SLICEL
+	................................
+Passed route at end.
+Complex block 9: cb.top^MULTI_PORT_MUX~1660^MUX_2~2509, type: SLICEL
+	................................
+Passed route at end.
+Complex block 10: cb.top^MULTI_PORT_MUX~1660^MUX_2~2575, type: SLICEL
+	................................
+Passed route at end.
+Complex block 11: cb.top^MULTI_PORT_MUX~1660^MUX_2~2579, type: SLICEL
+	................................
+Passed route at end.
+Complex block 12: cb.top^MULTI_PORT_MUX~1660^MUX_2~2497, type: SLICEL
+	................................
+Passed route at end.
+Complex block 13: cb.top^MULTI_PORT_MUX~1660^MUX_2~2499, type: SLICEL
+	................................
+Passed route at end.
+Complex block 14: cb.top^MULTI_PORT_MUX~1660^MUX_2~2502, type: SLICEL
+	................................
+Passed route at end.
+Complex block 15: cb.top^MULTI_PORT_MUX~1660^MUX_2~2512, type: SLICEL
+	................................
+Passed route at end.
+Complex block 16: cb.top^MULTI_PORT_MUX~1660^MUX_2~2614, type: SLICEL
+	................................
+Passed route at end.
+Complex block 17: cb.top^MULTI_PORT_MUX~1660^MUX_2~2646, type: SLICEL
+	................................
+Passed route at end.
+Complex block 18: cb.top^MULTI_PORT_MUX~1660^MUX_2~2507, type: SLICEL
+	................................
+Passed route at end.
+Complex block 19: cb.top^MULTI_PORT_MUX~1660^MUX_2~2580, type: SLICEL
+	................................
+Passed route at end.
+Complex block 20: cb.top^MULTI_PORT_MUX~1660^MUX_2~2588, type: SLICEL
+	................................
+Passed route at end.
+Complex block 21: cb.top^MULTI_PORT_MUX~1660^MUX_2~2592, type: SLICEL
+	................................
+Passed route at end.
+Complex block 22: cb.top^MULTI_PORT_MUX~1660^MUX_2~2520, type: SLICEL
+	................................
+Passed route at end.
+Complex block 23: cb.top^MULTI_PORT_MUX~1660^MUX_2~2508, type: SLICEL
+	................................
+Passed route at end.
+Complex block 24: cb.top^MULTI_PORT_MUX~1660^MUX_2~2551, type: SLICEL
+	................................
+Passed route at end.
+Complex block 25: cb.top^MULTI_PORT_MUX~1660^MUX_2~2612, type: SLICEL
+	................................
+Passed route at end.
+Complex block 26: cb.top^MULTI_PORT_MUX~1660^MUX_2~2566, type: SLICEL
+	................................
+Passed route at end.
+Complex block 27: cb.top^MULTI_PORT_MUX~1660^MUX_2~2611, type: SLICEL
+	................................
+Passed route at end.
+Complex block 28: cb.top^MULTI_PORT_MUX~1660^MUX_2~2615, type: SLICEL
+	................................
+Passed route at end.
+Complex block 29: cb.top^MULTI_PORT_MUX~1660^MUX_2~2622, type: SLICEL
+	................................
+Passed route at end.
+Complex block 30: cb.top^MULTI_PORT_MUX~1660^MUX_2~2623, type: SLICEL
+	................................
+Passed route at end.
+Complex block 31: cb.top^MULTI_PORT_MUX~1660^MUX_2~2627, type: SLICEL
+	................................
+Passed route at end.
+Complex block 32: cb.top^MULTI_PORT_MUX~1660^MUX_2~2639, type: SLICEL
+	................................
+Passed route at end.
+Complex block 33: cb.top^MULTI_PORT_MUX~1660^MUX_2~2643, type: SLICEL
+	................................
+Passed route at end.
+Complex block 34: cb.top^MULTI_PORT_MUX~1660^MUX_2~2514, type: SLICEL
+	................................
+Passed route at end.
+Complex block 35: cb.top^MULTI_PORT_MUX~1660^MUX_2~2586, type: SLICEL
+	..............................
+Passed route at end.
+Complex block 36: cb.top^MULTI_PORT_MUX~1660^MUX_2~2501, type: SLICEL
+	.........................
+Passed route at end.
+Complex block 37: cb.top^MULTI_PORT_MUX~1660^MUX_2~2547, type: SLICEL
+	.....................
+Passed route at end.
+Complex block 38: cb.top^MULTI_PORT_MUX~1660^MUX_2~2505, type: SLICEL
+	.................
+Passed route at end.
+Complex block 39: cb.top^MULTI_PORT_MUX~1660^MUX_2~2504, type: SLICEL
+	.............
+Passed route at end.
+Complex block 40: cb.top^MULTI_PORT_MUX~1660^MUX_2~2511, type: SLICEL
+	.........
+Passed route at end.
+Complex block 41: cb.top^MULTI_PORT_MUX~1660^MUX_2~2495, type: SLICEL
+	.....
+Passed route at end.
+Complex block 42: cb.top^MULTI_PORT_MUX~1660^MUX_2~2494, type: SLICEL
+	.............................
+Passed route at end.
+Complex block 43: cb.top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1.dual_port_ram+ram1^out2~76, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 44: cb.top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1.dual_port_ram+ram1^out2~75, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 45: cb.top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1.dual_port_ram+ram1^out2~141, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 46: cb.top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1.dual_port_ram+ram1^out2~139, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 47: cb.top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1.dual_port_ram+ram1^out2~152, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 48: cb.top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1.dual_port_ram+ram1^out2~147, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 49: cb.top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1.dual_port_ram+ram1^out2~3, type: RAMB36E1
+	....................................................................................................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 50: cb.top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1.dual_port_ram+ram1^out2~137, type: RAMB36E1
+	...................................................................................................................................................................................................................................................................................................................................
+Passed route at end.
+Complex block 51: cb.top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1.dual_port_ram+ram1^out2~9, type: RAMB36E1
+	................................................................................
+Passed route at end.
+Complex block 52: cb.n1732, type: SLICEL
+	...............................
+Failed route at end, repack cluster trying detailed routing at each stage.
+Complex block 52: cb.n1732, type: SLICEL
+	...........................
+Complex block 53: cb.out:top^oport_get~152, type: IOB
+	
+Passed route at end.
+Complex block 54: cb.out:top^oport_get~151, type: IOB
+	
+Passed route at end.
+Complex block 55: cb.out:top^oport_get~150, type: IOB
+	
+Passed route at end.
+Complex block 56: cb.out:top^oport_get~149, type: IOB
+	
+Passed route at end.
+Complex block 57: cb.out:top^oport_get~148, type: IOB
+	
+Passed route at end.
+Complex block 58: cb.out:top^oport_get~147, type: IOB
+	
+Passed route at end.
+Complex block 59: cb.out:top^oport_get~146, type: IOB
+	
+Passed route at end.
+Complex block 60: cb.out:top^oport_get~145, type: IOB
+	
+Passed route at end.
+Complex block 61: cb.out:top^oport_get~144, type: IOB
+	
+Passed route at end.
+Complex block 62: cb.out:top^oport_get~143, type: IOB
+	
+Passed route at end.
+Complex block 63: cb.out:top^oport_get~142, type: IOB
+	
+Passed route at end.
+Complex block 64: cb.out:top^oport_get~141, type: IOB
+	
+Passed route at end.
+Complex block 65: cb.out:top^oport_get~140, type: IOB
+	
+Passed route at end.
+Complex block 66: cb.out:top^oport_get~139, type: IOB
+	
+Passed route at end.
+Complex block 67: cb.out:top^oport_get~138, type: IOB
+	
+Passed route at end.
+Complex block 68: cb.out:top^oport_get~137, type: IOB
+	
+Passed route at end.
+Complex block 69: cb.out:top^oport_get~136, type: IOB
+	
+Passed route at end.
+Complex block 70: cb.out:top^oport_get~135, type: IOB
+	
+Passed route at end.
+Complex block 71: cb.out:top^oport_get~134, type: IOB
+	
+Passed route at end.
+Complex block 72: cb.out:top^oport_get~133, type: IOB
+	
+Passed route at end.
+Complex block 73: cb.out:top^oport_get~132, type: IOB
+	
+Passed route at end.
+Complex block 74: cb.out:top^oport_get~131, type: IOB
+	
+Passed route at end.
+Complex block 75: cb.out:top^oport_get~130, type: IOB
+	
+Passed route at end.
+Complex block 76: cb.out:top^oport_get~129, type: IOB
+	
+Passed route at end.
+Complex block 77: cb.out:top^oport_get~128, type: IOB
+	
+Passed route at end.
+Complex block 78: cb.out:top^oport_get~127, type: IOB
+	
+Passed route at end.
+Complex block 79: cb.out:top^oport_get~126, type: IOB
+	
+Passed route at end.
+Complex block 80: cb.out:top^oport_get~125, type: IOB
+	
+Passed route at end.
+Complex block 81: cb.out:top^oport_get~124, type: IOB
+	
+Passed route at end.
+Complex block 82: cb.out:top^oport_get~123, type: IOB
+	
+Passed route at end.
+Complex block 83: cb.out:top^oport_get~122, type: IOB
+	
+Passed route at end.
+Complex block 84: cb.out:top^oport_get~121, type: IOB
+	
+Passed route at end.
+Complex block 85: cb.out:top^oport_get~120, type: IOB
+	
+Passed route at end.
+Complex block 86: cb.out:top^oport_get~119, type: IOB
+	
+Passed route at end.
+Complex block 87: cb.out:top^oport_get~118, type: IOB
+	
+Passed route at end.
+Complex block 88: cb.out:top^oport_get~117, type: IOB
+	
+Passed route at end.
+Complex block 89: cb.out:top^oport_get~116, type: IOB
+	
+Passed route at end.
+Complex block 90: cb.out:top^oport_get~115, type: IOB
+	
+Passed route at end.
+Complex block 91: cb.out:top^oport_get~114, type: IOB
+	
+Passed route at end.
+Complex block 92: cb.out:top^oport_get~113, type: IOB
+	
+Passed route at end.
+Complex block 93: cb.out:top^oport_get~112, type: IOB
+	
+Passed route at end.
+Complex block 94: cb.out:top^oport_get~111, type: IOB
+	
+Passed route at end.
+Complex block 95: cb.out:top^oport_get~110, type: IOB
+	
+Passed route at end.
+Complex block 96: cb.out:top^oport_get~109, type: IOB
+	
+Passed route at end.
+Complex block 97: cb.out:top^oport_get~108, type: IOB
+	
+Passed route at end.
+Complex block 98: cb.out:top^oport_get~107, type: IOB
+	
+Passed route at end.
+Complex block 99: cb.out:top^oport_get~106, type: IOB
+	
+Passed route at end.
+Complex block 100: cb.out:top^oport_get~105, type: IOB
+	
+Passed route at end.
+Complex block 101: cb.out:top^oport_get~104, type: IOB
+	
+Passed route at end.
+Complex block 102: cb.out:top^oport_get~103, type: IOB
+	
+Passed route at end.
+Complex block 103: cb.out:top^oport_get~102, type: IOB
+	
+Passed route at end.
+Complex block 104: cb.out:top^oport_get~101, type: IOB
+	
+Passed route at end.
+Complex block 105: cb.out:top^oport_get~100, type: IOB
+	
+Passed route at end.
+Complex block 106: cb.out:top^oport_get~99, type: IOB
+	
+Passed route at end.
+Complex block 107: cb.out:top^oport_get~98, type: IOB
+	
+Passed route at end.
+Complex block 108: cb.out:top^oport_get~97, type: IOB
+	
+Passed route at end.
+Complex block 109: cb.out:top^oport_get~96, type: IOB
+	
+Passed route at end.
+Complex block 110: cb.out:top^oport_get~95, type: IOB
+	
+Passed route at end.
+Complex block 111: cb.out:top^oport_get~94, type: IOB
+	
+Passed route at end.
+Complex block 112: cb.out:top^oport_get~93, type: IOB
+	
+Passed route at end.
+Complex block 113: cb.out:top^oport_get~92, type: IOB
+	
+Passed route at end.
+Complex block 114: cb.out:top^oport_get~91, type: IOB
+	
+Passed route at end.
+Complex block 115: cb.out:top^oport_get~90, type: IOB
+	
+Passed route at end.
+Complex block 116: cb.out:top^oport_get~89, type: IOB
+	
+Passed route at end.
+Complex block 117: cb.out:top^oport_get~88, type: IOB
+	
+Passed route at end.
+Complex block 118: cb.out:top^oport_get~87, type: IOB
+	
+Passed route at end.
+Complex block 119: cb.out:top^oport_get~86, type: IOB
+	
+Passed route at end.
+Complex block 120: cb.out:top^oport_get~85, type: IOB
+	
+Passed route at end.
+Complex block 121: cb.out:top^oport_get~84, type: IOB
+	
+Passed route at end.
+Complex block 122: cb.out:top^oport_get~83, type: IOB
+	
+Passed route at end.
+Complex block 123: cb.out:top^oport_get~82, type: IOB
+	
+Passed route at end.
+Complex block 124: cb.out:top^oport_get~81, type: IOB
+	
+Passed route at end.
+Complex block 125: cb.out:top^oport_get~80, type: IOB
+	
+Passed route at end.
+Complex block 126: cb.out:top^oport_get~79, type: IOB
+	
+Passed route at end.
+Complex block 127: cb.out:top^oport_get~78, type: IOB
+	
+Passed route at end.
+Complex block 128: cb.out:top^oport_get~77, type: IOB
+	
+Passed route at end.
+Complex block 129: cb.out:top^oport_get~76, type: IOB
+	
+Passed route at end.
+Complex block 130: cb.out:top^oport_get~75, type: IOB
+	
+Passed route at end.
+Complex block 131: cb.out:top^oport_get~74, type: IOB
+	
+Passed route at end.
+Complex block 132: cb.out:top^oport_get~73, type: IOB
+	
+Passed route at end.
+Complex block 133: cb.out:top^oport_get~72, type: IOB
+	
+Passed route at end.
+Complex block 134: cb.out:top^oport_get~71, type: IOB
+	
+Passed route at end.
+Complex block 135: cb.out:top^oport_get~70, type: IOB
+	
+Passed route at end.
+Complex block 136: cb.out:top^oport_get~69, type: IOB
+	
+Passed route at end.
+Complex block 137: cb.out:top^oport_get~68, type: IOB
+	
+Passed route at end.
+Complex block 138: cb.out:top^oport_get~67, type: IOB
+	
+Passed route at end.
+Complex block 139: cb.out:top^oport_get~66, type: IOB
+	
+Passed route at end.
+Complex block 140: cb.out:top^oport_get~65, type: IOB
+	
+Passed route at end.
+Complex block 141: cb.out:top^oport_get~64, type: IOB
+	
+Passed route at end.
+Complex block 142: cb.out:top^oport_get~63, type: IOB
+	
+Passed route at end.
+Complex block 143: cb.out:top^oport_get~62, type: IOB
+	
+Passed route at end.
+Complex block 144: cb.out:top^oport_get~61, type: IOB
+	
+Passed route at end.
+Complex block 145: cb.out:top^oport_get~60, type: IOB
+	
+Passed route at end.
+Complex block 146: cb.out:top^oport_get~59, type: IOB
+	
+Passed route at end.
+Complex block 147: cb.out:top^oport_get~58, type: IOB
+	
+Passed route at end.
+Complex block 148: cb.out:top^oport_get~57, type: IOB
+	
+Passed route at end.
+Complex block 149: cb.out:top^oport_get~56, type: IOB
+	
+Passed route at end.
+Complex block 150: cb.out:top^oport_get~55, type: IOB
+	
+Passed route at end.
+Complex block 151: cb.out:top^oport_get~54, type: IOB
+	
+Passed route at end.
+Complex block 152: cb.out:top^oport_get~53, type: IOB
+	
+Passed route at end.
+Complex block 153: cb.out:top^oport_get~52, type: IOB
+	
+Passed route at end.
+Complex block 154: cb.out:top^oport_get~51, type: IOB
+	
+Passed route at end.
+Complex block 155: cb.out:top^oport_get~50, type: IOB
+	
+Passed route at end.
+Complex block 156: cb.out:top^oport_get~49, type: IOB
+	
+Passed route at end.
+Complex block 157: cb.out:top^oport_get~48, type: IOB
+	
+Passed route at end.
+Complex block 158: cb.out:top^oport_get~47, type: IOB
+	
+Passed route at end.
+Complex block 159: cb.out:top^oport_get~46, type: IOB
+	
+Passed route at end.
+Complex block 160: cb.out:top^oport_get~45, type: IOB
+	
+Passed route at end.
+Complex block 161: cb.out:top^oport_get~44, type: IOB
+	
+Passed route at end.
+Complex block 162: cb.out:top^oport_get~43, type: IOB
+	
+Passed route at end.
+Complex block 163: cb.out:top^oport_get~42, type: IOB
+	
+Passed route at end.
+Complex block 164: cb.out:top^oport_get~41, type: IOB
+	
+Passed route at end.
+Complex block 165: cb.out:top^oport_get~40, type: IOB
+	
+Passed route at end.
+Complex block 166: cb.out:top^oport_get~39, type: IOB
+	
+Passed route at end.
+Complex block 167: cb.out:top^oport_get~38, type: IOB
+	
+Passed route at end.
+Complex block 168: cb.out:top^oport_get~37, type: IOB
+	
+Passed route at end.
+Complex block 169: cb.out:top^oport_get~36, type: IOB
+	
+Passed route at end.
+Complex block 170: cb.out:top^oport_get~35, type: IOB
+	
+Passed route at end.
+Complex block 171: cb.out:top^oport_get~34, type: IOB
+	
+Passed route at end.
+Complex block 172: cb.out:top^oport_get~33, type: IOB
+	
+Passed route at end.
+Complex block 173: cb.out:top^oport_get~32, type: IOB
+	
+Passed route at end.
+Complex block 174: cb.out:top^oport_get~31, type: IOB
+	
+Passed route at end.
+Complex block 175: cb.out:top^oport_get~30, type: IOB
+	
+Passed route at end.
+Complex block 176: cb.out:top^oport_get~29, type: IOB
+	
+Passed route at end.
+Complex block 177: cb.out:top^oport_get~28, type: IOB
+	
+Passed route at end.
+Complex block 178: cb.out:top^oport_get~27, type: IOB
+	
+Passed route at end.
+Complex block 179: cb.out:top^oport_get~26, type: IOB
+	
+Passed route at end.
+Complex block 180: cb.out:top^oport_get~25, type: IOB
+	
+Passed route at end.
+Complex block 181: cb.out:top^oport_get~24, type: IOB
+	
+Passed route at end.
+Complex block 182: cb.out:top^oport_get~23, type: IOB
+	
+Passed route at end.
+Complex block 183: cb.out:top^oport_get~22, type: IOB
+	
+Passed route at end.
+Complex block 184: cb.out:top^oport_get~21, type: IOB
+	
+Passed route at end.
+Complex block 185: cb.out:top^oport_get~20, type: IOB
+	
+Passed route at end.
+Complex block 186: cb.out:top^oport_get~19, type: IOB
+	
+Passed route at end.
+Complex block 187: cb.out:top^oport_get~18, type: IOB
+	
+Passed route at end.
+Complex block 188: cb.out:top^oport_get~17, type: IOB
+	
+Passed route at end.
+Complex block 189: cb.out:top^oport_get~16, type: IOB
+	
+Passed route at end.
+Complex block 190: cb.out:top^oport_get~15, type: IOB
+	
+Passed route at end.
+Complex block 191: cb.out:top^oport_get~14, type: IOB
+	
+Passed route at end.
+Complex block 192: cb.out:top^oport_get~13, type: IOB
+	
+Passed route at end.
+Complex block 193: cb.out:top^oport_get~12, type: IOB
+	
+Passed route at end.
+Complex block 194: cb.out:top^oport_get~11, type: IOB
+	
+Passed route at end.
+Complex block 195: cb.out:top^oport_get~10, type: IOB
+	
+Passed route at end.
+Complex block 196: cb.out:top^oport_get~9, type: IOB
+	
+Passed route at end.
+Complex block 197: cb.out:top^oport_get~8, type: IOB
+	
+Passed route at end.
+Complex block 198: cb.out:top^oport_get~7, type: IOB
+	
+Passed route at end.
+Complex block 199: cb.out:top^oport_get~6, type: IOB
+	
+Passed route at end.
+Complex block 200: cb.out:top^oport_get~5, type: IOB
+	
+Passed route at end.
+Complex block 201: cb.out:top^oport_get~4, type: IOB
+	
+Passed route at end.
+Complex block 202: cb.out:top^oport_get~3, type: IOB
+	
+Passed route at end.
+Complex block 203: cb.out:top^oport_get~2, type: IOB
+	
+Passed route at end.
+Complex block 204: cb.out:top^oport_get~1, type: IOB
+	
+Passed route at end.
+Complex block 205: cb.out:top^oport_get~0, type: IOB
+	
+Passed route at end.
+Complex block 206: cb.n1797, type: SLICEL
+	.............................
+Passed route at end.
+Complex block 207: cb.n1812, type: SLICEL
+	.........................
+Passed route at end.
+Complex block 208: cb.n1712, type: SLICEL
+	.........................
+Passed route at end.
+Complex block 209: cb.n1887, type: SLICEL
+	...........................
+Passed route at end.
+Complex block 210: cb.n1707, type: SLICEL
+	.........................
+Passed route at end.
+Complex block 211: cb.n2223, type: SLICEL
+	.......
+Failed route at end, repack cluster trying detailed routing at each stage.
+Complex block 211: cb.n2223, type: SLICEL
+	.........
+Complex block 212: cb.n2215, type: SLICEL
+	.....................
+Passed route at end.
+Complex block 213: cb.n1882, type: SLICEL
+	..................
+Passed route at end.
+Complex block 214: cb.n2256, type: SLICEL
+	.................
+Passed route at end.
+Complex block 215: cb.n2257, type: SLICEL
+	............
+Failed route at end, repack cluster trying detailed routing at each stage.
+Complex block 215: cb.n2257, type: SLICEL
+	...........
+Complex block 216: cb.n1992, type: SLICEL
+	........
+Failed route at end, repack cluster trying detailed routing at each stage.
+Complex block 216: cb.n1992, type: SLICEL
+	..............
+Complex block 217: cb.n1947, type: SLICEL
+	........
+Passed route at end.
+Complex block 218: cb.n1902, type: SLICEL
+	.....
+Failed route at end, repack cluster trying detailed routing at each stage.
+Complex block 218: cb.n1902, type: SLICEL
+	.....
+Complex block 219: cb.n2251, type: SLICEL
+	...
+Passed route at end.
+Complex block 220: cb.n2219, type: SLICEL
+	.
+Passed route at end.
+Complex block 221: cb.n2285, type: SLICEL
+	.
+Passed route at end.
+Complex block 222: cb.n2250, type: SLICEL
+	
+Passed route at end.
+Complex block 223: cb.n2228, type: SLICEL
+	
+Passed route at end.
+Complex block 224: cb.top^iport1_put~98, type: IOB
+	
+Passed route at end.
+Complex block 225: cb.top^iport1_put~97, type: IOB
+	
+Passed route at end.
+Complex block 226: cb.top^iport0_put~124, type: IOB
+	
+Passed route at end.
+Complex block 227: cb.top^iport1_put~96, type: IOB
+	
+Passed route at end.
+Complex block 228: cb.top^iport1_put~95, type: IOB
+	
+Passed route at end.
+Complex block 229: cb.top^iport0_put~123, type: IOB
+	
+Passed route at end.
+Complex block 230: cb.top^iport0_put~60, type: IOB
+	
+Passed route at end.
+Complex block 231: cb.top^iport1_put~94, type: IOB
+	
+Passed route at end.
+Complex block 232: cb.top^iport1_put~93, type: IOB
+	
+Passed route at end.
+Complex block 233: cb.top^iport0_put~122, type: IOB
+	
+Passed route at end.
+Complex block 234: cb.top^iport1_put~92, type: IOB
+	
+Passed route at end.
+Complex block 235: cb.top^iport1_put~91, type: IOB
+	
+Passed route at end.
+Complex block 236: cb.top^iport0_put~121, type: IOB
+	
+Passed route at end.
+Complex block 237: cb.top^iport0_put~59, type: IOB
+	
+Passed route at end.
+Complex block 238: cb.top^iport0_put~28, type: IOB
+	
+Passed route at end.
+Complex block 239: cb.top^iport1_put~90, type: IOB
+	
+Passed route at end.
+Complex block 240: cb.top^iport1_put~89, type: IOB
+	
+Passed route at end.
+Complex block 241: cb.top^iport0_put~120, type: IOB
+	
+Passed route at end.
+Complex block 242: cb.top^iport1_put~88, type: IOB
+	
+Passed route at end.
+Complex block 243: cb.top^iport1_put~87, type: IOB
+	
+Passed route at end.
+Complex block 244: cb.top^iport0_put~119, type: IOB
+	
+Passed route at end.
+Complex block 245: cb.top^iport0_put~58, type: IOB
+	
+Passed route at end.
+Complex block 246: cb.top^iport1_put~86, type: IOB
+	
+Passed route at end.
+Complex block 247: cb.top^iport1_put~85, type: IOB
+	
+Passed route at end.
+Complex block 248: cb.top^iport0_put~118, type: IOB
+	
+Passed route at end.
+Complex block 249: cb.top^iport1_put~84, type: IOB
+	
+Passed route at end.
+Complex block 250: cb.top^iport1_put~83, type: IOB
+	
+Passed route at end.
+Complex block 251: cb.top^iport0_put~117, type: IOB
+	
+Passed route at end.
+Complex block 252: cb.top^iport0_put~57, type: IOB
+	
+Passed route at end.
+Complex block 253: cb.top^iport0_put~27, type: IOB
+	
+Passed route at end.
+Complex block 254: cb.top^iport0_put~12, type: IOB
+	
+Passed route at end.
+Complex block 255: cb.top^iport1_put~82, type: IOB
+	
+Passed route at end.
+Complex block 256: cb.top^iport1_put~81, type: IOB
+	
+Passed route at end.
+Complex block 257: cb.top^iport0_put~116, type: IOB
+	
+Passed route at end.
+Complex block 258: cb.top^iport1_put~80, type: IOB
+	
+Passed route at end.
+Complex block 259: cb.top^iport1_put~79, type: IOB
+	
+Passed route at end.
+Complex block 260: cb.top^iport0_put~115, type: IOB
+	
+Passed route at end.
+Complex block 261: cb.top^iport0_put~56, type: IOB
+	
+Passed route at end.
+Complex block 262: cb.top^iport1_put~78, type: IOB
+	
+Passed route at end.
+Complex block 263: cb.top^iport1_put~77, type: IOB
+	
+Passed route at end.
+Complex block 264: cb.top^iport0_put~114, type: IOB
+	
+Passed route at end.
+Complex block 265: cb.top^iport1_put~76, type: IOB
+	
+Passed route at end.
+Complex block 266: cb.top^iport0_put~113, type: IOB
+	
+Passed route at end.
+Complex block 267: cb.top^iport1_put~75, type: IOB
+	
+Passed route at end.
+Complex block 268: cb.top^iport0_put~55, type: IOB
+	
+Passed route at end.
+Complex block 269: cb.top^iport0_put~26, type: IOB
+	
+Passed route at end.
+Complex block 270: cb.top^iport0_put~11, type: IOB
+	
+Passed route at end.
+Complex block 271: cb.top^iport1_put~74, type: IOB
+	
+Passed route at end.
+Complex block 272: cb.top^iport1_put~73, type: IOB
+	
+Passed route at end.
+Complex block 273: cb.top^iport0_put~112, type: IOB
+	
+Passed route at end.
+Complex block 274: cb.top^iport1_put~72, type: IOB
+	
+Passed route at end.
+Complex block 275: cb.top^iport1_put~71, type: IOB
+	
+Passed route at end.
+Complex block 276: cb.top^iport0_put~111, type: IOB
+	
+Passed route at end.
+Complex block 277: cb.top^iport0_put~54, type: IOB
+	
+Passed route at end.
+Complex block 278: cb.top^iport1_put~70, type: IOB
+	
+Passed route at end.
+Complex block 279: cb.top^iport1_put~69, type: IOB
+	
+Passed route at end.
+Complex block 280: cb.top^iport0_put~110, type: IOB
+	
+Passed route at end.
+Complex block 281: cb.top^iport1_put~68, type: IOB
+	
+Passed route at end.
+Complex block 282: cb.top^iport1_put~67, type: IOB
+	
+Passed route at end.
+Complex block 283: cb.top^iport0_put~109, type: IOB
+	
+Passed route at end.
+Complex block 284: cb.top^iport0_put~53, type: IOB
+	
+Passed route at end.
+Complex block 285: cb.top^iport0_put~25, type: IOB
+	
+Passed route at end.
+Complex block 286: cb.top^iport0_put~4, type: IOB
+	
+Passed route at end.
+Complex block 287: cb.top^iport0_put~0, type: IOB
+	
+Passed route at end.
+Complex block 288: cb.top^iport1_put~66, type: IOB
+	
+Passed route at end.
+Complex block 289: cb.top^iport1_put~65, type: IOB
+	
+Passed route at end.
+Complex block 290: cb.top^iport0_put~108, type: IOB
+	
+Passed route at end.
+Complex block 291: cb.top^iport1_put~64, type: IOB
+	
+Passed route at end.
+Complex block 292: cb.top^iport1_put~63, type: IOB
+	
+Passed route at end.
+Complex block 293: cb.top^iport0_put~107, type: IOB
+	
+Passed route at end.
+Complex block 294: cb.top^iport0_put~52, type: IOB
+	
+Passed route at end.
+Complex block 295: cb.top^iport1_put~62, type: IOB
+	
+Passed route at end.
+Complex block 296: cb.top^iport1_put~61, type: IOB
+	
+Passed route at end.
+Complex block 297: cb.top^iport0_put~106, type: IOB
+	
+Passed route at end.
+Complex block 298: cb.top^iport1_put~60, type: IOB
+	
+Passed route at end.
+Complex block 299: cb.top^iport1_put~59, type: IOB
+	
+Passed route at end.
+Complex block 300: cb.top^iport0_put~105, type: IOB
+	
+Passed route at end.
+Complex block 301: cb.top^iport0_put~51, type: IOB
+	
+Passed route at end.
+Complex block 302: cb.top^iport0_put~24, type: IOB
+	
+Passed route at end.
+Complex block 303: cb.top^iport1_put~58, type: IOB
+	
+Passed route at end.
+Complex block 304: cb.top^iport1_put~57, type: IOB
+	
+Passed route at end.
+Complex block 305: cb.top^iport0_put~104, type: IOB
+	
+Passed route at end.
+Complex block 306: cb.top^iport1_put~56, type: IOB
+	
+Passed route at end.
+Complex block 307: cb.top^iport1_put~55, type: IOB
+	
+Passed route at end.
+Complex block 308: cb.top^iport0_put~103, type: IOB
+	
+Passed route at end.
+Complex block 309: cb.top^iport0_put~50, type: IOB
+	
+Passed route at end.
+Complex block 310: cb.top^iport1_put~54, type: IOB
+	
+Passed route at end.
+Complex block 311: cb.top^iport1_put~53, type: IOB
+	
+Passed route at end.
+Complex block 312: cb.top^iport0_put~102, type: IOB
+	
+Passed route at end.
+Complex block 313: cb.top^iport1_put~52, type: IOB
+	
+Passed route at end.
+Complex block 314: cb.top^iport1_put~51, type: IOB
+	
+Passed route at end.
+Complex block 315: cb.top^iport0_put~101, type: IOB
+	
+Passed route at end.
+Complex block 316: cb.top^iport0_put~49, type: IOB
+	
+Passed route at end.
+Complex block 317: cb.top^iport0_put~23, type: IOB
+	
+Passed route at end.
+Complex block 318: cb.top^iport0_put~10, type: IOB
+	
+Passed route at end.
+Complex block 319: cb.top^iport1_put~50, type: IOB
+	
+Passed route at end.
+Complex block 320: cb.top^iport1_put~49, type: IOB
+	
+Passed route at end.
+Complex block 321: cb.top^iport0_put~100, type: IOB
+	
+Passed route at end.
+Complex block 322: cb.top^iport1_put~48, type: IOB
+	
+Passed route at end.
+Complex block 323: cb.top^iport1_put~47, type: IOB
+	
+Passed route at end.
+Complex block 324: cb.top^iport0_put~99, type: IOB
+	
+Passed route at end.
+Complex block 325: cb.top^iport0_put~48, type: IOB
+	
+Passed route at end.
+Complex block 326: cb.top^iport1_put~46, type: IOB
+	
+Passed route at end.
+Complex block 327: cb.top^iport1_put~45, type: IOB
+	
+Passed route at end.
+Complex block 328: cb.top^iport0_put~98, type: IOB
+	
+Passed route at end.
+Complex block 329: cb.top^iport1_put~44, type: IOB
+	
+Passed route at end.
+Complex block 330: cb.top^iport1_put~43, type: IOB
+	
+Passed route at end.
+Complex block 331: cb.top^iport0_put~97, type: IOB
+	
+Passed route at end.
+Complex block 332: cb.top^iport0_put~47, type: IOB
+	
+Passed route at end.
+Complex block 333: cb.top^iport0_put~22, type: IOB
+	
+Passed route at end.
+Complex block 334: cb.top^iport1_put~42, type: IOB
+	
+Passed route at end.
+Complex block 335: cb.top^iport1_put~41, type: IOB
+	
+Passed route at end.
+Complex block 336: cb.top^iport0_put~96, type: IOB
+	
+Passed route at end.
+Complex block 337: cb.top^iport1_put~40, type: IOB
+	
+Passed route at end.
+Complex block 338: cb.top^iport1_put~39, type: IOB
+	
+Passed route at end.
+Complex block 339: cb.top^iport0_put~95, type: IOB
+	
+Passed route at end.
+Complex block 340: cb.top^iport0_put~46, type: IOB
+	
+Passed route at end.
+Complex block 341: cb.top^iport1_put~38, type: IOB
+	
+Passed route at end.
+Complex block 342: cb.top^iport1_put~37, type: IOB
+	
+Passed route at end.
+Complex block 343: cb.top^iport0_put~94, type: IOB
+	
+Passed route at end.
+Complex block 344: cb.top^iport1_put~36, type: IOB
+	
+Passed route at end.
+Complex block 345: cb.top^iport1_put~35, type: IOB
+	
+Passed route at end.
+Complex block 346: cb.top^iport0_put~93, type: IOB
+	
+Passed route at end.
+Complex block 347: cb.top^iport0_put~45, type: IOB
+	
+Passed route at end.
+Complex block 348: cb.top^iport0_put~21, type: IOB
+	
+Passed route at end.
+Complex block 349: cb.top^iport0_put~9, type: IOB
+	
+Passed route at end.
+Complex block 350: cb.top^iport0_put~3, type: IOB
+	
+Passed route at end.
+Complex block 351: cb.top^iport1_put~34, type: IOB
+	
+Passed route at end.
+Complex block 352: cb.top^iport1_put~33, type: IOB
+	
+Passed route at end.
+Complex block 353: cb.top^iport0_put~92, type: IOB
+	
+Passed route at end.
+Complex block 354: cb.top^iport1_put~32, type: IOB
+	
+Passed route at end.
+Complex block 355: cb.top^iport1_put~31, type: IOB
+	
+Passed route at end.
+Complex block 356: cb.top^iport0_put~91, type: IOB
+	
+Passed route at end.
+Complex block 357: cb.top^iport0_put~44, type: IOB
+	
+Passed route at end.
+Complex block 358: cb.top^iport1_put~30, type: IOB
+	
+Passed route at end.
+Complex block 359: cb.top^iport1_put~29, type: IOB
+	
+Passed route at end.
+Complex block 360: cb.top^iport0_put~90, type: IOB
+	
+Passed route at end.
+Complex block 361: cb.top^iport1_put~28, type: IOB
+	
+Passed route at end.
+Complex block 362: cb.top^iport1_put~27, type: IOB
+	
+Passed route at end.
+Complex block 363: cb.top^iport0_put~89, type: IOB
+	
+Passed route at end.
+Complex block 364: cb.top^iport0_put~43, type: IOB
+	
+Passed route at end.
+Complex block 365: cb.top^iport0_put~20, type: IOB
+	
+Passed route at end.
+Complex block 366: cb.top^iport1_put~26, type: IOB
+	
+Passed route at end.
+Complex block 367: cb.top^iport1_put~25, type: IOB
+	
+Passed route at end.
+Complex block 368: cb.top^iport0_put~88, type: IOB
+	
+Passed route at end.
+Complex block 369: cb.top^iport1_put~24, type: IOB
+	
+Passed route at end.
+Complex block 370: cb.top^iport1_put~23, type: IOB
+	
+Passed route at end.
+Complex block 371: cb.top^iport0_put~87, type: IOB
+	
+Passed route at end.
+Complex block 372: cb.top^iport0_put~42, type: IOB
+	
+Passed route at end.
+Complex block 373: cb.top^iport1_put~22, type: IOB
+	
+Passed route at end.
+Complex block 374: cb.top^iport1_put~21, type: IOB
+	
+Passed route at end.
+Complex block 375: cb.top^iport0_put~86, type: IOB
+	
+Passed route at end.
+Complex block 376: cb.top^iport1_put~20, type: IOB
+	
+Passed route at end.
+Complex block 377: cb.top^iport1_put~19, type: IOB
+	
+Passed route at end.
+Complex block 378: cb.top^iport0_put~85, type: IOB
+	
+Passed route at end.
+Complex block 379: cb.top^iport0_put~41, type: IOB
+	
+Passed route at end.
+Complex block 380: cb.top^iport0_put~19, type: IOB
+	
+Passed route at end.
+Complex block 381: cb.top^iport0_put~8, type: IOB
+	
+Passed route at end.
+Complex block 382: cb.top^iport1_put~18, type: IOB
+	
+Passed route at end.
+Complex block 383: cb.top^iport1_put~17, type: IOB
+	
+Passed route at end.
+Complex block 384: cb.top^iport0_put~84, type: IOB
+	
+Passed route at end.
+Complex block 385: cb.top^iport1_put~16, type: IOB
+	
+Passed route at end.
+Complex block 386: cb.top^iport1_put~15, type: IOB
+	
+Passed route at end.
+Complex block 387: cb.top^iport0_put~83, type: IOB
+	
+Passed route at end.
+Complex block 388: cb.top^iport0_put~40, type: IOB
+	
+Passed route at end.
+Complex block 389: cb.top^iport1_put~14, type: IOB
+	
+Passed route at end.
+Complex block 390: cb.top^iport1_put~13, type: IOB
+	
+Passed route at end.
+Complex block 391: cb.top^iport0_put~82, type: IOB
+	
+Passed route at end.
+Complex block 392: cb.top^iport1_put~12, type: IOB
+	
+Passed route at end.
+Complex block 393: cb.top^iport1_put~11, type: IOB
+	
+Passed route at end.
+Complex block 394: cb.top^iport0_put~81, type: IOB
+	
+Passed route at end.
+Complex block 395: cb.top^iport0_put~39, type: IOB
+	
+Passed route at end.
+Complex block 396: cb.top^iport0_put~18, type: IOB
+	
+Passed route at end.
+Complex block 397: cb.top^iport1_put~10, type: IOB
+	
+Passed route at end.
+Complex block 398: cb.top^iport1_put~9, type: IOB
+	
+Passed route at end.
+Complex block 399: cb.top^iport0_put~80, type: IOB
+	
+Passed route at end.
+Complex block 400: cb.top^iport1_put~8, type: IOB
+	
+Passed route at end.
+Complex block 401: cb.top^iport1_put~7, type: IOB
+	
+Passed route at end.
+Complex block 402: cb.top^iport0_put~79, type: IOB
+	
+Passed route at end.
+Complex block 403: cb.top^iport0_put~38, type: IOB
+	
+Passed route at end.
+Complex block 404: cb.top^iport1_put~6, type: IOB
+	
+Passed route at end.
+Complex block 405: cb.top^iport1_put~5, type: IOB
+	
+Passed route at end.
+Complex block 406: cb.top^iport0_put~78, type: IOB
+	
+Passed route at end.
+Complex block 407: cb.top^iport1_put~4, type: IOB
+	
+Passed route at end.
+Complex block 408: cb.top^iport1_put~3, type: IOB
+	
+Passed route at end.
+Complex block 409: cb.top^iport0_put~77, type: IOB
+	
+Passed route at end.
+Complex block 410: cb.top^iport0_put~37, type: IOB
+	
+Passed route at end.
+Complex block 411: cb.top^iport0_put~17, type: IOB
+	
+Passed route at end.
+Complex block 412: cb.top^iport0_put~7, type: IOB
+	
+Passed route at end.
+Complex block 413: cb.top^iport0_put~2, type: IOB
+	
+Passed route at end.
+Complex block 414: cb.top^iport1_put~2, type: IOB
+	
+Passed route at end.
+Complex block 415: cb.top^iport1_put~1, type: IOB
+	
+Passed route at end.
+Complex block 416: cb.top^iport0_put~76, type: IOB
+	
+Passed route at end.
+Complex block 417: cb.top^iport1_put~0, type: IOB
+	
+Passed route at end.
+Complex block 418: cb.top^iport0_put~36, type: IOB
+	
+Passed route at end.
+Complex block 419: cb.top^iport0_put~75, type: IOB
+	
+Passed route at end.
+Complex block 420: cb.top^iport0_put~16, type: IOB
+	
+Passed route at end.
+Complex block 421: cb.top^iport0_put~74, type: IOB
+	
+Passed route at end.
+Complex block 422: cb.top^iport0_put~152, type: IOB
+	
+Passed route at end.
+Complex block 423: cb.top^iport0_put~35, type: IOB
+	
+Passed route at end.
+Complex block 424: cb.top^iport1_put~152, type: IOB
+	
+Passed route at end.
+Complex block 425: cb.top^iport1_put~151, type: IOB
+	
+Passed route at end.
+Complex block 426: cb.top^iport0_put~151, type: IOB
+	
+Passed route at end.
+Complex block 427: cb.top^iport0_put~6, type: IOB
+	
+Passed route at end.
+Complex block 428: cb.top^iport1_put~150, type: IOB
+	
+Passed route at end.
+Complex block 429: cb.top^iport1_put~149, type: IOB
+	
+Passed route at end.
+Complex block 430: cb.top^iport0_put~150, type: IOB
+	
+Passed route at end.
+Complex block 431: cb.top^iport1_put~148, type: IOB
+	
+Passed route at end.
+Complex block 432: cb.top^iport1_put~147, type: IOB
+	
+Passed route at end.
+Complex block 433: cb.top^iport0_put~149, type: IOB
+	
+Passed route at end.
+Complex block 434: cb.top^iport0_put~73, type: IOB
+	
+Passed route at end.
+Complex block 435: cb.top^iport0_put~1, type: IOB
+	
+Passed route at end.
+Complex block 436: cb.top^iport1_put~146, type: IOB
+	
+Passed route at end.
+Complex block 437: cb.top^iport1_put~145, type: IOB
+	
+Passed route at end.
+Complex block 438: cb.top^iport0_put~148, type: IOB
+	
+Passed route at end.
+Complex block 439: cb.top^iport1_put~144, type: IOB
+	
+Passed route at end.
+Complex block 440: cb.top^iport1_put~143, type: IOB
+	
+Passed route at end.
+Complex block 441: cb.top^iport0_put~147, type: IOB
+	
+Passed route at end.
+Complex block 442: cb.top^iport0_put~72, type: IOB
+	
+Passed route at end.
+Complex block 443: cb.top^iport1_put~142, type: IOB
+	
+Passed route at end.
+Complex block 444: cb.top^iport1_put~141, type: IOB
+	
+Passed route at end.
+Complex block 445: cb.top^iport0_put~146, type: IOB
+	
+Passed route at end.
+Complex block 446: cb.top^iport0_put~34, type: IOB
+	
+Passed route at end.
+Complex block 447: cb.top^iport1_put~140, type: IOB
+	
+Passed route at end.
+Complex block 448: cb.top^iport0_put~145, type: IOB
+	
+Passed route at end.
+Complex block 449: cb.top^iport1_put~139, type: IOB
+	
+Passed route at end.
+Complex block 450: cb.top^iport0_put~71, type: IOB
+	
+Passed route at end.
+Complex block 451: cb.top^iport0_put~15, type: IOB
+	
+Passed route at end.
+Complex block 452: cb.top^iport1_put~138, type: IOB
+	
+Passed route at end.
+Complex block 453: cb.top^iport1_put~137, type: IOB
+	
+Passed route at end.
+Complex block 454: cb.top^iport0_put~144, type: IOB
+	
+Passed route at end.
+Complex block 455: cb.top^iport1_put~136, type: IOB
+	
+Passed route at end.
+Complex block 456: cb.top^iport1_put~135, type: IOB
+	
+Passed route at end.
+Complex block 457: cb.top^iport0_put~143, type: IOB
+	
+Passed route at end.
+Complex block 458: cb.top^iport0_put~70, type: IOB
+	
+Passed route at end.
+Complex block 459: cb.top^iport1_put~134, type: IOB
+	
+Passed route at end.
+Complex block 460: cb.top^iport1_put~133, type: IOB
+	
+Passed route at end.
+Complex block 461: cb.top^iport0_put~142, type: IOB
+	
+Passed route at end.
+Complex block 462: cb.top^iport1_put~132, type: IOB
+	
+Passed route at end.
+Complex block 463: cb.top^iport1_put~131, type: IOB
+	
+Passed route at end.
+Complex block 464: cb.top^iport0_put~141, type: IOB
+	
+Passed route at end.
+Complex block 465: cb.top^iport0_put~69, type: IOB
+	
+Passed route at end.
+Complex block 466: cb.top^iport0_put~33, type: IOB
+	
+Passed route at end.
+Complex block 467: cb.top^iport1_put~130, type: IOB
+	
+Passed route at end.
+Complex block 468: cb.top^iport1_put~129, type: IOB
+	
+Passed route at end.
+Complex block 469: cb.top^iport0_put~140, type: IOB
+	
+Passed route at end.
+Complex block 470: cb.top^iport1_put~128, type: IOB
+	
+Passed route at end.
+Complex block 471: cb.top^iport1_put~127, type: IOB
+	
+Passed route at end.
+Complex block 472: cb.top^iport0_put~139, type: IOB
+	
+Passed route at end.
+Complex block 473: cb.top^iport0_put~68, type: IOB
+	
+Passed route at end.
+Complex block 474: cb.top^iport1_put~126, type: IOB
+	
+Passed route at end.
+Complex block 475: cb.top^iport1_put~125, type: IOB
+	
+Passed route at end.
+Complex block 476: cb.top^iport0_put~138, type: IOB
+	
+Passed route at end.
+Complex block 477: cb.top^iport1_put~124, type: IOB
+	
+Passed route at end.
+Complex block 478: cb.top^iport1_put~123, type: IOB
+	
+Passed route at end.
+Complex block 479: cb.top^iport0_put~137, type: IOB
+	
+Passed route at end.
+Complex block 480: cb.top^iport0_put~67, type: IOB
+	
+Passed route at end.
+Complex block 481: cb.top^iport0_put~32, type: IOB
+	
+Passed route at end.
+Complex block 482: cb.top^iport1_put~122, type: IOB
+	
+Passed route at end.
+Complex block 483: cb.top^iport1_put~121, type: IOB
+	
+Passed route at end.
+Complex block 484: cb.top^iport0_put~136, type: IOB
+	
+Passed route at end.
+Complex block 485: cb.top^iport1_put~120, type: IOB
+	
+Passed route at end.
+Complex block 486: cb.top^iport1_put~119, type: IOB
+	
+Passed route at end.
+Complex block 487: cb.top^iport0_put~135, type: IOB
+	
+Passed route at end.
+Complex block 488: cb.top^iport0_put~66, type: IOB
+	
+Passed route at end.
+Complex block 489: cb.top^iport1_put~118, type: IOB
+	
+Passed route at end.
+Complex block 490: cb.top^iport1_put~117, type: IOB
+	
+Passed route at end.
+Complex block 491: cb.top^iport0_put~134, type: IOB
+	
+Passed route at end.
+Complex block 492: cb.top^iport1_put~116, type: IOB
+	
+Passed route at end.
+Complex block 493: cb.top^iport1_put~115, type: IOB
+	
+Passed route at end.
+Complex block 494: cb.top^iport0_put~133, type: IOB
+	
+Passed route at end.
+Complex block 495: cb.top^iport0_put~65, type: IOB
+	
+Passed route at end.
+Complex block 496: cb.top^iport0_put~31, type: IOB
+	
+Passed route at end.
+Complex block 497: cb.top^iport0_put~14, type: IOB
+	
+Passed route at end.
+Complex block 498: cb.top^iport1_put~114, type: IOB
+	
+Passed route at end.
+Complex block 499: cb.top^iport1_put~113, type: IOB
+	
+Passed route at end.
+Complex block 500: cb.top^iport0_put~132, type: IOB
+	
+Passed route at end.
+Complex block 501: cb.top^iport1_put~112, type: IOB
+	
+Passed route at end.
+Complex block 502: cb.top^iport1_put~111, type: IOB
+	
+Passed route at end.
+Complex block 503: cb.top^iport0_put~131, type: IOB
+	
+Passed route at end.
+Complex block 504: cb.top^iport0_put~64, type: IOB
+	
+Passed route at end.
+Complex block 505: cb.top^iport1_put~110, type: IOB
+	
+Passed route at end.
+Complex block 506: cb.top^iport1_put~109, type: IOB
+	
+Passed route at end.
+Complex block 507: cb.top^iport0_put~130, type: IOB
+	
+Passed route at end.
+Complex block 508: cb.top^iport1_put~108, type: IOB
+	
+Passed route at end.
+Complex block 509: cb.top^iport1_put~107, type: IOB
+	
+Passed route at end.
+Complex block 510: cb.top^iport0_put~129, type: IOB
+	
+Passed route at end.
+Complex block 511: cb.top^iport0_put~63, type: IOB
+	
+Passed route at end.
+Complex block 512: cb.top^iport0_put~30, type: IOB
+	
+Passed route at end.
+Complex block 513: cb.top^iport1_put~106, type: IOB
+	
+Passed route at end.
+Complex block 514: cb.top^iport1_put~105, type: IOB
+	
+Passed route at end.
+Complex block 515: cb.top^iport0_put~128, type: IOB
+	
+Passed route at end.
+Complex block 516: cb.top^iport1_put~104, type: IOB
+	
+Passed route at end.
+Complex block 517: cb.top^iport1_put~103, type: IOB
+	
+Passed route at end.
+Complex block 518: cb.top^iport0_put~127, type: IOB
+	
+Passed route at end.
+Complex block 519: cb.top^iport0_put~62, type: IOB
+	
+Passed route at end.
+Complex block 520: cb.top^iport1_put~102, type: IOB
+	
+Passed route at end.
+Complex block 521: cb.top^iport1_put~101, type: IOB
+	
+Passed route at end.
+Complex block 522: cb.top^iport0_put~126, type: IOB
+	
+Passed route at end.
+Complex block 523: cb.top^iport1_put~100, type: IOB
+	
+Passed route at end.
+Complex block 524: cb.top^iport1_put~99, type: IOB
+	
+Passed route at end.
+Complex block 525: cb.top^iport0_put~125, type: IOB
+	
+Passed route at end.
+Complex block 526: cb.top^iport0_put~61, type: IOB
+	
+Passed route at end.
+Complex block 527: cb.top^iport0_put~29, type: IOB
+	
+Passed route at end.
+Complex block 528: cb.top^iport0_put~13, type: IOB
+	
+Passed route at end.
+Complex block 529: cb.top^iport0_put~5, type: IOB
+	
+Passed route at end.
+Complex block 530: cb.top^EN_iport1_put, type: IOB
+	
+Passed route at end.
+Complex block 531: cb.top^EN_iport0_put, type: IOB
+	
+Passed route at end.
+Complex block 532: cb.top^EN_oport_get, type: IOB
+	
+Passed route at end.
+Complex block 533: cb.top^RST_N, type: IOB
+	
+Passed route at end.
+Complex block 534: cb.out:top^RDY_oport_get, type: IOB
+	
+Passed route at end.
+Complex block 535: cb.out:top^RDY_iport1_put, type: IOB
+	
+Passed route at end.
+Complex block 536: cb.out:top^RDY_iport0_put, type: IOB
+	
+Passed route at end.
+Complex block 537: cb.top^CLK_BUFG, type: BUFG
+	
+Passed route at end.
+Complex block 538: cb.gnd, type: SLICEL
+	
+Passed route at end.
+Complex block 539: cb.top^CLK, type: IOB
+	
+Passed route at end.
+	<EMPTY>: # blocks: 0, average # input + clock pins used: 0, average # output pins used: 0
+	IOB: # blocks: 467, average # input + clock pins used: 0.334047, average # output pins used: 0.665953
+	SLICEL: # blocks: 58, average # input + clock pins used: 14.1034, average # output pins used: 4
+	DSP48E1: # blocks: 0, average # input + clock pins used: 0, average # output pins used: 0
+	RAMB36E1: # blocks: 14, average # input + clock pins used: 86.7857, average # output pins used: 32.7857
+	BUFG: # blocks: 1, average # input + clock pins used: 1, average # output pins used: 1
+Absorbed logical nets 36 out of 1039 nets, 1003 nets not absorbed.
+
+Netlist conversion complete.
+
+Packing took 6.96038 seconds.
+Packing completed.
+Begin parsing packed FPGA netlist file.
+Finished parsing packed FPGA netlist file.
+Netlist generated from file 'mkPktMerge.net'.
+top^iport1_put~98 is a constant generator.
+top^iport1_put~97 is a constant generator.
+top^iport0_put~124 is a constant generator.
+top^iport1_put~96 is a constant generator.
+top^iport1_put~95 is a constant generator.
+top^iport0_put~123 is a constant generator.
+top^iport0_put~60 is a constant generator.
+top^iport1_put~94 is a constant generator.
+top^iport1_put~93 is a constant generator.
+top^iport0_put~122 is a constant generator.
+top^iport1_put~92 is a constant generator.
+top^iport1_put~91 is a constant generator.
+top^iport0_put~121 is a constant generator.
+top^iport0_put~59 is a constant generator.
+top^iport0_put~28 is a constant generator.
+top^iport1_put~90 is a constant generator.
+top^iport1_put~89 is a constant generator.
+top^iport0_put~120 is a constant generator.
+top^iport1_put~88 is a constant generator.
+top^iport1_put~87 is a constant generator.
+top^iport0_put~119 is a constant generator.
+top^iport0_put~58 is a constant generator.
+top^iport1_put~86 is a constant generator.
+top^iport1_put~85 is a constant generator.
+top^iport0_put~118 is a constant generator.
+top^iport1_put~84 is a constant generator.
+top^iport1_put~83 is a constant generator.
+top^iport0_put~117 is a constant generator.
+top^iport0_put~57 is a constant generator.
+top^iport0_put~27 is a constant generator.
+top^iport0_put~12 is a constant generator.
+top^iport1_put~82 is a constant generator.
+top^iport1_put~81 is a constant generator.
+top^iport0_put~116 is a constant generator.
+top^iport1_put~80 is a constant generator.
+top^iport1_put~79 is a constant generator.
+top^iport0_put~115 is a constant generator.
+top^iport0_put~56 is a constant generator.
+top^iport1_put~78 is a constant generator.
+top^iport1_put~77 is a constant generator.
+top^iport0_put~114 is a constant generator.
+top^iport1_put~76 is a constant generator.
+top^iport0_put~113 is a constant generator.
+top^iport1_put~75 is a constant generator.
+top^iport0_put~55 is a constant generator.
+top^iport0_put~26 is a constant generator.
+top^iport0_put~11 is a constant generator.
+top^iport1_put~74 is a constant generator.
+top^iport1_put~73 is a constant generator.
+top^iport0_put~112 is a constant generator.
+top^iport1_put~72 is a constant generator.
+top^iport1_put~71 is a constant generator.
+top^iport0_put~111 is a constant generator.
+top^iport0_put~54 is a constant generator.
+top^iport1_put~70 is a constant generator.
+top^iport1_put~69 is a constant generator.
+top^iport0_put~110 is a constant generator.
+top^iport1_put~68 is a constant generator.
+top^iport1_put~67 is a constant generator.
+top^iport0_put~109 is a constant generator.
+top^iport0_put~53 is a constant generator.
+top^iport0_put~25 is a constant generator.
+top^iport0_put~4 is a constant generator.
+top^iport0_put~0 is a constant generator.
+top^iport1_put~66 is a constant generator.
+top^iport1_put~65 is a constant generator.
+top^iport0_put~108 is a constant generator.
+top^iport1_put~64 is a constant generator.
+top^iport1_put~63 is a constant generator.
+top^iport0_put~107 is a constant generator.
+top^iport0_put~52 is a constant generator.
+top^iport1_put~62 is a constant generator.
+top^iport1_put~61 is a constant generator.
+top^iport0_put~106 is a constant generator.
+top^iport1_put~60 is a constant generator.
+top^iport1_put~59 is a constant generator.
+top^iport0_put~105 is a constant generator.
+top^iport0_put~51 is a constant generator.
+top^iport0_put~24 is a constant generator.
+top^iport1_put~58 is a constant generator.
+top^iport1_put~57 is a constant generator.
+top^iport0_put~104 is a constant generator.
+top^iport1_put~56 is a constant generator.
+top^iport1_put~55 is a constant generator.
+top^iport0_put~103 is a constant generator.
+top^iport0_put~50 is a constant generator.
+top^iport1_put~54 is a constant generator.
+top^iport1_put~53 is a constant generator.
+top^iport0_put~102 is a constant generator.
+top^iport1_put~52 is a constant generator.
+top^iport1_put~51 is a constant generator.
+top^iport0_put~101 is a constant generator.
+top^iport0_put~49 is a constant generator.
+top^iport0_put~23 is a constant generator.
+top^iport0_put~10 is a constant generator.
+top^iport1_put~50 is a constant generator.
+top^iport1_put~49 is a constant generator.
+top^iport0_put~100 is a constant generator.
+top^iport1_put~48 is a constant generator.
+top^iport1_put~47 is a constant generator.
+top^iport0_put~99 is a constant generator.
+top^iport0_put~48 is a constant generator.
+top^iport1_put~46 is a constant generator.
+top^iport1_put~45 is a constant generator.
+top^iport0_put~98 is a constant generator.
+top^iport1_put~44 is a constant generator.
+top^iport1_put~43 is a constant generator.
+top^iport0_put~97 is a constant generator.
+top^iport0_put~47 is a constant generator.
+top^iport0_put~22 is a constant generator.
+top^iport1_put~42 is a constant generator.
+top^iport1_put~41 is a constant generator.
+top^iport0_put~96 is a constant generator.
+top^iport1_put~40 is a constant generator.
+top^iport1_put~39 is a constant generator.
+top^iport0_put~95 is a constant generator.
+top^iport0_put~46 is a constant generator.
+top^iport1_put~38 is a constant generator.
+top^iport1_put~37 is a constant generator.
+top^iport0_put~94 is a constant generator.
+top^iport1_put~36 is a constant generator.
+top^iport1_put~35 is a constant generator.
+top^iport0_put~93 is a constant generator.
+top^iport0_put~45 is a constant generator.
+top^iport0_put~21 is a constant generator.
+top^iport0_put~9 is a constant generator.
+top^iport0_put~3 is a constant generator.
+top^iport1_put~34 is a constant generator.
+top^iport1_put~33 is a constant generator.
+top^iport0_put~92 is a constant generator.
+top^iport1_put~32 is a constant generator.
+top^iport1_put~31 is a constant generator.
+top^iport0_put~91 is a constant generator.
+top^iport0_put~44 is a constant generator.
+top^iport1_put~30 is a constant generator.
+top^iport1_put~29 is a constant generator.
+top^iport0_put~90 is a constant generator.
+top^iport1_put~28 is a constant generator.
+top^iport1_put~27 is a constant generator.
+top^iport0_put~89 is a constant generator.
+top^iport0_put~43 is a constant generator.
+top^iport0_put~20 is a constant generator.
+top^iport1_put~26 is a constant generator.
+top^iport1_put~25 is a constant generator.
+top^iport0_put~88 is a constant generator.
+top^iport1_put~24 is a constant generator.
+top^iport1_put~23 is a constant generator.
+top^iport0_put~87 is a constant generator.
+top^iport0_put~42 is a constant generator.
+top^iport1_put~22 is a constant generator.
+top^iport1_put~21 is a constant generator.
+top^iport0_put~86 is a constant generator.
+top^iport1_put~20 is a constant generator.
+top^iport1_put~19 is a constant generator.
+top^iport0_put~85 is a constant generator.
+top^iport0_put~41 is a constant generator.
+top^iport0_put~19 is a constant generator.
+top^iport0_put~8 is a constant generator.
+top^iport1_put~18 is a constant generator.
+top^iport1_put~17 is a constant generator.
+top^iport0_put~84 is a constant generator.
+top^iport1_put~16 is a constant generator.
+top^iport1_put~15 is a constant generator.
+top^iport0_put~83 is a constant generator.
+top^iport0_put~40 is a constant generator.
+top^iport1_put~14 is a constant generator.
+top^iport1_put~13 is a constant generator.
+top^iport0_put~82 is a constant generator.
+top^iport1_put~12 is a constant generator.
+top^iport1_put~11 is a constant generator.
+top^iport0_put~81 is a constant generator.
+top^iport0_put~39 is a constant generator.
+top^iport0_put~18 is a constant generator.
+top^iport1_put~10 is a constant generator.
+top^iport1_put~9 is a constant generator.
+top^iport0_put~80 is a constant generator.
+top^iport1_put~8 is a constant generator.
+top^iport1_put~7 is a constant generator.
+top^iport0_put~79 is a constant generator.
+top^iport0_put~38 is a constant generator.
+top^iport1_put~6 is a constant generator.
+top^iport1_put~5 is a constant generator.
+top^iport0_put~78 is a constant generator.
+top^iport1_put~4 is a constant generator.
+top^iport1_put~3 is a constant generator.
+top^iport0_put~77 is a constant generator.
+top^iport0_put~37 is a constant generator.
+top^iport0_put~17 is a constant generator.
+top^iport0_put~7 is a constant generator.
+top^iport0_put~2 is a constant generator.
+top^iport1_put~2 is a constant generator.
+top^iport1_put~1 is a constant generator.
+top^iport0_put~76 is a constant generator.
+top^iport1_put~0 is a constant generator.
+top^iport0_put~36 is a constant generator.
+top^iport0_put~75 is a constant generator.
+top^iport0_put~16 is a constant generator.
+top^iport0_put~74 is a constant generator.
+top^iport0_put~152 is a constant generator.
+top^iport0_put~35 is a constant generator.
+top^iport1_put~152 is a constant generator.
+top^iport1_put~151 is a constant generator.
+top^iport0_put~151 is a constant generator.
+top^iport0_put~6 is a constant generator.
+top^iport1_put~150 is a constant generator.
+top^iport1_put~149 is a constant generator.
+top^iport0_put~150 is a constant generator.
+top^iport1_put~148 is a constant generator.
+top^iport1_put~147 is a constant generator.
+top^iport0_put~149 is a constant generator.
+top^iport0_put~73 is a constant generator.
+top^iport0_put~1 is a constant generator.
+top^iport1_put~146 is a constant generator.
+top^iport1_put~145 is a constant generator.
+top^iport0_put~148 is a constant generator.
+top^iport1_put~144 is a constant generator.
+top^iport1_put~143 is a constant generator.
+top^iport0_put~147 is a constant generator.
+top^iport0_put~72 is a constant generator.
+top^iport1_put~142 is a constant generator.
+top^iport1_put~141 is a constant generator.
+top^iport0_put~146 is a constant generator.
+top^iport0_put~34 is a constant generator.
+top^iport1_put~140 is a constant generator.
+top^iport0_put~145 is a constant generator.
+top^iport1_put~139 is a constant generator.
+top^iport0_put~71 is a constant generator.
+top^iport0_put~15 is a constant generator.
+top^iport1_put~138 is a constant generator.
+top^iport1_put~137 is a constant generator.
+top^iport0_put~144 is a constant generator.
+top^iport1_put~136 is a constant generator.
+top^iport1_put~135 is a constant generator.
+top^iport0_put~143 is a constant generator.
+top^iport0_put~70 is a constant generator.
+top^iport1_put~134 is a constant generator.
+top^iport1_put~133 is a constant generator.
+top^iport0_put~142 is a constant generator.
+top^iport1_put~132 is a constant generator.
+top^iport1_put~131 is a constant generator.
+top^iport0_put~141 is a constant generator.
+top^iport0_put~69 is a constant generator.
+top^iport0_put~33 is a constant generator.
+top^iport1_put~130 is a constant generator.
+top^iport1_put~129 is a constant generator.
+top^iport0_put~140 is a constant generator.
+top^iport1_put~128 is a constant generator.
+top^iport1_put~127 is a constant generator.
+top^iport0_put~139 is a constant generator.
+top^iport0_put~68 is a constant generator.
+top^iport1_put~126 is a constant generator.
+top^iport1_put~125 is a constant generator.
+top^iport0_put~138 is a constant generator.
+top^iport1_put~124 is a constant generator.
+top^iport1_put~123 is a constant generator.
+top^iport0_put~137 is a constant generator.
+top^iport0_put~67 is a constant generator.
+top^iport0_put~32 is a constant generator.
+top^iport1_put~122 is a constant generator.
+top^iport1_put~121 is a constant generator.
+top^iport0_put~136 is a constant generator.
+top^iport1_put~120 is a constant generator.
+top^iport1_put~119 is a constant generator.
+top^iport0_put~135 is a constant generator.
+top^iport0_put~66 is a constant generator.
+top^iport1_put~118 is a constant generator.
+top^iport1_put~117 is a constant generator.
+top^iport0_put~134 is a constant generator.
+top^iport1_put~116 is a constant generator.
+top^iport1_put~115 is a constant generator.
+top^iport0_put~133 is a constant generator.
+top^iport0_put~65 is a constant generator.
+top^iport0_put~31 is a constant generator.
+top^iport0_put~14 is a constant generator.
+top^iport1_put~114 is a constant generator.
+top^iport1_put~113 is a constant generator.
+top^iport0_put~132 is a constant generator.
+top^iport1_put~112 is a constant generator.
+top^iport1_put~111 is a constant generator.
+top^iport0_put~131 is a constant generator.
+top^iport0_put~64 is a constant generator.
+top^iport1_put~110 is a constant generator.
+top^iport1_put~109 is a constant generator.
+top^iport0_put~130 is a constant generator.
+top^iport1_put~108 is a constant generator.
+top^iport1_put~107 is a constant generator.
+top^iport0_put~129 is a constant generator.
+top^iport0_put~63 is a constant generator.
+top^iport0_put~30 is a constant generator.
+top^iport1_put~106 is a constant generator.
+top^iport1_put~105 is a constant generator.
+top^iport0_put~128 is a constant generator.
+top^iport1_put~104 is a constant generator.
+top^iport1_put~103 is a constant generator.
+top^iport0_put~127 is a constant generator.
+top^iport0_put~62 is a constant generator.
+top^iport1_put~102 is a constant generator.
+top^iport1_put~101 is a constant generator.
+top^iport0_put~126 is a constant generator.
+top^iport1_put~100 is a constant generator.
+top^iport1_put~99 is a constant generator.
+top^iport0_put~125 is a constant generator.
+top^iport0_put~61 is a constant generator.
+top^iport0_put~29 is a constant generator.
+top^iport0_put~13 is a constant generator.
+top^iport0_put~5 is a constant generator.
+top^EN_iport1_put is a constant generator.
+top^EN_iport0_put is a constant generator.
+top^EN_oport_get is a constant generator.
+top^RST_N is a constant generator.
+gnd is a constant generator.
+top^CLK is a constant generator.
+WARNING(196): in check_connections_to_global_clb_pins:
+WARNING(197): 	net #82 (top^CLK_BUFG) is driven by CLB output pin (#8) on block #537 (top^CLK_BUFG).
+Net is global, but CLB pin is not.
+
+WARNING(198): Logic block #538 (gnd) has only 1 pin.
+Pin is an output -- may be a constant generator.
+	Non-fatal, but check this.
+
+Netlist num_nets: 1003
+Netlist num_blocks: 540
+Netlist <EMPTY> blocks: 0.
+Netlist SLICEL blocks: 58.
+Netlist DSP48E1 blocks: 0.
+Netlist RAMB36E1 blocks: 14.
+Netlist BUFG blocks: 1.
+Netlist inputs pins: 311
+Netlist output pins: 156
+
+The circuit will be mapped into a 102 x 240 array of clbs.
+
+Resource usage...
+	Netlist      0	blocks of type: <EMPTY>
+	Architecture 2024	blocks of type: <EMPTY>
+	Netlist      467	blocks of type: IOB
+	Architecture 600	blocks of type: IOB
+	Netlist      58	blocks of type: SLICEL
+	Architecture 37680	blocks of type: SLICEL
+	Netlist      0	blocks of type: DSP48E1
+	Architecture 768	blocks of type: DSP48E1
+	Netlist      14	blocks of type: RAMB36E1
+	Architecture 416	blocks of type: RAMB36E1
+	Netlist      1	blocks of type: BUFG
+	Architecture 32	blocks of type: BUFG
+
+WARNING(199): Unconnected logic in design, number of dangling tnodes = 1
+Loading 11587851 nodes and 575561352 bytes of edge/switch data from xc6vlx240tff1156.xml...
+WARNING(200): in check_rr_graph: fringe node 3550244 has no fanin.
+WARNING(201): 	This is possible on the fringe for low Fc_out, N, and certain Lengths
+Computing delta_io_to_io lookup matrix, may take a few seconds, please wait...
+Computing delta_io_to_clb lookup matrix, may take a few seconds, please wait...
+Computing delta_clb_to_io lookup matrix, may take a few seconds, please wait...
+Computing delta_clb_to_clb lookup matrix, may take a few seconds, please wait...
+
+There are 1659 point to point connections in this circuit.
+
+Initial placement cost: 0.991996 bb_cost: 1205.12 td_cost: 3.55863e-06 delay_cost: 7.89807e-06
+
+--------- --------- ----------- ----------- ----------- ----------- -------- -------- ------- ------- ------- --------- -------
+        T      Cost  Av BB Cost  Av TD Cost  Av Tot Del  P to P Del    d_max  Ac Rate Std Dev R limit     Exp Tot Moves   Alpha
+--------- --------- ----------- ----------- ----------- ----------- -------- -------- ------- ------- ------- --------- -------
+  0.32158   0.97501     1234.33 3.63401e-06 8.19954e-06 4.76074e-09  22.1530   0.9984  0.0694 241.0000  1.0000      4396  0.5000
+  0.16079   0.90842     1248.14 3.56643e-06 8.22358e-06 5.18444e-09  24.2380   0.9980  0.0346 241.0000  1.0000      8792  0.5000
+  0.08039   0.90554     1263.92 3.19507e-06 8.21355e-06 5.18466e-09  27.6380   0.9934  0.0542 241.0000  1.0000     13188  0.5000
+  0.04020    0.9061     1242.47 3.27032e-06 8.09755e-06 5.02798e-09  25.7480   0.9877  0.0376 241.0000  1.0000     17584  0.5000
+  0.02010    0.9209     1132.39 2.54561e-06 7.39506e-06 4.37833e-09  26.9180   0.9732  0.0368 241.0000  1.0000     21980  0.5000
+  0.01005   0.87253        1059 3.11309e-06 6.89754e-06  4.5053e-09  20.9280   0.9527  0.0494 241.0000  1.0000     26376  0.9000
+  0.00904   0.93444     1057.64 3.28179e-06 6.90031e-06 4.28337e-09  19.5960   0.9420  0.0269 241.0000  1.0000     30772  0.9000
+  0.00814   0.90145     1022.68 2.73122e-06 6.68032e-06 4.23285e-09  22.1180   0.9345  0.0432 241.0000  1.0000     35168  0.9000
+  0.00733   0.88387      890.16  2.0818e-06 5.98009e-06 3.95415e-09  24.0760   0.9249  0.0283 241.0000  1.0000     39564  0.9000
+  0.00659   0.93371     888.241 2.05236e-06 5.95158e-06 3.61566e-09  22.7680   0.9158  0.0344 241.0000  1.0000     43960  0.9000
+  0.00593   0.93185     898.192 2.61697e-06 6.10683e-06 3.73349e-09  19.2280   0.9192  0.0251 241.0000  1.0000     48356  0.9000
+  0.00534   0.92524     846.258 2.40136e-06 5.73735e-06 3.59279e-09  18.6560   0.9033  0.0405 241.0000  1.0000     52752  0.9000
+  0.00481   0.87819     821.377 2.18515e-06 5.55025e-06 3.63375e-09  19.7380   0.8997  0.0570 241.0000  1.0000     57148  0.9000
+  0.00433   0.96555     805.683 2.36839e-06 5.42405e-06 3.24938e-09  16.3860   0.8897  0.0166 241.0000  1.0000     61544  0.9000
+  0.00389   0.91019     769.243 1.80131e-06 5.30207e-06 3.35355e-09  21.5860   0.8756  0.0442 241.0000  1.0000     65940  0.9000
+  0.00350    0.9535     769.318 2.49449e-06 5.11198e-06 3.16412e-09  14.2080   0.8631  0.0248 241.0000  1.0000     70336  0.9000
+  0.00315   0.92585     721.904 2.11877e-06  4.7206e-06 2.88375e-09  14.8380   0.8544  0.0277 241.0000  1.0000     74732  0.9000
+  0.00284   0.92279     663.315  1.7923e-06 4.36774e-06 2.82084e-09  15.8780   0.8374  0.0277 241.0000  1.0000     79128  0.9000
+  0.00255   0.93637      637.15 1.87422e-06  4.3026e-06 2.67993e-09  14.2460   0.8182  0.0265 241.0000  1.0000     83524  0.9000
+  0.00230   0.96363     597.323 1.59979e-06 3.95116e-06  2.3656e-09  14.2180   0.8030  0.0184 241.0000  1.0000     87920  0.9000
+  0.00207   0.96781     581.539 1.64939e-06 3.91832e-06 2.35585e-09  13.3480   0.7864  0.0197 241.0000  1.0000     92316  0.9500
+  0.00197   0.95051     574.485 1.86446e-06 3.82191e-06 2.33203e-09  11.7320   0.7921  0.0191 241.0000  1.0000     96712  0.9500
+  0.00187    0.9667     574.184 1.58169e-06 3.74807e-06  2.2832e-09  13.8580   0.7866  0.0175 241.0000  1.0000    101108  0.9500
+  0.00177   0.96015     545.392 1.82888e-06 3.63234e-06 2.19853e-09  11.0820   0.7732  0.0120 241.0000  1.0000    105504  0.9500
+  0.00169   0.94629     536.912 1.76447e-06 3.56618e-06  2.2086e-09  11.2820   0.7805  0.0146 241.0000  1.0000    109900  0.9500
+  0.00160   0.97363     532.589 1.57892e-06 3.53553e-06 2.12603e-09  12.0820   0.7404  0.0076 241.0000  1.0000    114296  0.9500
+  0.00152   0.94525     515.208 1.59046e-06 3.50603e-06 2.13428e-09  11.7720   0.7439  0.0169 241.0000  1.0000    118692  0.9500
+  0.00144   0.95813     503.309 1.49265e-06 3.44014e-06 2.10152e-09  12.1720   0.7332  0.0155 241.0000  1.0000    123088  0.9500
+  0.00137   0.96183     498.392 1.55296e-06 3.41869e-06  2.0789e-09  11.5320   0.7404  0.0151 241.0000  1.0000    127484  0.9500
+  0.00130   0.96505     507.651 1.47332e-06 3.35268e-06 2.04511e-09  11.9720   0.7291  0.0140 241.0000  1.0000    131880  0.9500
+  0.00124   0.97352     499.668 1.48087e-06 3.26077e-06 1.96465e-09  11.5220   0.7118  0.0061 241.0000  1.0000    136276  0.9500
+  0.00118   0.96111     497.678  1.5123e-06 3.26873e-06 1.97373e-09  11.1720   0.7104  0.0137 241.0000  1.0000    140672  0.9500
+  0.00112   0.95815     488.064 1.42078e-06 3.21127e-06 1.97282e-09  11.6820   0.7143  0.0128 241.0000  1.0000    145068  0.9500
+  0.00106   0.95079     471.912 1.25025e-06  3.0708e-06 1.90329e-09  12.5720   0.6836  0.0153 241.0000  1.0000    149464  0.9500
+  0.00101    0.9604     467.039 1.33723e-06 3.05609e-06 1.84225e-09  11.5320   0.6804  0.0148 241.0000  1.0000    153860  0.9500
+  0.00096   0.96086     457.298 1.35069e-06  2.9915e-06 1.83979e-09  11.1320   0.6510  0.0126 241.0000  1.0000    158256  0.9500
+  0.00091   0.95594     456.514 1.28657e-06 2.93799e-06 1.79267e-09  11.4820   0.6724  0.0130 241.0000  1.0000    162652  0.9500
+  0.00087   0.96986     447.268  1.3227e-06 2.90149e-06 1.74411e-09  10.7920   0.6545  0.0095 241.0000  1.0000    167048  0.9500
+  0.00082    0.9607     442.911 1.34908e-06 2.83772e-06 1.73897e-09  10.3320   0.6558  0.0141 241.0000  1.0000    171444  0.9500
+  0.00078   0.96181     437.259 1.22194e-06 2.76121e-06 1.68464e-09  11.1320   0.6397  0.0152 241.0000  1.0000    175840  0.9500
+  0.00074   0.96145     427.534 1.15907e-06 2.72073e-06 1.64266e-09  11.3320   0.6249  0.0115 241.0000  1.0000    180236  0.9500
+  0.00070    0.9693     426.302 1.19656e-06 2.73578e-06 1.63647e-09  10.9720   0.6247  0.0072 241.0000  1.0000    184632  0.9500
+  0.00067   0.95721     418.216 1.17566e-06 2.67624e-06 1.63848e-09  10.9320   0.5798  0.0101 241.0000  1.0000    189028  0.9500
+  0.00064   0.96964     419.151 1.07449e-06 2.67934e-06 1.61553e-09  11.9320   0.5696  0.0083 241.0000  1.0000    193424  0.9500
+  0.00060   0.97024     417.349 1.14679e-06 2.68128e-06 1.61852e-09  11.1320   0.5792  0.0077 241.0000  1.0000    197820  0.9500
+  0.00057   0.96133      417.17 1.15218e-06 2.65531e-06 1.61836e-09  10.9320   0.5571  0.0123 241.0000  1.0000    202216  0.9500
+  0.00055   0.96091     413.147 1.13789e-06 2.61843e-06 1.59785e-09  10.8820   0.5562  0.0174 241.0000  1.0000    206612  0.9500
+  0.00052   0.97482     408.168 1.14448e-06 2.57879e-06  1.5476e-09  10.5720   0.5177  0.0074 241.0000  1.0000    211008  0.9500
+  0.00049   0.96248     405.262 1.08097e-06 2.56448e-06 1.55444e-09  11.1220   0.5032  0.0133 241.0000  1.0000    215404  0.9500
+  0.00047   0.96488     401.917 1.11544e-06 2.54367e-06 1.53779e-09  10.5920   0.4816  0.0093 241.0000  1.0000    219800  0.9500
+  0.00044   0.96912     399.413 1.11758e-06 2.54117e-06 1.53897e-09  10.5220   0.4850  0.0132 241.0000  1.0000    224196  0.9500
+  0.00042   0.96291     394.136 1.09431e-06 2.51339e-06 1.52811e-09  10.5220   0.4554  0.0135 241.0000  1.0000    228592  0.9500
+  0.00040   0.97341     393.114 1.09765e-06 2.51667e-06 1.50977e-09  10.4420   0.4288  0.0088 241.0000  1.0000    232988  0.9500
+  0.00038   0.96439     392.225 1.12274e-06 2.51002e-06 1.51773e-09   9.7320   0.4252  0.0126 238.3005  1.0787    237384  0.9500
+  0.00036   0.96024     387.314  9.3346e-07 2.48554e-06 1.50036e-09  10.5220   0.4076  0.0146 234.7640  1.1819    241780  0.9500
+  0.00034   0.96513     386.448 8.04271e-07 2.48146e-06 1.48542e-09  10.3320   0.3892  0.0112 227.1678  1.4034    246176  0.9500
+  0.00033   0.94311     386.674 6.82945e-07 2.47978e-06 1.49635e-09   9.9220   0.3753  0.0184 215.6316  1.7399    250572  0.9500
+  0.00031   0.93163     381.423 5.41252e-07 2.48738e-06 1.48744e-09   9.7720   0.3672  0.0218 201.6892  2.1466    254968  0.9500
+  0.00029   0.92099     381.959 3.66785e-07 2.48185e-06 1.49524e-09  10.3320   0.3565  0.0284 186.9965  2.5751    259364  0.9500
+  0.00028   0.90591      378.66 3.05003e-07 2.47117e-06 1.48474e-09   9.9220   0.3212  0.0306 171.3749  3.0307    263760  0.9500
+  0.00027   0.88741     376.683 1.57154e-07 2.46592e-06 1.46313e-09  10.8820   0.3232  0.0375 151.0157  3.6245    268156  0.9500
+  0.00025   0.86948     374.163 1.02279e-07 2.49662e-06 1.48203e-09  11.2820   0.3260  0.0487 133.3844  4.1388    272552  0.9500
+  0.00024   0.84489     371.339 1.37014e-07 2.43939e-06 1.48983e-09   9.8820   0.3139  0.0513 118.1757  4.5824    276948  0.9500
+  0.00023   0.84943     370.305 1.42979e-07  2.4592e-06 1.46422e-09   9.3220   0.3112  0.0531 103.2763  5.0169    281344  0.9500
+  0.00022   0.84262     367.356  9.5596e-08 2.47719e-06 1.50006e-09   9.7720   0.3135  0.0543 89.9735  5.4049    285740  0.9500
+  0.00021   0.84521     367.685 8.43764e-08 2.45571e-06 1.48321e-09   9.6420   0.3294  0.0582 78.5889  5.7370    290136  0.9500
+  0.00020   0.84448     367.069 1.13223e-07 2.41499e-06 1.46454e-09   9.0420   0.3358  0.0606 69.8962  5.9905    294532  0.9500
+  0.00019   0.81316     364.603 6.10804e-08 2.43378e-06 1.43947e-09   9.9520   0.3585  0.0708 62.6102  6.2030    298928  0.9500
+  0.00018   0.83766     360.938 8.44751e-08 2.40421e-06 1.44955e-09   9.2820   0.3485  0.0640 57.5079  6.3519    303324  0.9500
+  0.00017    0.8221     356.756 3.50356e-08 2.35801e-06 1.45688e-09  10.5220   0.3760  0.0758 52.2459  6.5053    307720  0.9500
+  0.00016   0.82024       354.1 4.96135e-08  2.3583e-06 1.39806e-09   9.9920   0.3938  0.0746 48.9034  6.6028    312116  0.9500
+  0.00015   0.82429     353.632 6.42584e-08 2.36313e-06 1.44392e-09   9.3920   0.3840  0.0724 46.6424  6.6688    316512  0.9500
+  0.00014   0.82527     351.742 6.17052e-08 2.35256e-06 1.39583e-09   9.4420   0.3881  0.0783 44.0298  6.7450    320908  0.9500
+  0.00014   0.83783     350.593 6.15397e-08 2.31113e-06 1.41395e-09   9.3720   0.3783  0.0620 41.7437  6.8116    325304  0.9500
+  0.00013   0.81526      352.74 5.35088e-08 2.34512e-06  1.4248e-09   9.4820   0.4693  0.0661 39.1681  6.8868    329700  0.9500
+  0.00012   0.82627     349.429 4.23981e-08 2.32237e-06 1.40937e-09   9.7720   0.4456  0.0662 40.3153  6.8533    334096  0.9500
+  0.00012   0.81635     348.505 5.03797e-08  2.3409e-06 1.39072e-09   9.4420   0.4236  0.0700 40.5424  6.8467    338492  0.9500
+  0.00011   0.85053     346.594 8.37631e-08 2.32428e-06 1.39466e-09   8.7220   0.4152  0.0661 39.8762  6.8661    342888  0.9500
+  0.00011   0.83384     345.408 7.47672e-08 2.28273e-06 1.39532e-09   8.7720   0.4165  0.0623 38.8853  6.8950    347284  0.9500
+  0.00010   0.84097     343.655 8.22084e-08 2.25653e-06 1.37395e-09   8.5920   0.4042  0.0588 37.9720  6.9216    351680  0.9500
+  0.00010   0.85433     343.361 5.80155e-08 2.28477e-06 1.35486e-09   9.1720   0.4115  0.0744 36.6138  6.9613    356076  0.9500
+  0.00009   0.85457     342.355 7.48093e-08 2.27049e-06 1.38168e-09   8.7220   0.4131  0.0661 35.5707  6.9917    360472  0.9500
+  0.00009   0.85488     340.886 6.77293e-08 2.23498e-06 1.33615e-09   8.7320   0.3888  0.0629 34.6140  7.0196    364868  0.9500
+  0.00008   0.85268      341.48 6.61838e-08 2.23084e-06 1.33158e-09   8.6820   0.3967  0.0618 32.8404  7.0713    369264  0.9500
+  0.00008   0.84421     342.319 6.50752e-08 2.24779e-06 1.35537e-09   8.7320   0.4092  0.0665 31.4192  7.1128    373660  0.9500
+  0.00007   0.85829     341.216 6.75625e-08 2.23751e-06  1.3521e-09   8.5920   0.3860  0.0601 30.4526  7.1410    378056  0.9500
+  0.00007   0.87114     341.058 7.43236e-08 2.25427e-06 1.36872e-09   8.4420   0.3879  0.0554 28.8092  7.1889    382452  0.9500
+  0.00007   0.86991     340.367 6.67556e-08 2.24868e-06 1.35134e-09   8.5920   0.4004  0.0615 27.3069  7.2327    386848  0.9500
+  0.00006   0.87781     340.645  8.9329e-08 2.24098e-06 1.35374e-09   8.1720   0.3931  0.0555 26.2245  7.2643    391244  0.9500
+  0.00006   0.87839     340.927 9.19498e-08 2.26983e-06 1.34851e-09   8.1320   0.3965  0.0532 24.9942  7.3002    395640  0.9500
+  0.00006    0.8856     340.043  7.5015e-08 2.27743e-06 1.37806e-09   8.3720   0.3838  0.0492 23.9069  7.3319    400036  0.9500
+  0.00005   0.89445     338.133 5.37302e-08 2.24489e-06 1.36615e-09   8.7320   0.3819  0.0462 22.5623  7.3711    404432  0.9500
+  0.00005   0.89213     335.438 8.12717e-08 2.20932e-06 1.33746e-09   8.1220   0.3767  0.0489 21.2523  7.4093    408828  0.9500
+  0.00005   0.88497     333.445 8.70728e-08 2.19942e-06 1.32468e-09   7.9720   0.3708  0.0512 19.9072  7.4485    413224  0.9500
+  0.00005   0.91532     330.944  4.9591e-08 2.18803e-06 1.31564e-09   8.5720   0.3587  0.0402 18.5294  7.4887    417620  0.9500
+  0.00004    0.9053      328.77  8.0111e-08 2.19408e-06 1.32907e-09   7.9920   0.3706  0.0477 17.0236  7.5326    422016  0.9500
+  0.00004   0.93068     328.816 1.09378e-07 2.19202e-06  1.3151e-09   7.5920   0.4108  0.0325 15.8416  7.5671    426412  0.9500
+  0.00004   0.93195     326.886 6.26304e-08 2.18843e-06 1.31982e-09   8.1720   0.4006  0.0350 15.3794  7.5806    430808  0.9500
+  0.00004   0.94125       325.6 1.15695e-07 2.18818e-06 1.31985e-09   7.5220   0.3919  0.0293 14.7734  7.5983    435204  0.9500
+  0.00004   0.93953     326.486 1.04068e-07 2.19274e-06 1.31825e-09   7.5220   0.3737  0.0298 14.0635  7.6190    439600  0.9500
+  0.00003   0.94808     326.458 6.01483e-08 2.18582e-06  1.3179e-09   8.1220   0.4047  0.0284 13.1317  7.6462    443996  0.9500
+  0.00003   0.93761     325.968 6.62811e-08 2.18543e-06  1.3208e-09   7.9720   0.3970  0.0301 12.6680  7.6597    448392  0.9500
+  0.00003   0.93956     324.492 1.47561e-07 2.16429e-06 1.32275e-09   7.1720   0.3815  0.0302 12.1227  7.6756    452788  0.9500
+  0.00003   0.95401      323.95 1.92233e-07 2.14713e-06 1.29868e-09   6.8820   0.3872  0.0246 11.4133  7.6963    457184  0.9500
+  0.00003   0.95485     324.671 1.39956e-07 2.14266e-06  1.2965e-09   7.1780   0.3944  0.0200 10.8103  7.7139    461580  0.9500
+  0.00003   0.95953     324.585 1.57597e-07 2.13025e-06 1.28531e-09   7.0280   0.3854  0.0209 10.3179  7.7282    465976  0.9500
+  0.00003   0.96136      323.54 1.63978e-07 2.12117e-06 1.27899e-09   6.9720   0.3965  0.0195  9.7540  7.7447    470372  0.9500
+  0.00002   0.96568     323.355 1.22903e-07 2.12149e-06 1.27795e-09   7.2180   0.3751  0.0190  9.3297  7.7571    474768  0.9500
+  0.00002   0.95423     323.111 1.85989e-07 2.12858e-06  1.2834e-09   6.8430   0.3758  0.0175  8.7243  7.7747    479164  0.9500
+  0.00002    0.9719     321.679 1.18427e-07 2.11512e-06 1.28285e-09   7.2580   0.3938  0.0154  8.1642  7.7910    483560  0.9500
+  0.00002   0.97072     321.864 1.46084e-07 2.11623e-06 1.27044e-09   7.0420   0.3658  0.0143  7.7867  7.8021    487956  0.9500
+  0.00002    0.9745     321.522 1.55346e-07 2.11658e-06 1.28096e-09   6.9720   0.3587  0.0125  7.2089  7.8189    492352  0.9500
+  0.00002   0.97858     321.475 1.69989e-07 2.11269e-06 1.26969e-09   6.8820   0.3576  0.0111  6.6230  7.8360    496748  0.9500
+  0.00002   0.96993     324.967 1.67622e-07 2.12891e-06 1.27675e-09   6.8820   0.3501  0.0162  6.0773  7.8519    501144  0.9500
+  0.00002   0.98368     323.926 1.79082e-07 2.10851e-06 1.27797e-09   6.8820   0.4202  0.0101  5.5309  7.8678    505540  0.9500
+  0.00002   0.98725     322.427 1.63798e-07 2.08915e-06 1.26027e-09   6.8820   0.3551  0.0069  5.4211  7.8711    509936  0.9500
+  0.00002   0.98702     322.197 1.60526e-07  2.0802e-06 1.25392e-09   6.8820   0.3644  0.0065  4.9608  7.8845    514332  0.9500
+  0.00001   0.98896     321.926  1.5718e-07 2.07461e-06 1.25143e-09   6.8820   0.3601  0.0054  4.5859  7.8954    518728  0.9500
+  0.00001   0.99117     321.837 1.55421e-07 2.07446e-06 1.24948e-09   6.8820   0.3478  0.0043  4.2195  7.9061    523124  0.9500
+  0.00001   0.99449     321.926 1.56311e-07 2.06211e-06  1.2463e-09   6.8820   0.3189  0.0029  3.8305  7.9174    527520  0.9500
+  0.00001   0.99452     321.933  1.5285e-07 2.05716e-06 1.24025e-09   6.8820   0.2934  0.0024  3.3668  7.9310    531916  0.9500
+  0.00001   0.99543     321.618 1.51918e-07 2.05825e-06 1.24186e-09   6.8820   0.2896  0.0022  2.8734  7.9454    536312  0.9500
+  0.00001   0.99556     321.215 1.51544e-07 2.05522e-06 1.24116e-09   6.8820   0.2973  0.0021  2.4411  7.9580    540708  0.9500
+  0.00001   0.99499     320.993 1.50224e-07 2.05446e-06 1.23448e-09   6.8820   0.2809  0.0022  2.0928  7.9681    545104  0.9500
+  0.00001    0.9995     321.075  1.4995e-07 2.06257e-06 1.23851e-09   6.8820   0.0102  0.0003  1.7599  7.9778    549500  0.9500
+  0.00001    0.9999     321.066 1.48655e-07  2.0543e-06 1.23671e-09   6.8820   0.0061  0.0000  1.0036  7.9999    553896  0.9500
+  0.00001   0.99985     320.996 1.48709e-07 2.05945e-06 1.23951e-09   6.8820   0.0068  0.0001  1.0000  8.0000    558292  0.8000
+  0.00001   0.99985     320.947 1.48661e-07 2.06025e-06 1.24362e-09   6.8820   0.0050  0.0001  1.0000  8.0000    562688  0.8000
+  0.00001   0.99989     320.889  1.4897e-07 2.05576e-06 1.24032e-09   6.8820   0.0032  0.0001  1.0000  8.0000    567084  0.8000
+  0.00000   0.99965     320.871 1.48678e-07 2.05385e-06 1.23856e-09            0.0032  0.0000  1.0000  8.0000    571480
+
+BB estimate of min-dist (placement) wirelength: 32037
+bb_cost recomputed from scratch: 320.823
+timing_cost recomputed from scratch: 1.48675e-07
+delay_cost recomputed from scratch: 2.05345e-06
+
+Completed placement consistency check successfully.
+
+Swaps called: 572020
+
+Placement estimated critical path delay: 6.882 ns
+Placement cost: 0.999566, bb_cost: 320.823, td_cost: 1.48675e-07, delay_cost: 2.05345e-06
+Placement total # of swap attempts: 572020
+	Swap reject rate: 0
+	Swap accept rate: 0
+	Swap abort rate: 0
+Placement took 41.1427 seconds.
+WARNING(202): Unconnected logic in design, number of dangling tnodes = 1
+Loading 11587851 nodes and 575561352 bytes of edge/switch data from xc6vlx240tff1156.xml...
+WARNING(203): in check_rr_graph: fringe node 3550244 has no fanin.
+WARNING(204): 	This is possible on the fringe for low Fc_out, N, and certain Lengths
+Build rr_graph took 13.1518 seconds.
+Number of nets to be routed: 1037 (not including 2 global nets).
+Confirming Router Algorithm: TIMING_DRIVEN.
+
+Routing iteration: 1
+Wire length after first iteration 40831, total available wire length 9043859, ratio 0.00451478
+Average number of nodes popped per net: 3885
+Top 10 most congested nodes:
+	 6: 7839177
+	 5: 8323128
+	 5: 8103755
+	 5: 7973026
+	 5: 7943420
+	 5: 7809994
+	 5: 7809360
+	 5: 7678331
+	 5: 7677697
+	 5: 7552190
+Top 10 most congested nets:
+	 688: inet 362 (top^FF_NODE~2324, 152 sinks, bb: (23,74)-(41,110))
+	 223: inet 370 (top^RST_N, 30 sinks, bb: (0,88)-(37,102))
+	 112: inet 371 (n2056, 13 sinks, bb: (27,92)-(37,100))
+	 107: inet 651 (n2215, 13 sinks, bb: (28,92)-(35,102))
+	 102: inet 667 (top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1^FF_NODE~807, 17 sinks, bb: (22,73)-(39,109))
+	 101: inet 663 (top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1^FF_NODE~828, 17 sinks, bb: (22,73)-(39,109))
+	 95: inet 5 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1^FF_NODE~1294, 17 sinks, bb: (22,58)-(39,114))
+	 92: inet 4 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1^FF_NODE~1293, 17 sinks, bb: (22,58)-(39,114))
+	 85: inet 687 (top^EN_iport1_put, 44 sinks, bb: (22,73)-(44,109))
+	 84: inet 662 (top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1^FF_NODE~827, 18 sinks, bb: (22,73)-(39,109))
+Congestion score: 2761
+Critical path: 6.992 ns
+Routing iteration took 2.59782 seconds.
+
+Routing iteration: 2
+Wire length 40627, total available wire length 9043859, ratio 0.00449222
+Average number of nodes popped per net: 4632
+Top 10 most congested nodes:
+	 4: 8555414
+	 3: 8265069
+	 3: 7913433
+	 3: 7779157
+	 3: 7648709
+	 3: 7647504
+	 3: 7516965
+	 3: 7395888
+	 3: 7276186
+	 3: 6636780
+Top 10 most congested nets:
+	 262: inet 362 (top^FF_NODE~2324, 152 sinks, bb: (23,74)-(41,110))
+	 38: inet 370 (top^RST_N, 30 sinks, bb: (0,88)-(37,102))
+	 28: inet 687 (top^EN_iport1_put, 44 sinks, bb: (22,73)-(44,109))
+	 26: inet 304 (top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1^FF_NODE~318, 19 sinks, bb: (22,83)-(39,119))
+	 26: inet 299 (top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1^FF_NODE~338, 17 sinks, bb: (22,83)-(39,119))
+	 24: inet 819 (top^iport0_put~74, 1 sinks, bb: (33,103)-(44,185))
+	 24: inet 817 (top^iport0_put~76, 1 sinks, bb: (33,103)-(44,173))
+	 24: inet 662 (top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1^FF_NODE~827, 18 sinks, bb: (22,73)-(39,109))
+	 23: inet 651 (n2215, 13 sinks, bb: (28,92)-(35,102))
+	 22: inet 371 (n2056, 13 sinks, bb: (27,92)-(37,100))
+Congestion score: 1475
+Critical path: 6.992 ns
+Routing iteration took 3.7542 seconds.
+
+Routing iteration: 3
+Wire length 40836, total available wire length 9043859, ratio 0.00451533
+Average number of nodes popped per net: 4965
+Top 10 most congested nodes:
+	 4: 7973026
+	 3: 7839177
+	 3: 7749890
+	 3: 6636780
+	 2: 8103755
+	 2: 7839817
+	 2: 7713551
+	 2: 7240137
+	 2: 6886820
+	 2: 6105277
+Top 10 most congested nets:
+	 207: inet 362 (top^FF_NODE~2324, 152 sinks, bb: (23,74)-(41,110))
+	 78: inet 370 (top^RST_N, 30 sinks, bb: (0,88)-(37,102))
+	 31: inet 325 (top^EN_iport0_put, 42 sinks, bb: (0,83)-(39,119))
+	 28: inet 960 (top^EN_oport_get, 6 sinks, bb: (27,92)-(60,103))
+	 22: inet 0 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1^FF_NODE~1314, 19 sinks, bb: (22,58)-(39,114))
+	 20: inet 922 (top^iport0_put~37, 1 sinks, bb: (33,93)-(44,183))
+	 18: inet 687 (top^EN_iport1_put, 44 sinks, bb: (22,73)-(44,109))
+	 17: inet 920 (top^iport0_put~18, 1 sinks, bb: (33,93)-(44,167))
+	 17: inet 371 (n2056, 13 sinks, bb: (27,92)-(37,100))
+	 16: inet 665 (top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1^FF_NODE~805, 16 sinks, bb: (22,73)-(39,109))
+Congestion score: 1001
+Critical path: 6.992 ns
+Routing iteration took 4.15923 seconds.
+
+Routing iteration: 4
+Wire length 41031, total available wire length 9043859, ratio 0.00453689
+Average number of nodes popped per net: 5254
+Top 10 most congested nodes:
+	 2: 8747033
+	 2: 8293521
+	 2: 8002427
+	 2: 7874836
+	 2: 7749893
+	 2: 6105277
+	 1: 6503893
+	 1: 6474064
+	 1: 6403284
+	 1: 6372261
+Top 10 most congested nets:
+	 79: inet 362 (top^FF_NODE~2324, 152 sinks, bb: (23,74)-(41,110))
+	 30: inet 370 (top^RST_N, 30 sinks, bb: (0,88)-(37,102))
+	 18: inet 687 (top^EN_iport1_put, 44 sinks, bb: (22,73)-(44,109))
+	 15: inet 325 (top^EN_iport0_put, 42 sinks, bb: (0,83)-(39,119))
+	 14: inet 667 (top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1^FF_NODE~807, 17 sinks, bb: (22,73)-(39,109))
+	 13: inet 651 (n2215, 13 sinks, bb: (28,92)-(35,102))
+	 12: inet 665 (top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1^FF_NODE~805, 16 sinks, bb: (22,73)-(39,109))
+	 11: inet 920 (top^iport0_put~18, 1 sinks, bb: (33,93)-(44,167))
+	 9: inet 650 (top^FF_NODE~2325, 6 sinks, bb: (29,92)-(35,100))
+	 9: inet 6 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1^FF_NODE~1295, 16 sinks, bb: (22,58)-(39,114))
+Congestion score: 490
+Critical path: 6.992 ns
+Routing iteration took 5.25158 seconds.
+
+Routing iteration: 5
+Wire length 40901, total available wire length 9043859, ratio 0.00452252
+Average number of nodes popped per net: 5045
+Top 10 most congested nodes:
+	 2: 8425045
+	 2: 7998877
+	 1: 6533521
+	 1: 6503949
+	 1: 6503893
+	 1: 6403284
+	 1: 6372261
+	 1: 6331094
+	 1: 6205521
+	 1: 6174180
+Top 10 most congested nets:
+	 35: inet 362 (top^FF_NODE~2324, 152 sinks, bb: (23,74)-(41,110))
+	 14: inet 370 (top^RST_N, 30 sinks, bb: (0,88)-(37,102))
+	 13: inet 816 (top^iport0_put~77, 1 sinks, bb: (33,103)-(60,159))
+	 12: inet 817 (top^iport0_put~76, 1 sinks, bb: (33,103)-(44,173))
+	 8: inet 665 (top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1^FF_NODE~805, 16 sinks, bb: (22,73)-(39,109))
+	 8: inet 662 (top.arSRLFIFO_b+fi1.generic_fifo_sc_b+fifo_1^FF_NODE~827, 18 sinks, bb: (22,73)-(39,109))
+	 7: inet 960 (top^EN_oport_get, 6 sinks, bb: (27,92)-(60,103))
+	 7: inet 687 (top^EN_iport1_put, 44 sinks, bb: (22,73)-(44,109))
+	 7: inet 318 (top^iport0_put~24, 1 sinks, bb: (22,93)-(44,135))
+	 7: inet 317 (top^iport0_put~25, 1 sinks, bb: (22,93)-(44,143))
+Congestion score: 269
+Critical path: 6.992 ns
+Routing iteration took 4.57315 seconds.
+
+Routing iteration: 6
+Wire length 40927, total available wire length 9043859, ratio 0.00452539
+Average number of nodes popped per net: 4837
+Top 10 most congested nodes:
+	 2: 7839124
+	 1: 6598992
+	 1: 6533521
+	 1: 6503893
+	 1: 6403284
+	 1: 6372261
+	 1: 6331094
+	 1: 6205521
+	 1: 6174180
+	 1: 6142646
+Top 10 most congested nets:
+	 10: inet 362 (top^FF_NODE~2324, 152 sinks, bb: (23,74)-(41,110))
+	 8: inet 325 (top^EN_iport0_put, 42 sinks, bb: (0,83)-(39,119))
+	 7: inet 166 (top^MULTI_PORT_MUX~1660^MUX_2~2615, 1 sinks, bb: (31,58)-(39,89))
+	 7: inet 1 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1^FF_NODE~1315, 17 sinks, bb: (22,58)-(39,114))
+	 6: inet 172 (top^MULTI_PORT_MUX~1660^MUX_2~2609, 1 sinks, bb: (31,58)-(39,89))
+	 5: inet 599 (top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1.dual_port_ram+ram1^out1~143, 1 sinks, bb: (29,84)-(39,104))
+	 5: inet 178 (top^MULTI_PORT_MUX~1660^MUX_2~2603, 1 sinks, bb: (31,58)-(39,88))
+	 5: inet 160 (top^MULTI_PORT_MUX~1660^MUX_2~2621, 1 sinks, bb: (31,58)-(39,88))
+	 4: inet 216 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~107, 1 sinks, bb: (33,38)-(44,69))
+	 4: inet 194 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~129, 1 sinks, bb: (33,24)-(44,69))
+Congestion score: 128
+Critical path: 6.992 ns
+Routing iteration took 4.48332 seconds.
+
+Routing iteration: 7
+Wire length 41102, total available wire length 9043859, ratio 0.00454474
+Average number of nodes popped per net: 4674
+Top 10 most congested nodes:
+	 1: 6904945
+	 1: 6799589
+	 1: 6668836
+	 1: 6666816
+	 1: 6533521
+	 1: 6403284
+	 1: 6372261
+	 1: 6331094
+	 1: 6205521
+	 1: 6105277
+Top 10 most congested nets:
+	 5: inet 304 (top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1^FF_NODE~318, 19 sinks, bb: (22,83)-(39,119))
+	 4: inet 362 (top^FF_NODE~2324, 152 sinks, bb: (23,74)-(41,110))
+	 3: inet 925 (top^iport0_put~127, 1 sinks, bb: (33,93)-(44,179))
+	 3: inet 922 (top^iport0_put~37, 1 sinks, bb: (33,93)-(44,183))
+	 3: inet 749 (top^iport1_put~125, 1 sinks, bb: (33,30)-(60,89))
+	 3: inet 718 (top^iport1_put~85, 1 sinks, bb: (22,98)-(44,163))
+	 3: inet 687 (top^EN_iport1_put, 44 sinks, bb: (22,73)-(44,109))
+	 3: inet 627 (top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1.dual_port_ram+ram1^out1~11, 1 sinks, bb: (32,83)-(39,104))
+	 3: inet 599 (top.arSRLFIFO_a+fi0.generic_fifo_sc_a+fifo_1.dual_port_ram+ram1^out1~143, 1 sinks, bb: (29,84)-(39,104))
+	 2: inet 704 (top^iport1_put~26, 1 sinks, bb: (33,98)-(44,171))
+Congestion score: 57
+Critical path: 6.992 ns
+Routing iteration took 4.36237 seconds.
+
+Routing iteration: 8
+Wire length 41108, total available wire length 9043859, ratio 0.0045454
+Average number of nodes popped per net: 4234
+Top 10 most congested nodes:
+	 1: 6922326
+	 1: 6904945
+	 1: 6799642
+	 1: 6668836
+	 1: 6667451
+	 1: 6666816
+	 1: 6331094
+	 1: 6205521
+	 1: 6142646
+	 1: 6105277
+Top 10 most congested nets:
+	 8: inet 935 (top^iport0_put~146, 1 sinks, bb: (33,26)-(44,104))
+	 7: inet 764 (top^iport1_put~110, 1 sinks, bb: (33,22)-(44,89))
+	 5: inet 704 (top^iport1_put~26, 1 sinks, bb: (33,98)-(44,171))
+	 4: inet 922 (top^iport0_put~37, 1 sinks, bb: (33,93)-(44,183))
+	 4: inet 874 (top^iport0_put~90, 1 sinks, bb: (22,28)-(44,94))
+	 3: inet 700 (top^iport1_put~30, 1 sinks, bb: (33,98)-(44,187))
+	 3: inet 675 (top^iport1_put~54, 1 sinks, bb: (33,98)-(60,153))
+	 2: inet 812 (top^iport1_put~133, 1 sinks, bb: (33,42)-(60,84))
+	 2: inet 787 (top^iport1_put~17, 1 sinks, bb: (33,26)-(60,84))
+	 2: inet 760 (top^iport1_put~114, 1 sinks, bb: (0,28)-(39,89))
+Congestion score: 50
+Critical path: 6.992 ns
+Routing iteration took 4.32315 seconds.
+
+Routing iteration: 9
+Wire length 41168, total available wire length 9043859, ratio 0.00455204
+Average number of nodes popped per net: 4075
+Top 10 most congested nodes:
+	 1: 7943417
+	 1: 7678660
+	 1: 7576759
+	 1: 7550948
+	 1: 7431605
+	 1: 7335169
+	 1: 7175273
+	 1: 7045289
+	 1: 6920447
+	 1: 6331094
+Top 10 most congested nets:
+	 3: inet 675 (top^iport1_put~54, 1 sinks, bb: (33,98)-(60,153))
+	 3: inet 170 (top^MULTI_PORT_MUX~1660^MUX_2~2611, 1 sinks, bb: (31,58)-(39,89))
+	 3: inet 166 (top^MULTI_PORT_MUX~1660^MUX_2~2615, 1 sinks, bb: (31,58)-(39,89))
+	 2: inet 896 (top^iport0_put~44, 1 sinks, bb: (0,88)-(28,137))
+	 2: inet 888 (top^iport0_put~122, 1 sinks, bb: (0,88)-(28,125))
+	 2: inet 833 (top^iport0_put~60, 1 sinks, bb: (33,103)-(44,161))
+	 2: inet 827 (top^iport0_put~66, 1 sinks, bb: (33,103)-(44,141))
+	 2: inet 764 (top^iport1_put~110, 1 sinks, bb: (33,22)-(44,89))
+	 2: inet 709 (top^iport1_put~94, 1 sinks, bb: (22,98)-(60,163))
+	 2: inet 700 (top^iport1_put~30, 1 sinks, bb: (33,98)-(44,187))
+Congestion score: 23
+Critical path: 6.992 ns
+Routing iteration took 4.23531 seconds.
+
+Routing iteration: 10
+Wire length 41144, total available wire length 9043859, ratio 0.00454939
+Average number of nodes popped per net: 3866
+Top 10 most congested nodes:
+	 1: 8941282
+	 1: 8910897
+	 1: 8805411
+	 1: 8718669
+	 1: 8718117
+	 1: 7749837
+	 1: 7581727
+	 1: 7431605
+	 1: 7204201
+	 1: 6697710
+Top 10 most congested nets:
+	 4: inet 160 (top^MULTI_PORT_MUX~1660^MUX_2~2621, 1 sinks, bb: (31,58)-(39,88))
+	 4: inet 4 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1^FF_NODE~1293, 17 sinks, bb: (22,58)-(39,114))
+	 2: inet 922 (top^iport0_put~37, 1 sinks, bb: (33,93)-(44,183))
+	 2: inet 772 (top^iport1_put~102, 1 sinks, bb: (33,34)-(60,89))
+	 2: inet 7 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1^FF_NODE~1296, 13 sinks, bb: (22,58)-(39,114))
+	 1: inet 739 (top^iport1_put~62, 1 sinks, bb: (22,98)-(60,147))
+	 1: inet 709 (top^iport1_put~94, 1 sinks, bb: (22,98)-(60,163))
+	 1: inet 706 (top^iport1_put~97, 1 sinks, bb: (22,98)-(44,147))
+	 1: inet 704 (top^iport1_put~26, 1 sinks, bb: (33,98)-(44,171))
+	 1: inet 674 (top^iport1_put~55, 1 sinks, bb: (33,98)-(44,131))
+Congestion score: 13
+Critical path: 6.992 ns
+Routing iteration took 4.08366 seconds.
+
+Routing iteration: 11
+Wire length 41209, total available wire length 9043859, ratio 0.00455657
+Average number of nodes popped per net: 3791
+Top 10 most congested nodes:
+	 1: 8103755
+	 1: 7581727
+	 1: 6331094
+Top 10 most congested nets:
+	 1: inet 952 (top^iport0_put~4, 1 sinks, bb: (0,108)-(39,165))
+	 1: inet 922 (top^iport0_put~37, 1 sinks, bb: (33,93)-(44,183))
+	 1: inet 920 (top^iport0_put~18, 1 sinks, bb: (33,93)-(44,167))
+	 1: inet 900 (top^iport0_put~40, 1 sinks, bb: (0,88)-(28,153))
+	 1: inet 896 (top^iport0_put~44, 1 sinks, bb: (0,88)-(28,137))
+	 1: inet 738 (top^iport1_put~63, 1 sinks, bb: (0,98)-(28,161))
+Congestion score: 3
+Critical path: 6.992 ns
+Routing iteration took 4.52884 seconds.
+
+Routing iteration: 12
+Wire length 41204, total available wire length 9043859, ratio 0.00455602
+Average number of nodes popped per net: 3645
+Top 10 most congested nodes:
+	 1: 7112250
+Top 10 most congested nets:
+	 1: inet 737 (top^iport1_put~64, 1 sinks, bb: (22,98)-(44,155))
+	 1: inet 717 (top^iport1_put~86, 1 sinks, bb: (22,98)-(44,139))
+Congestion score: 1
+Critical path: 6.992 ns
+Routing iteration took 3.92751 seconds.
+
+Routing iteration: 13
+Wire length 41270, total available wire length 9043859, ratio 0.00456332
+Average number of nodes popped per net: 3601
+Successfully routed after 13 routing iterations.
+Completed net delay value cross check successfully.
+
+
+Checking to ensure routing is legal...
+Completed routing consistency check successfully.
+
+
+Serial number (magic cookie) for the routing is: 318074093
+Circuit successfully routed with a channel width factor of 18.
+
+
+Average number of bends per net: 2.90743  Maximum # of bends: 37
+
+Number of routed nets (nonglobal): 1037
+Wirelength results (in units of 1 clb segments)...
+	Total wirelength: 41270, average net length: 39.7975
+	Maximum net length: 662
+
+Wirelength results in terms of physical segments...
+	Total wiring segments used: 8007, average wire segments per net: 7.72131
+	Maximum segments used by a net: 92
+	Total local nets with reserved CLB opins: 0
+
+X - Directed channels: j	max occ	av_occ		capacity
+0	0	0.00000  	18
+1	0	0.00000  	18
+2	0	0.00000  	18
+3	0	0.00000  	18
+4	0	0.00000  	18
+5	12	0.137255 	18
+6	2	0.0392157	18
+7	0	0.00000  	18
+8	0	0.00000  	18
+9	12	0.137255 	18
+10	2	0.0392157	18
+11	13	0.186275 	18
+12	1	0.00980392	18
+13	12	0.137255 	18
+14	2	0.0392157	18
+15	12	0.176471 	18
+16	2	0.0784314	18
+17	12	0.137255 	18
+18	2	0.0784314	18
+19	12	0.156863 	18
+20	2	0.0588235	18
+21	10	0.117647 	18
+22	2	0.0196078	18
+23	13	0.176471 	18
+24	2	0.0980392	18
+25	12	0.303922 	18
+26	2	0.137255 	18
+27	12	0.343137 	18
+28	3	0.117647 	18
+29	11	0.274510 	18
+30	2	0.0980392	18
+31	11	0.401961 	18
+32	2	0.215686 	18
+33	11	0.352941 	18
+34	3	0.245098 	18
+35	11	0.421569 	18
+36	2	0.0686275	18
+37	11	0.617647 	18
+38	3	0.441176 	18
+39	10	0.205882 	18
+40	2	0.0784314	18
+41	11	0.549020 	18
+42	3	0.343137 	18
+43	12	0.735294 	18
+44	3	0.392157 	18
+45	12	0.490196 	18
+46	3	0.607843 	18
+47	12	0.872549 	18
+48	3	0.411765 	18
+49	11	0.519608 	18
+50	3	0.617647 	18
+51	11	0.509804 	18
+52	2	0.509804 	18
+53	11	0.598039 	18
+54	4	0.568627 	18
+55	10	1.08824  	18
+56	4	0.735294 	18
+57	12	0.941176 	18
+58	8	1.25490  	18
+59	13	0.774510 	18
+60	10	1.72549  	18
+61	262	4.19608  	18
+62	37	1.81373  	18
+63	40	1.78431  	18
+64	27	1.16667  	18
+65	25	1.34314  	18
+66	5	0.764706 	18
+67	11	0.872549 	18
+68	3	0.745098 	18
+69	12	1.92157  	18
+70	10	1.19608  	18
+71	265	4.51961  	18
+72	40	1.88235  	18
+73	43	2.44118  	18
+74	37	1.27451  	18
+75	40	2.14706  	18
+76	270	4.05882  	18
+77	56	2.30392  	18
+78	95	3.69608  	18
+79	41	2.12745  	18
+80	88	2.65686  	18
+81	264	4.62745  	18
+82	46	3.01961  	18
+83	40	2.37255  	18
+84	94	3.69608  	18
+85	89	2.95098  	18
+86	270	6.66667  	18
+87	48	3.12745  	18
+88	43	1.86275  	18
+89	42	3.05882  	18
+90	31	1.83333  	18
+91	262	7.96078  	18
+92	49	3.46078  	18
+93	40	3.57843  	18
+94	82	5.51961  	18
+95	152	7.23529  	18
+96	274	14.7059  	18
+97	157	6.91176  	18
+98	142	6.94118  	18
+99	33	2.40196  	18
+100	49	3.86275  	18
+101	269	9.28431  	18
+102	54	3.18627  	18
+103	51	5.29412  	18
+104	48	2.84314  	18
+105	56	3.71569  	18
+106	269	9.59804  	18
+107	45	3.62745  	18
+108	42	2.77451  	18
+109	32	3.32353  	18
+110	39	2.88235  	18
+111	83	2.08824  	18
+112	12	1.67647  	18
+113	23	1.64706  	18
+114	21	1.73529  	18
+115	21	1.41176  	18
+116	3	0.460784 	18
+117	13	1.04902  	18
+118	3	0.794118 	18
+119	11	0.892157 	18
+120	6	1.00980  	18
+121	14	0.882353 	18
+122	5	0.823529 	18
+123	14	1.12745  	18
+124	4	0.656863 	18
+125	13	0.676471 	18
+126	3	0.127451 	18
+127	13	0.666667 	18
+128	3	0.352941 	18
+129	12	0.882353 	18
+130	3	0.225490 	18
+131	11	0.343137 	18
+132	4	0.441176 	18
+133	14	1.00000  	18
+134	3	0.382353 	18
+135	13	0.549020 	18
+136	3	0.421569 	18
+137	15	0.725490 	18
+138	4	0.441176 	18
+139	13	0.529412 	18
+140	3	0.147059 	18
+141	14	1.03922  	18
+142	2	0.450980 	18
+143	12	0.754902 	18
+144	4	0.215686 	18
+145	15	0.931373 	18
+146	3	0.617647 	18
+147	12	0.529412 	18
+148	2	0.382353 	18
+149	14	0.568627 	18
+150	3	0.480392 	18
+151	13	0.392157 	18
+152	2	0.235294 	18
+153	12	0.362745 	18
+154	4	0.529412 	18
+155	12	0.343137 	18
+156	3	0.254902 	18
+157	12	0.480392 	18
+158	3	0.294118 	18
+159	12	0.509804 	18
+160	1	0.147059 	18
+161	14	0.343137 	18
+162	2	0.0784314	18
+163	12	0.303922 	18
+164	3	0.0980392	18
+165	12	0.196078 	18
+166	4	0.284314 	18
+167	11	0.205882 	18
+168	2	0.0490196	18
+169	13	0.166667 	18
+170	1	0.00980392	18
+171	12	0.137255 	18
+172	2	0.0392157	18
+173	12	0.137255 	18
+174	1	0.00980392	18
+175	11	0.107843 	18
+176	1	0.00980392	18
+177	12	0.137255 	18
+178	2	0.0392157	18
+179	11	0.107843 	18
+180	2	0.0392157	18
+181	7	0.0882353	18
+182	0	0.00000  	18
+183	11	0.107843 	18
+184	2	0.0392157	18
+185	0	0.00000  	18
+186	0	0.00000  	18
+187	0	0.00000  	18
+188	0	0.00000  	18
+189	0	0.00000  	18
+190	0	0.00000  	18
+191	0	0.00000  	18
+192	0	0.00000  	18
+193	0	0.00000  	18
+194	0	0.00000  	18
+195	0	0.00000  	18
+196	0	0.00000  	18
+197	0	0.00000  	18
+198	0	0.00000  	18
+199	0	0.00000  	18
+200	0	0.00000  	18
+201	0	0.00000  	18
+202	0	0.00000  	18
+203	0	0.00000  	18
+204	0	0.00000  	18
+205	0	0.00000  	18
+206	0	0.00000  	18
+207	0	0.00000  	18
+208	0	0.00000  	18
+209	0	0.00000  	18
+210	0	0.00000  	18
+211	0	0.00000  	18
+212	0	0.00000  	18
+213	0	0.00000  	18
+214	0	0.00000  	18
+215	0	0.00000  	18
+216	0	0.00000  	18
+217	0	0.00000  	18
+218	0	0.00000  	18
+219	0	0.00000  	18
+220	0	0.00000  	18
+221	0	0.00000  	18
+222	0	0.00000  	18
+223	0	0.00000  	18
+224	0	0.00000  	18
+225	0	0.00000  	18
+226	0	0.00000  	18
+227	0	0.00000  	18
+228	0	0.00000  	18
+229	0	0.00000  	18
+230	0	0.00000  	18
+231	0	0.00000  	18
+232	0	0.00000  	18
+233	0	0.00000  	18
+234	0	0.00000  	18
+235	0	0.00000  	18
+236	0	0.00000  	18
+237	0	0.00000  	18
+238	0	0.00000  	18
+239	0	0.00000  	18
+240	0	0.00000  	18
+
+Y - Directed channels: i	max occ	av_occ		capacity
+0	8	0.920833 	18
+1	2	0.0416667	18
+2	17	5.21250  	18
+3	0	0.00000  	18
+4	5	1.53750  	18
+5	1	0.0208333	18
+6	2	0.208333 	18
+7	0	0.00000  	18
+8	5	1.08333  	18
+9	0	0.00000  	18
+10	2	0.0416667	18
+11	0	0.00000  	18
+12	5	0.750000 	18
+13	11	3.19583  	18
+14	2	0.0416667	18
+15	0	0.00000  	18
+16	5	0.666667 	18
+17	2	0.0833333	18
+18	14	2.17917  	18
+19	2	0.0625000	18
+20	3	0.279167 	18
+21	3	0.116667 	18
+22	3	0.270833 	18
+23	4	0.258333 	18
+24	9	0.795833 	18
+25	214	15.3875  	18
+26	25	1.24583  	18
+27	18	1.60417  	18
+28	8	0.812500 	18
+29	14	1.59167  	18
+30	19	0.916667 	18
+31	30	1.06667  	18
+32	40	3.12083  	18
+33	13	1.85833  	18
+34	43	4.55000  	18
+35	34	5.05833  	18
+36	224	27.9000  	18
+37	22	4.97917  	18
+38	22	3.48750  	18
+39	23	11.2375  	18
+40	11	1.22500  	18
+41	23	5.09167  	18
+42	3	0.320833 	18
+43	20	3.27500  	18
+44	0	0.00000  	18
+45	5	0.775000 	18
+46	0	0.00000  	18
+47	3	0.254167 	18
+48	0	0.00000  	18
+49	3	0.416667 	18
+50	0	0.00000  	18
+51	0	0.00000  	18
+52	2	0.516667 	18
+53	3	0.187500 	18
+54	0	0.00000  	18
+55	15	3.10000  	18
+56	1	0.00833333	18
+57	6	1.53333  	18
+58	2	0.0291667	18
+59	2	0.283333 	18
+60	0	0.00000  	18
+61	0	0.00000  	18
+62	0	0.00000  	18
+63	0	0.00000  	18
+64	0	0.00000  	18
+65	0	0.00000  	18
+66	0	0.00000  	18
+67	0	0.00000  	18
+68	0	0.00000  	18
+69	0	0.00000  	18
+70	0	0.00000  	18
+71	0	0.00000  	18
+72	0	0.00000  	18
+73	0	0.00000  	18
+74	0	0.00000  	18
+75	0	0.00000  	18
+76	0	0.00000  	18
+77	0	0.00000  	18
+78	0	0.00000  	18
+79	0	0.00000  	18
+80	0	0.00000  	18
+81	0	0.00000  	18
+82	0	0.00000  	18
+83	0	0.00000  	18
+84	0	0.00000  	18
+85	0	0.00000  	18
+86	0	0.00000  	18
+87	0	0.00000  	18
+88	0	0.00000  	18
+89	0	0.00000  	18
+90	0	0.00000  	18
+91	0	0.00000  	18
+92	0	0.00000  	18
+93	0	0.00000  	18
+94	0	0.00000  	18
+95	0	0.00000  	18
+96	0	0.00000  	18
+97	0	0.00000  	18
+98	0	0.00000  	18
+99	0	0.00000  	18
+100	0	0.00000  	18
+101	0	0.00000  	18
+102	0	0.00000  	18
+
+Total tracks in x-direction: 4338, in y-direction: 1854
+
+Logic area (in minimum width transistor areas, excludes I/Os and empty grid tiles)...
+	Total logic block area (Warning, need to add pitch of routing to blocks with height > 3): 0
+	Total used logic block area: 0
+
+Routing area (in minimum width transistor areas)...
+	Total routing area: 2.17165e+07, per logic tile: 887.113
+
+Segment usage by type (index):
+Segment type       Fractional utilization
+------------       ----------------------
+       0                  0.00209
+       1                  0.0022
+       2                  0.00134
+       3                  0.0017
+       4                  0.00606
+       8                  0.0117
+
+Segment usage by length:
+Segment length       Fractional utilization
+--------------       ----------------------
+        1                   0.00198
+        2                   0.0017
+        4                   0.00606
+       16                   0.0117
+
+WARNING(205): 1 unused pins 
+Nets on critical path: 1 normal, 0 global.
+Total logic delay: 4.422e-09 (s), total net delay: 2.57e-09 (s)
+Final critical path: 6.992 ns
+f_max: 143.021 MHz
+
+Least slack in design: -6.992 ns
+
+Routing took 69.2602 seconds.
+vpr: SRC/inc/inc_misc.c:104: void inc_infer_vpack_blocks_and_pins(): Assertion `vpack_net[inet].node_block[0] == OPEN' failed.
+nbles---------- 4Command terminated by signal 6
+104.79user 5.64system 1:56.84elapsed 94%CPU (0avgtext+0avgdata 2729828maxresident)k
+0inputs+6672outputs (0major+165792minor)pagefaults 0swaps

@@ -1,0 +1,622 @@
+________________________________________________________________________
+                       VPR - The Next Generation                        
+                     Version 0.A15.0 (Linux X86/64)                     
+            This is free open source code under MIT license.            
+________________________________________________________________________
+
+VPR FPGA Placement and Routing.
+Version: Version 7.0
+Compiled: Aug 25 2015.
+University of Toronto
+vpr@eecg.utoronto.ca
+This is free open source code under MIT license.
+
+Architecture file: xc6vlx240tff1156.xml
+Circuit name: mkPktMerge.blif
+
+Building complex block graph.
+WARNING(1): IOB[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(2): IOB[0].VCC_WIRE[0] unconnected pin in architecture.
+WARNING(3): SLICEL[0].A6_VCCONLY[0] unconnected pin in architecture.
+WARNING(4): SLICEL[0].B6_VCCONLY[0] unconnected pin in architecture.
+WARNING(5): SLICEL[0].C6_VCCONLY[0] unconnected pin in architecture.
+WARNING(6): SLICEL[0].D6_VCCONLY[0] unconnected pin in architecture.
+WARNING(7): SLICEL[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(8): SLICEL[0].VCC_WIRE[0] unconnected pin in architecture.
+WARNING(9): DSP48E1[0].A[25] unconnected pin in architecture.
+WARNING(10): DSP48E1[0].A[26] unconnected pin in architecture.
+WARNING(11): DSP48E1[0].A[27] unconnected pin in architecture.
+WARNING(12): DSP48E1[0].A[28] unconnected pin in architecture.
+WARNING(13): DSP48E1[0].A[29] unconnected pin in architecture.
+WARNING(14): DSP48E1[0].CEA1[0] unconnected pin in architecture.
+WARNING(15): DSP48E1[0].CEA2[0] unconnected pin in architecture.
+WARNING(16): DSP48E1[0].CEB1[0] unconnected pin in architecture.
+WARNING(17): DSP48E1[0].CEB2[0] unconnected pin in architecture.
+WARNING(18): DSP48E1[0].CEM[0] unconnected pin in architecture.
+WARNING(19): DSP48E1[0].CEP[0] unconnected pin in architecture.
+WARNING(20): DSP48E1[0].INMODE[0] unconnected pin in architecture.
+WARNING(21): DSP48E1[0].INMODE[1] unconnected pin in architecture.
+WARNING(22): DSP48E1[0].INMODE[2] unconnected pin in architecture.
+WARNING(23): DSP48E1[0].INMODE[3] unconnected pin in architecture.
+WARNING(24): DSP48E1[0].INMODE[4] unconnected pin in architecture.
+WARNING(25): DSP48E1[0].OPMODE[0] unconnected pin in architecture.
+WARNING(26): DSP48E1[0].OPMODE[1] unconnected pin in architecture.
+WARNING(27): DSP48E1[0].OPMODE[2] unconnected pin in architecture.
+WARNING(28): DSP48E1[0].OPMODE[3] unconnected pin in architecture.
+WARNING(29): DSP48E1[0].OPMODE[4] unconnected pin in architecture.
+WARNING(30): DSP48E1[0].OPMODE[5] unconnected pin in architecture.
+WARNING(31): DSP48E1[0].OPMODE[6] unconnected pin in architecture.
+WARNING(32): DSP48E1[0].P[43] unconnected pin in architecture.
+WARNING(33): DSP48E1[0].P[44] unconnected pin in architecture.
+WARNING(34): DSP48E1[0].P[45] unconnected pin in architecture.
+WARNING(35): DSP48E1[0].P[46] unconnected pin in architecture.
+WARNING(36): DSP48E1[0].P[47] unconnected pin in architecture.
+WARNING(37): DSP48E1[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(38): DSP48E1[0].VCC_WIRE[0] unconnected pin in architecture.
+WARNING(39): RAMB36E1[0].ADDRARDADDRL[15] unconnected pin in architecture.
+WARNING(40): RAMB36E1[0].ADDRARDADDRU[0] unconnected pin in architecture.
+WARNING(41): RAMB36E1[0].ADDRARDADDRU[1] unconnected pin in architecture.
+WARNING(42): RAMB36E1[0].ADDRARDADDRU[2] unconnected pin in architecture.
+WARNING(43): RAMB36E1[0].ADDRARDADDRU[3] unconnected pin in architecture.
+WARNING(44): RAMB36E1[0].ADDRARDADDRU[4] unconnected pin in architecture.
+WARNING(45): RAMB36E1[0].ADDRARDADDRU[5] unconnected pin in architecture.
+WARNING(46): RAMB36E1[0].ADDRARDADDRU[6] unconnected pin in architecture.
+WARNING(47): RAMB36E1[0].ADDRARDADDRU[7] unconnected pin in architecture.
+WARNING(48): RAMB36E1[0].ADDRARDADDRU[8] unconnected pin in architecture.
+WARNING(49): RAMB36E1[0].ADDRARDADDRU[9] unconnected pin in architecture.
+WARNING(50): RAMB36E1[0].ADDRARDADDRU[10] unconnected pin in architecture.
+WARNING(51): RAMB36E1[0].ADDRARDADDRU[11] unconnected pin in architecture.
+WARNING(52): RAMB36E1[0].ADDRARDADDRU[12] unconnected pin in architecture.
+WARNING(53): RAMB36E1[0].ADDRARDADDRU[13] unconnected pin in architecture.
+WARNING(54): RAMB36E1[0].ADDRARDADDRU[14] unconnected pin in architecture.
+WARNING(55): RAMB36E1[0].ADDRBWRADDRL[15] unconnected pin in architecture.
+WARNING(56): RAMB36E1[0].ADDRBWRADDRU[0] unconnected pin in architecture.
+WARNING(57): RAMB36E1[0].ADDRBWRADDRU[1] unconnected pin in architecture.
+WARNING(58): RAMB36E1[0].ADDRBWRADDRU[2] unconnected pin in architecture.
+WARNING(59): RAMB36E1[0].ADDRBWRADDRU[3] unconnected pin in architecture.
+WARNING(60): RAMB36E1[0].ADDRBWRADDRU[4] unconnected pin in architecture.
+WARNING(61): RAMB36E1[0].ADDRBWRADDRU[5] unconnected pin in architecture.
+WARNING(62): RAMB36E1[0].ADDRBWRADDRU[6] unconnected pin in architecture.
+WARNING(63): RAMB36E1[0].ADDRBWRADDRU[7] unconnected pin in architecture.
+WARNING(64): RAMB36E1[0].ADDRBWRADDRU[8] unconnected pin in architecture.
+WARNING(65): RAMB36E1[0].ADDRBWRADDRU[9] unconnected pin in architecture.
+WARNING(66): RAMB36E1[0].ADDRBWRADDRU[10] unconnected pin in architecture.
+WARNING(67): RAMB36E1[0].ADDRBWRADDRU[11] unconnected pin in architecture.
+WARNING(68): RAMB36E1[0].ADDRBWRADDRU[12] unconnected pin in architecture.
+WARNING(69): RAMB36E1[0].ADDRBWRADDRU[13] unconnected pin in architecture.
+WARNING(70): RAMB36E1[0].ADDRBWRADDRU[14] unconnected pin in architecture.
+WARNING(71): RAMB36E1[0].WEAL[1] unconnected pin in architecture.
+WARNING(72): RAMB36E1[0].WEAL[2] unconnected pin in architecture.
+WARNING(73): RAMB36E1[0].WEAL[3] unconnected pin in architecture.
+WARNING(74): RAMB36E1[0].WEAU[0] unconnected pin in architecture.
+WARNING(75): RAMB36E1[0].WEAU[1] unconnected pin in architecture.
+WARNING(76): RAMB36E1[0].WEAU[2] unconnected pin in architecture.
+WARNING(77): RAMB36E1[0].WEAU[3] unconnected pin in architecture.
+WARNING(78): RAMB36E1[0].WEBWEL[1] unconnected pin in architecture.
+WARNING(79): RAMB36E1[0].WEBWEL[2] unconnected pin in architecture.
+WARNING(80): RAMB36E1[0].WEBWEL[3] unconnected pin in architecture.
+WARNING(81): RAMB36E1[0].WEBWEL[4] unconnected pin in architecture.
+WARNING(82): RAMB36E1[0].WEBWEL[5] unconnected pin in architecture.
+WARNING(83): RAMB36E1[0].WEBWEL[6] unconnected pin in architecture.
+WARNING(84): RAMB36E1[0].WEBWEL[7] unconnected pin in architecture.
+WARNING(85): RAMB36E1[0].WEBWEU[0] unconnected pin in architecture.
+WARNING(86): RAMB36E1[0].WEBWEU[1] unconnected pin in architecture.
+WARNING(87): RAMB36E1[0].WEBWEU[2] unconnected pin in architecture.
+WARNING(88): RAMB36E1[0].WEBWEU[3] unconnected pin in architecture.
+WARNING(89): RAMB36E1[0].WEBWEU[4] unconnected pin in architecture.
+WARNING(90): RAMB36E1[0].WEBWEU[5] unconnected pin in architecture.
+WARNING(91): RAMB36E1[0].WEBWEU[6] unconnected pin in architecture.
+WARNING(92): RAMB36E1[0].WEBWEU[7] unconnected pin in architecture.
+WARNING(93): RAMB36E1[0].ENARDENL[0] unconnected pin in architecture.
+WARNING(94): RAMB36E1[0].ENARDENU[0] unconnected pin in architecture.
+WARNING(95): RAMB36E1[0].ENBWRENL[0] unconnected pin in architecture.
+WARNING(96): RAMB36E1[0].ENBWRENU[0] unconnected pin in architecture.
+WARNING(97): RAMB36E1[0].REGCEAREGCEL[0] unconnected pin in architecture.
+WARNING(98): RAMB36E1[0].REGCEAREGCEU[0] unconnected pin in architecture.
+WARNING(99): RAMB36E1[0].REGCEBL[0] unconnected pin in architecture.
+WARNING(100): RAMB36E1[0].REGCEBU[0] unconnected pin in architecture.
+WARNING(101): RAMB36E1[0].RSTRAMARSTRAMLRST[0] unconnected pin in architecture.
+WARNING(102): RAMB36E1[0].RSTRAMARSTRAMU[0] unconnected pin in architecture.
+WARNING(103): RAMB36E1[0].RSTRAMBL[0] unconnected pin in architecture.
+WARNING(104): RAMB36E1[0].RSTRAMBU[0] unconnected pin in architecture.
+WARNING(105): RAMB36E1[0].RSTREGARSTREGL[0] unconnected pin in architecture.
+WARNING(106): RAMB36E1[0].RSTREGARSTREGU[0] unconnected pin in architecture.
+WARNING(107): RAMB36E1[0].RSTREGBL[0] unconnected pin in architecture.
+WARNING(108): RAMB36E1[0].RSTREGBU[0] unconnected pin in architecture.
+WARNING(109): RAMB36E1[0].s0_WEA[1] unconnected pin in architecture.
+WARNING(110): RAMB36E1[0].s0_WEA[2] unconnected pin in architecture.
+WARNING(111): RAMB36E1[0].s0_WEA[3] unconnected pin in architecture.
+WARNING(112): RAMB36E1[0].s0_WEBWE[1] unconnected pin in architecture.
+WARNING(113): RAMB36E1[0].s0_WEBWE[2] unconnected pin in architecture.
+WARNING(114): RAMB36E1[0].s0_WEBWE[3] unconnected pin in architecture.
+WARNING(115): RAMB36E1[0].s0_WEBWE[4] unconnected pin in architecture.
+WARNING(116): RAMB36E1[0].s0_WEBWE[5] unconnected pin in architecture.
+WARNING(117): RAMB36E1[0].s0_WEBWE[6] unconnected pin in architecture.
+WARNING(118): RAMB36E1[0].s0_WEBWE[7] unconnected pin in architecture.
+WARNING(119): RAMB36E1[0].s0_ENARDEN[0] unconnected pin in architecture.
+WARNING(120): RAMB36E1[0].s0_ENBWREN[0] unconnected pin in architecture.
+WARNING(121): RAMB36E1[0].s0_ADDRATIEHIGH[0] unconnected pin in architecture.
+WARNING(122): RAMB36E1[0].s0_ADDRATIEHIGH[1] unconnected pin in architecture.
+WARNING(123): RAMB36E1[0].s0_ADDRBTIEHIGH[0] unconnected pin in architecture.
+WARNING(124): RAMB36E1[0].s0_ADDRBTIEHIGH[1] unconnected pin in architecture.
+WARNING(125): RAMB36E1[0].s0_REGCEAREGCE[0] unconnected pin in architecture.
+WARNING(126): RAMB36E1[0].s0_REGCEB[0] unconnected pin in architecture.
+WARNING(127): RAMB36E1[0].s0_RSTRAMARSTRAM[0] unconnected pin in architecture.
+WARNING(128): RAMB36E1[0].s0_RSTRAMB[0] unconnected pin in architecture.
+WARNING(129): RAMB36E1[0].s0_RSTREGARSTREG[0] unconnected pin in architecture.
+WARNING(130): RAMB36E1[0].s0_RSTREGB[0] unconnected pin in architecture.
+WARNING(131): RAMB36E1[0].s1_WEA[1] unconnected pin in architecture.
+WARNING(132): RAMB36E1[0].s1_WEA[2] unconnected pin in architecture.
+WARNING(133): RAMB36E1[0].s1_WEA[3] unconnected pin in architecture.
+WARNING(134): RAMB36E1[0].s1_WEBWE[1] unconnected pin in architecture.
+WARNING(135): RAMB36E1[0].s1_WEBWE[2] unconnected pin in architecture.
+WARNING(136): RAMB36E1[0].s1_WEBWE[3] unconnected pin in architecture.
+WARNING(137): RAMB36E1[0].s1_WEBWE[4] unconnected pin in architecture.
+WARNING(138): RAMB36E1[0].s1_WEBWE[5] unconnected pin in architecture.
+WARNING(139): RAMB36E1[0].s1_WEBWE[6] unconnected pin in architecture.
+WARNING(140): RAMB36E1[0].s1_WEBWE[7] unconnected pin in architecture.
+WARNING(141): RAMB36E1[0].s1_ENARDEN[0] unconnected pin in architecture.
+WARNING(142): RAMB36E1[0].s1_ENBWREN[0] unconnected pin in architecture.
+WARNING(143): RAMB36E1[0].s1_ADDRATIEHIGH[0] unconnected pin in architecture.
+WARNING(144): RAMB36E1[0].s1_ADDRATIEHIGH[1] unconnected pin in architecture.
+WARNING(145): RAMB36E1[0].s1_ADDRBTIEHIGH[0] unconnected pin in architecture.
+WARNING(146): RAMB36E1[0].s1_ADDRBTIEHIGH[1] unconnected pin in architecture.
+WARNING(147): RAMB36E1[0].s1_REGCEAREGCE[0] unconnected pin in architecture.
+WARNING(148): RAMB36E1[0].s1_REGCEB[0] unconnected pin in architecture.
+WARNING(149): RAMB36E1[0].s1_RSTRAMARSTRAM[0] unconnected pin in architecture.
+WARNING(150): RAMB36E1[0].s1_RSTRAMB[0] unconnected pin in architecture.
+WARNING(151): RAMB36E1[0].s1_RSTREGARSTREG[0] unconnected pin in architecture.
+WARNING(152): RAMB36E1[0].s1_RSTREGB[0] unconnected pin in architecture.
+WARNING(153): RAMB36E1[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(154): RAMB36E1[0].VCC_WIRE[0] unconnected pin in architecture.
+WARNING(155): RAMB36E1[0].CLKARDCLKU[0] unconnected pin in architecture.
+WARNING(156): RAMB36E1[0].CLKBWRCLKL[0] unconnected pin in architecture.
+WARNING(157): RAMB36E1[0].CLKBWRCLKU[0] unconnected pin in architecture.
+WARNING(158): RAMB36E1[0].s0_CLKBWRCLK[0] unconnected pin in architecture.
+WARNING(159): RAMB36E1[0].s1_CLKBWRCLK[0] unconnected pin in architecture.
+WARNING(160): RAMB36E1[0].REGCLKARDRCLKL[0] unconnected pin in architecture.
+WARNING(161): RAMB36E1[0].REGCLKARDRCLKU[0] unconnected pin in architecture.
+WARNING(162): RAMB36E1[0].REGCLKBL[0] unconnected pin in architecture.
+WARNING(163): RAMB36E1[0].REGCLKBU[0] unconnected pin in architecture.
+WARNING(164): RAMB36E1[0].s0_REGCLKARDRCLK[0] unconnected pin in architecture.
+WARNING(165): RAMB36E1[0].s0_REGCLKB[0] unconnected pin in architecture.
+WARNING(166): RAMB36E1[0].s1_REGCLKARDRCLK[0] unconnected pin in architecture.
+WARNING(167): RAMB36E1[0].s1_REGCLKB[0] unconnected pin in architecture.
+WARNING(168): RAMB18E1[0].WEA[1] unconnected pin in architecture.
+WARNING(169): RAMB18E1[0].WEA[2] unconnected pin in architecture.
+WARNING(170): RAMB18E1[0].WEA[3] unconnected pin in architecture.
+WARNING(171): RAMB18E1[0].WEBWE[1] unconnected pin in architecture.
+WARNING(172): RAMB18E1[0].WEBWE[2] unconnected pin in architecture.
+WARNING(173): RAMB18E1[0].WEBWE[3] unconnected pin in architecture.
+WARNING(174): RAMB18E1[0].WEBWE[4] unconnected pin in architecture.
+WARNING(175): RAMB18E1[0].WEBWE[5] unconnected pin in architecture.
+WARNING(176): RAMB18E1[0].WEBWE[6] unconnected pin in architecture.
+WARNING(177): RAMB18E1[0].WEBWE[7] unconnected pin in architecture.
+WARNING(178): RAMB18E1[0].CLKBWRCLK[0] unconnected pin in architecture.
+WARNING(179): RAMB18E1[1].WEA[1] unconnected pin in architecture.
+WARNING(180): RAMB18E1[1].WEA[2] unconnected pin in architecture.
+WARNING(181): RAMB18E1[1].WEA[3] unconnected pin in architecture.
+WARNING(182): RAMB18E1[1].WEBWE[1] unconnected pin in architecture.
+WARNING(183): RAMB18E1[1].WEBWE[2] unconnected pin in architecture.
+WARNING(184): RAMB18E1[1].WEBWE[3] unconnected pin in architecture.
+WARNING(185): RAMB18E1[1].WEBWE[4] unconnected pin in architecture.
+WARNING(186): RAMB18E1[1].WEBWE[5] unconnected pin in architecture.
+WARNING(187): RAMB18E1[1].WEBWE[6] unconnected pin in architecture.
+WARNING(188): RAMB18E1[1].WEBWE[7] unconnected pin in architecture.
+WARNING(189): RAMB18E1[1].CLKBWRCLK[0] unconnected pin in architecture.
+WARNING(190): BUFG[0].GND_WIRE[0] unconnected pin in architecture.
+WARNING(191): BUFG[0].VCC_WIRE[0] unconnected pin in architecture.
+Loop for doall = 0, init_parse took 1.7e-05 seconds.
+Loop for doall = 0 took 0.039735 seconds.
+Loop for doall = 1, init_parse took 0.009796 seconds.
+Loop for doall = 1 took 0.03315 seconds.
+Swept away 459 nets with no fanout.
+Net is a constant generator: gnd.
+WARNING(192): logical_block #1344 with output gnd has only 0 pin.
+WARNING(193): Block contains output -- may be a constant generator.
+0 unconnected blocks in input netlist.
+Removed 156 LUT buffers.
+Sweeped away 156 nodes.
+BLIF circuit stats:
+	1 LUTs of size 0
+	0 LUTs of size 1
+	9 LUTs of size 2
+	163 LUTs of size 3
+	9 LUTs of size 4
+	17 LUTs of size 5
+	33 LUTs of size 6
+	311 of type input
+	156 of type output
+	36 of type latch
+	232 of type names
+	0 of type lut8
+	0 of type lut7
+	1 of type bufgctrl
+	0 of type xadder
+	0 of type adder
+	459 of type dual_port_ram
+	0 of type single_port_ram
+	0 of type multiply
+Timing analysis: ON
+Circuit netlist file: mkPktMerge.net
+Circuit placement file: mkPktMerge.place
+Circuit routing file: mkPktMerge.route
+Circuit SDC file: mkPktMerge.sdc
+Operation: RUN_FLOW
+
+Packer: DISABLED
+Placer: DISABLED
+Router: ENABLED
+RouterOpts.route_type: DETAILED
+RouterOpts.router_algorithm: READ_ROUTE
+RouterOpts.base_cost_type: DELAY_NORMALIZED
+RouterOpts.fixed_channel_width: 18
+RouterOpts.acc_fac: 1.000000
+RouterOpts.bb_factor: 3
+RouterOpts.bend_cost: 0.000000
+RouterOpts.first_iter_pres_fac: 0.500000
+RouterOpts.initial_pres_fac: 0.500000
+RouterOpts.pres_fac_mult: 1.300000
+RouterOpts.max_router_iterations: 15
+
+RouterOpts.inc_type:             INC_OVERLAY
+RouterOpts.inc_router_algorithm:  TIMING_DRIVEN
+RouterOpts.inc_le_symmetry:   TRUE
+RouterOpts.inc_best_effort:   TRUE
+RouterOpts.inc_connectivity:  20
+RouterOpts.inc_match_file:    (null)
+
+RoutingArch.directionality: UNI_DIRECTIONAL
+RoutingArch.switch_block_type: WILTON
+RoutingArch.Fs: 3
+
+Begin parsing packed FPGA netlist file.
+Finished parsing packed FPGA netlist file.
+Netlist generated from file 'mkPktMerge.net'.
+top^iport1_put~98 is a constant generator.
+top^iport1_put~97 is a constant generator.
+top^iport0_put~124 is a constant generator.
+top^iport1_put~96 is a constant generator.
+top^iport1_put~95 is a constant generator.
+top^iport0_put~123 is a constant generator.
+top^iport0_put~60 is a constant generator.
+top^iport1_put~94 is a constant generator.
+top^iport1_put~93 is a constant generator.
+top^iport0_put~122 is a constant generator.
+top^iport1_put~92 is a constant generator.
+top^iport1_put~91 is a constant generator.
+top^iport0_put~121 is a constant generator.
+top^iport0_put~59 is a constant generator.
+top^iport0_put~28 is a constant generator.
+top^iport1_put~90 is a constant generator.
+top^iport1_put~89 is a constant generator.
+top^iport0_put~120 is a constant generator.
+top^iport1_put~88 is a constant generator.
+top^iport1_put~87 is a constant generator.
+top^iport0_put~119 is a constant generator.
+top^iport0_put~58 is a constant generator.
+top^iport1_put~86 is a constant generator.
+top^iport1_put~85 is a constant generator.
+top^iport0_put~118 is a constant generator.
+top^iport1_put~84 is a constant generator.
+top^iport1_put~83 is a constant generator.
+top^iport0_put~117 is a constant generator.
+top^iport0_put~57 is a constant generator.
+top^iport0_put~27 is a constant generator.
+top^iport0_put~12 is a constant generator.
+top^iport1_put~82 is a constant generator.
+top^iport1_put~81 is a constant generator.
+top^iport0_put~116 is a constant generator.
+top^iport1_put~80 is a constant generator.
+top^iport1_put~79 is a constant generator.
+top^iport0_put~115 is a constant generator.
+top^iport0_put~56 is a constant generator.
+top^iport1_put~78 is a constant generator.
+top^iport1_put~77 is a constant generator.
+top^iport0_put~114 is a constant generator.
+top^iport1_put~76 is a constant generator.
+top^iport0_put~113 is a constant generator.
+top^iport1_put~75 is a constant generator.
+top^iport0_put~55 is a constant generator.
+top^iport0_put~26 is a constant generator.
+top^iport0_put~11 is a constant generator.
+top^iport1_put~74 is a constant generator.
+top^iport1_put~73 is a constant generator.
+top^iport0_put~112 is a constant generator.
+top^iport1_put~72 is a constant generator.
+top^iport1_put~71 is a constant generator.
+top^iport0_put~111 is a constant generator.
+top^iport0_put~54 is a constant generator.
+top^iport1_put~70 is a constant generator.
+top^iport1_put~69 is a constant generator.
+top^iport0_put~110 is a constant generator.
+top^iport1_put~68 is a constant generator.
+top^iport1_put~67 is a constant generator.
+top^iport0_put~109 is a constant generator.
+top^iport0_put~53 is a constant generator.
+top^iport0_put~25 is a constant generator.
+top^iport0_put~4 is a constant generator.
+top^iport0_put~0 is a constant generator.
+top^iport1_put~66 is a constant generator.
+top^iport1_put~65 is a constant generator.
+top^iport0_put~108 is a constant generator.
+top^iport1_put~64 is a constant generator.
+top^iport1_put~63 is a constant generator.
+top^iport0_put~107 is a constant generator.
+top^iport0_put~52 is a constant generator.
+top^iport1_put~62 is a constant generator.
+top^iport1_put~61 is a constant generator.
+top^iport0_put~106 is a constant generator.
+top^iport1_put~60 is a constant generator.
+top^iport1_put~59 is a constant generator.
+top^iport0_put~105 is a constant generator.
+top^iport0_put~51 is a constant generator.
+top^iport0_put~24 is a constant generator.
+top^iport1_put~58 is a constant generator.
+top^iport1_put~57 is a constant generator.
+top^iport0_put~104 is a constant generator.
+top^iport1_put~56 is a constant generator.
+top^iport1_put~55 is a constant generator.
+top^iport0_put~103 is a constant generator.
+top^iport0_put~50 is a constant generator.
+top^iport1_put~54 is a constant generator.
+top^iport1_put~53 is a constant generator.
+top^iport0_put~102 is a constant generator.
+top^iport1_put~52 is a constant generator.
+top^iport1_put~51 is a constant generator.
+top^iport0_put~101 is a constant generator.
+top^iport0_put~49 is a constant generator.
+top^iport0_put~23 is a constant generator.
+top^iport0_put~10 is a constant generator.
+top^iport1_put~50 is a constant generator.
+top^iport1_put~49 is a constant generator.
+top^iport0_put~100 is a constant generator.
+top^iport1_put~48 is a constant generator.
+top^iport1_put~47 is a constant generator.
+top^iport0_put~99 is a constant generator.
+top^iport0_put~48 is a constant generator.
+top^iport1_put~46 is a constant generator.
+top^iport1_put~45 is a constant generator.
+top^iport0_put~98 is a constant generator.
+top^iport1_put~44 is a constant generator.
+top^iport1_put~43 is a constant generator.
+top^iport0_put~97 is a constant generator.
+top^iport0_put~47 is a constant generator.
+top^iport0_put~22 is a constant generator.
+top^iport1_put~42 is a constant generator.
+top^iport1_put~41 is a constant generator.
+top^iport0_put~96 is a constant generator.
+top^iport1_put~40 is a constant generator.
+top^iport1_put~39 is a constant generator.
+top^iport0_put~95 is a constant generator.
+top^iport0_put~46 is a constant generator.
+top^iport1_put~38 is a constant generator.
+top^iport1_put~37 is a constant generator.
+top^iport0_put~94 is a constant generator.
+top^iport1_put~36 is a constant generator.
+top^iport1_put~35 is a constant generator.
+top^iport0_put~93 is a constant generator.
+top^iport0_put~45 is a constant generator.
+top^iport0_put~21 is a constant generator.
+top^iport0_put~9 is a constant generator.
+top^iport0_put~3 is a constant generator.
+top^iport1_put~34 is a constant generator.
+top^iport1_put~33 is a constant generator.
+top^iport0_put~92 is a constant generator.
+top^iport1_put~32 is a constant generator.
+top^iport1_put~31 is a constant generator.
+top^iport0_put~91 is a constant generator.
+top^iport0_put~44 is a constant generator.
+top^iport1_put~30 is a constant generator.
+top^iport1_put~29 is a constant generator.
+top^iport0_put~90 is a constant generator.
+top^iport1_put~28 is a constant generator.
+top^iport1_put~27 is a constant generator.
+top^iport0_put~89 is a constant generator.
+top^iport0_put~43 is a constant generator.
+top^iport0_put~20 is a constant generator.
+top^iport1_put~26 is a constant generator.
+top^iport1_put~25 is a constant generator.
+top^iport0_put~88 is a constant generator.
+top^iport1_put~24 is a constant generator.
+top^iport1_put~23 is a constant generator.
+top^iport0_put~87 is a constant generator.
+top^iport0_put~42 is a constant generator.
+top^iport1_put~22 is a constant generator.
+top^iport1_put~21 is a constant generator.
+top^iport0_put~86 is a constant generator.
+top^iport1_put~20 is a constant generator.
+top^iport1_put~19 is a constant generator.
+top^iport0_put~85 is a constant generator.
+top^iport0_put~41 is a constant generator.
+top^iport0_put~19 is a constant generator.
+top^iport0_put~8 is a constant generator.
+top^iport1_put~18 is a constant generator.
+top^iport1_put~17 is a constant generator.
+top^iport0_put~84 is a constant generator.
+top^iport1_put~16 is a constant generator.
+top^iport1_put~15 is a constant generator.
+top^iport0_put~83 is a constant generator.
+top^iport0_put~40 is a constant generator.
+top^iport1_put~14 is a constant generator.
+top^iport1_put~13 is a constant generator.
+top^iport0_put~82 is a constant generator.
+top^iport1_put~12 is a constant generator.
+top^iport1_put~11 is a constant generator.
+top^iport0_put~81 is a constant generator.
+top^iport0_put~39 is a constant generator.
+top^iport0_put~18 is a constant generator.
+top^iport1_put~10 is a constant generator.
+top^iport1_put~9 is a constant generator.
+top^iport0_put~80 is a constant generator.
+top^iport1_put~8 is a constant generator.
+top^iport1_put~7 is a constant generator.
+top^iport0_put~79 is a constant generator.
+top^iport0_put~38 is a constant generator.
+top^iport1_put~6 is a constant generator.
+top^iport1_put~5 is a constant generator.
+top^iport0_put~78 is a constant generator.
+top^iport1_put~4 is a constant generator.
+top^iport1_put~3 is a constant generator.
+top^iport0_put~77 is a constant generator.
+top^iport0_put~37 is a constant generator.
+top^iport0_put~17 is a constant generator.
+top^iport0_put~7 is a constant generator.
+top^iport0_put~2 is a constant generator.
+top^iport1_put~2 is a constant generator.
+top^iport1_put~1 is a constant generator.
+top^iport0_put~76 is a constant generator.
+top^iport1_put~0 is a constant generator.
+top^iport0_put~36 is a constant generator.
+top^iport0_put~75 is a constant generator.
+top^iport0_put~16 is a constant generator.
+top^iport0_put~74 is a constant generator.
+top^iport0_put~152 is a constant generator.
+top^iport0_put~35 is a constant generator.
+top^iport1_put~152 is a constant generator.
+top^iport1_put~151 is a constant generator.
+top^iport0_put~151 is a constant generator.
+top^iport0_put~6 is a constant generator.
+top^iport1_put~150 is a constant generator.
+top^iport1_put~149 is a constant generator.
+top^iport0_put~150 is a constant generator.
+top^iport1_put~148 is a constant generator.
+top^iport1_put~147 is a constant generator.
+top^iport0_put~149 is a constant generator.
+top^iport0_put~73 is a constant generator.
+top^iport0_put~1 is a constant generator.
+top^iport1_put~146 is a constant generator.
+top^iport1_put~145 is a constant generator.
+top^iport0_put~148 is a constant generator.
+top^iport1_put~144 is a constant generator.
+top^iport1_put~143 is a constant generator.
+top^iport0_put~147 is a constant generator.
+top^iport0_put~72 is a constant generator.
+top^iport1_put~142 is a constant generator.
+top^iport1_put~141 is a constant generator.
+top^iport0_put~146 is a constant generator.
+top^iport0_put~34 is a constant generator.
+top^iport1_put~140 is a constant generator.
+top^iport0_put~145 is a constant generator.
+top^iport1_put~139 is a constant generator.
+top^iport0_put~71 is a constant generator.
+top^iport0_put~15 is a constant generator.
+top^iport1_put~138 is a constant generator.
+top^iport1_put~137 is a constant generator.
+top^iport0_put~144 is a constant generator.
+top^iport1_put~136 is a constant generator.
+top^iport1_put~135 is a constant generator.
+top^iport0_put~143 is a constant generator.
+top^iport0_put~70 is a constant generator.
+top^iport1_put~134 is a constant generator.
+top^iport1_put~133 is a constant generator.
+top^iport0_put~142 is a constant generator.
+top^iport1_put~132 is a constant generator.
+top^iport1_put~131 is a constant generator.
+top^iport0_put~141 is a constant generator.
+top^iport0_put~69 is a constant generator.
+top^iport0_put~33 is a constant generator.
+top^iport1_put~130 is a constant generator.
+top^iport1_put~129 is a constant generator.
+top^iport0_put~140 is a constant generator.
+top^iport1_put~128 is a constant generator.
+top^iport1_put~127 is a constant generator.
+top^iport0_put~139 is a constant generator.
+top^iport0_put~68 is a constant generator.
+top^iport1_put~126 is a constant generator.
+top^iport1_put~125 is a constant generator.
+top^iport0_put~138 is a constant generator.
+top^iport1_put~124 is a constant generator.
+top^iport1_put~123 is a constant generator.
+top^iport0_put~137 is a constant generator.
+top^iport0_put~67 is a constant generator.
+top^iport0_put~32 is a constant generator.
+top^iport1_put~122 is a constant generator.
+top^iport1_put~121 is a constant generator.
+top^iport0_put~136 is a constant generator.
+top^iport1_put~120 is a constant generator.
+top^iport1_put~119 is a constant generator.
+top^iport0_put~135 is a constant generator.
+top^iport0_put~66 is a constant generator.
+top^iport1_put~118 is a constant generator.
+top^iport1_put~117 is a constant generator.
+top^iport0_put~134 is a constant generator.
+top^iport1_put~116 is a constant generator.
+top^iport1_put~115 is a constant generator.
+top^iport0_put~133 is a constant generator.
+top^iport0_put~65 is a constant generator.
+top^iport0_put~31 is a constant generator.
+top^iport0_put~14 is a constant generator.
+top^iport1_put~114 is a constant generator.
+top^iport1_put~113 is a constant generator.
+top^iport0_put~132 is a constant generator.
+top^iport1_put~112 is a constant generator.
+top^iport1_put~111 is a constant generator.
+top^iport0_put~131 is a constant generator.
+top^iport0_put~64 is a constant generator.
+top^iport1_put~110 is a constant generator.
+top^iport1_put~109 is a constant generator.
+top^iport0_put~130 is a constant generator.
+top^iport1_put~108 is a constant generator.
+top^iport1_put~107 is a constant generator.
+top^iport0_put~129 is a constant generator.
+top^iport0_put~63 is a constant generator.
+top^iport0_put~30 is a constant generator.
+top^iport1_put~106 is a constant generator.
+top^iport1_put~105 is a constant generator.
+top^iport0_put~128 is a constant generator.
+top^iport1_put~104 is a constant generator.
+top^iport1_put~103 is a constant generator.
+top^iport0_put~127 is a constant generator.
+top^iport0_put~62 is a constant generator.
+top^iport1_put~102 is a constant generator.
+top^iport1_put~101 is a constant generator.
+top^iport0_put~126 is a constant generator.
+top^iport1_put~100 is a constant generator.
+top^iport1_put~99 is a constant generator.
+top^iport0_put~125 is a constant generator.
+top^iport0_put~61 is a constant generator.
+top^iport0_put~29 is a constant generator.
+top^iport0_put~13 is a constant generator.
+top^iport0_put~5 is a constant generator.
+top^EN_iport1_put is a constant generator.
+top^EN_iport0_put is a constant generator.
+top^EN_oport_get is a constant generator.
+top^RST_N is a constant generator.
+gnd is a constant generator.
+top^CLK is a constant generator.
+WARNING(194): in check_connections_to_global_clb_pins:
+WARNING(195): 	net #82 (top^CLK_BUFG) is driven by CLB output pin (#8) on block #537 (top^CLK_BUFG).
+Net is global, but CLB pin is not.
+
+WARNING(196): Logic block #538 (gnd) has only 1 pin.
+Pin is an output -- may be a constant generator.
+	Non-fatal, but check this.
+
+Netlist num_nets: 1003
+Netlist num_blocks: 540
+Netlist <EMPTY> blocks: 0.
+Netlist SLICEL blocks: 58.
+Netlist DSP48E1 blocks: 0.
+Netlist RAMB36E1 blocks: 14.
+Netlist BUFG blocks: 1.
+Netlist inputs pins: 311
+Netlist output pins: 156
+
+The circuit will be mapped into a 102 x 240 array of clbs.
+
+Resource usage...
+	Netlist      0	blocks of type: <EMPTY>
+	Architecture 2024	blocks of type: <EMPTY>
+	Netlist      467	blocks of type: IOB
+	Architecture 600	blocks of type: IOB
+	Netlist      58	blocks of type: SLICEL
+	Architecture 37680	blocks of type: SLICEL
+	Netlist      0	blocks of type: DSP48E1
+	Architecture 768	blocks of type: DSP48E1
+	Netlist      14	blocks of type: RAMB36E1
+	Architecture 416	blocks of type: RAMB36E1
+	Netlist      1	blocks of type: BUFG
+	Architecture 32	blocks of type: BUFG
+
+Placement took 0.578959 seconds.

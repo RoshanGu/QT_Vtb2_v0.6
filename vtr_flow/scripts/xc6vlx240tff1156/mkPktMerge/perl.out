@@ -1,0 +1,22 @@
+/usr/bin/time /usr/bin/perl  -0777 -p -i -e "s/(\.model adder
+\.inputs\s+a(\[0\])?\s+b(\[0\])?\s+cin(\[0\])?
+\.outputs\s+cout(\[0\])?\s+sumout(\[0\])?)
+\.blackbox
+\.end
+/\1
+.names a\2 b\3 a_xor_b
+01 1
+10 1
+.names a\2 b\3 a_and_b
+11 1
+.subckt xadder a_xor_b=a_xor_b a_and_b=a_and_b cin=cin\4 cout=cout\5 sumout=sumout\6
+.end
+
+.model xadder
+.inputs a_xor_b a_and_b cin
+.outputs cout sumout
+.blackbox
+.end
+/smg" mkPktMerge.xadder.odin.blif 2>&1
+0.00user 0.00system 0:00.00elapsed 100%CPU (0avgtext+0avgdata 4944maxresident)k
+0inputs+2136outputs (0major+455minor)pagefaults 0swaps

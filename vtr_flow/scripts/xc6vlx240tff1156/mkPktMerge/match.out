@@ -1,0 +1,4 @@
+/usr/bin/time /home/osboxes/Desktop/QT-VTBv0.4/vtr_flow/../mwbm/mwbm  mkPktMerge.overlay 32 1038 0.75 0 2>&1
+Command terminated by signal 11
+0.00user 0.00system 0:00.19elapsed 0%CPU (0avgtext+0avgdata 2976maxresident)k
+0inputs+0outputs (0major+126minor)pagefaults 0swaps

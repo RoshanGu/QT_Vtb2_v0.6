@@ -1,0 +1,81 @@
+/usr/bin/time /home/osboxes/Desktop/QT-VTBv0.4/vtr_flow/../ODIN_II/odin_II.exe  -c odin_config.xml 2>&1
+Preprocessing verilog.
+Warning: The constant awa defined on line 4844 in mkDelayWorker32B.v was previously defined on line 4070 in mkDelayWorker32B.v
+Warning: The constant dwc defined on line 5622 in mkDelayWorker32B.v was previously defined on line 4843 in mkDelayWorker32B.v
+	Warning: The value of dwc has been redefined to 60, the previous value was 128
+
+--------------------------------------------------------------------
+Welcome to ODIN II version 0.1 - the better High level synthesis tools++ targetting FPGAs (mainly VPR)
+Email: jamieson.peter@gmail.com and ken@unb.ca for support issues
+
+Reading Configuration file
+Reading FPGA Architecture file
+--------------------------------------------------------------------
+High-level synthesis Begin
+Parser starting - we'll create an abstract syntax tree.  Note this tree can be viewed using GraphViz (see documentation)
+Missing verilog.l rule: Default rule invoked in state 0: "_"
+Missing verilog.l rule: Default rule invoked in state 0: "_"
+Missing verilog.l rule: Default rule invoked in state 0: "_"
+Optimizing module by AST based optimizations
+Converting AST into a Netlist. Note this netlist can be viewed using GraphViz (see documentation)
+Performing Optimizations of the Netlist
+
+Hard Logical Memory Distribution
+============================
+DPRAM: 256 width 10 depth
+DPRAM: 256 width 10 depth
+DPRAM: 313 width 3 depth
+DPRAM: 131 width 2 depth
+DPRAM: 128 width 4 depth
+DPRAM: 128 width 4 depth
+DPRAM: 60 width 3 depth
+DPRAM: 32 width 4 depth
+DPRAM: 32 width 4 depth
+
+Total Logical Memory Blocks = 9 
+Total Logical Memory bits = 532916 
+Max Memory Width = 313 
+Max Memory Depth = 10 
+
+Performing Partial Map to target device
+Outputting the netlist to the specified output format
+Successful High-level synthesis by Odin in 731.4ms
+--------------------------------------------------------------------
+
+Hard Multiplier Distribution
+============================
+
+
+Total # of multipliers = 0
+
+Hard adder Distribution
+============================
+
+
+Total # of chains = 53
+
+Hard adder chain Details
+============================
+
+
+The Number of Hard Block adders in the Longest Chain: 34
+
+
+The Total Number of Hard Block adders: 879
+
+Hard MINUS Distribution
+============================
+
+
+Total # of chains = 4
+
+Hard sub chain Details
+============================
+
+
+The Number of Hard Block subs in the Longest Chain: 17
+
+
+The Total Number of Hard Block subs: 64
+0.68user 0.04system 0:00.77elapsed 94%CPU (0avgtext+0avgdata 77984maxresident)k
+1392inputs+26960outputs (6major+18851minor)pagefaults 0swaps

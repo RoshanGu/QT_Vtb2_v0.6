@@ -1,0 +1,57 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3176198843/fast"
+make[1]: Entering directory `/home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3176198843.dir/build.make CMakeFiles/cmTryCompileExec3176198843.dir/build
+make[2]: Entering directory `/home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3176198843.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -o CMakeFiles/cmTryCompileExec3176198843.dir/CheckSymbolExists.c.o   -c /home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec3176198843
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3176198843.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3176198843.dir/CheckSymbolExists.c.o  -o cmTryCompileExec3176198843 -rdynamic 
+CMakeFiles/cmTryCompileExec3176198843.dir/CheckSymbolExists.c.o: In function `main':
+CheckSymbolExists.c:(.text+0x16): undefined reference to `pthread_create'
+make[2]: Leaving directory `/home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp'
+collect2: error: ld returned 1 exit status
+make[2]: *** [cmTryCompileExec3176198843] Error 1
+make[1]: *** [cmTryCompileExec3176198843/fast] Error 2
+
+File /home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2797217311/fast"
+make[1]: Entering directory `/home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2797217311.dir/build.make CMakeFiles/cmTryCompileExec2797217311.dir/build
+make[2]: Entering directory `/home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2797217311.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTryCompileExec2797217311.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-2.8/Modules/CheckFunctionExists.c
+Linking C executable cmTryCompileExec2797217311
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2797217311.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTryCompileExec2797217311.dir/CheckFunctionExists.c.o  -o cmTryCompileExec2797217311 -rdynamic -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+make[2]: Leaving directory `/home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/home/osboxes/Desktop/QT-VTBv0.4/lemon-1.3/build/CMakeFiles/CMakeTmp'
+collect2: error: ld returned 1 exit status
+make[2]: *** [cmTryCompileExec2797217311] Error 1
+make[1]: *** [cmTryCompileExec2797217311/fast] Error 2
+
+

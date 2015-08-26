@@ -1,0 +1,6401 @@
+Index: mwbm/mwbm.cpp
+===================================================================
+--- mwbm/mwbm.cpp	(.../trunk)	(revision 0)
++++ mwbm/mwbm.cpp	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,258 @@
++#include <map>
++#include <cassert>
++#include <cstring>
++
++#include <lemon/smart_graph.h>
++#include <lemon/time_measure.h>
++#include <lemon/matching.h>
++
++using namespace lemon;
++
++// The granularity (starting from bit0) for write data masking
++// (so that writing trace data does not affect trigger lookup)
++#define RAM_DOUT_MASK 	1
++// The data width of each RAM
++#define RAM_DATA_WIDTH 	72
++// The address width of each RAM
++#define RAM_ADDR_WIDTH 	11
++
++typedef SmartBpGraph BpGraph;
++
++int main (int argc, char * const argv[]) 
++{
++	BpGraph bpg;
++	BpGraph::EdgeMap<int> weight(bpg);
++	BpGraph::RedNodeMap<int> rnode2ipin(bpg);
++
++	assert(argc == 6);
++	const char *overlay_file = argv[1];
++	const int trigger_width = atoi(argv[2]);
++	const int total_vnets = atoi(argv[3]);
++	const float trace_fraction = atof(argv[4]);
++	const int seed = atoi(argv[5]);
++
++	FILE *fp = fopen(overlay_file, "r");
++	char line[32768];
++	// LEMON bipartite graphs nominally call the two set of nodes
++	// red and blue
++	typedef BpGraph::RedNode RedNode;
++	typedef BpGraph::BlueNode BlueNode;
++	typedef std::map<int,BlueNode> int2bnode;
++	int2bnode vnet2bnode;
++	int ipin = 0;
++
++	// Read the overlay file, line by line
++	while (fgets(line, 32768, fp)) {
++		// Extracting each comma-separated token
++		char *pch = strtok(line, ",");
++		// If the line is non empty, means that is one or more nets that connect to it
++		if (pch) {
++			RedNode in;
++			in = bpg.addRedNode();
++			rnode2ipin.set(in, ipin);
++			// Line contains vnet numbers of all nets that reach this ipin
++			while (pch && *pch != '\n') {
++				const int vnet = atoi(pch); 
++				// Create a node in graph only if one hasn't been created before
++				BlueNode vn;
++				if (vnet2bnode.count(vnet) == 0)
++				{
++					vn = bpg.addBlueNode();
++					vnet2bnode[vnet] = vn;
++				}
++				else
++				{
++					vn = vnet2bnode[vnet];
++				}
++				bpg.addEdge(in, vn);
++				pch = strtok(NULL, ",");
++			}
++		}
++		++ipin;
++	}
++	fclose(fp);
++
++	const int total_ipins = ipin;
++	const int num_vnets = vnet2bnode.size();
++	assert(num_vnets == bpg.blueNum());
++	const int num_ipins = bpg.redNum();
++	assert(num_ipins <= total_ipins);
++
++	// Build a vector of all trace-able/reachable vnets
++	// (i.e. those for which a blue node exists)
++	std::vector<int> vnets;
++	vnets.reserve(total_vnets);
++	for (int2bnode::const_iterator it = vnet2bnode.begin(); it != vnet2bnode.end(); ++it)
++	{
++		vnets.push_back(it->first);
++	}
++	// The difference of reachable and total are nets that are not
++	// traceable/reachable, so assign them a "-1" vnet number
++	std::sort(vnets.begin(), vnets.end());
++	for (int i = vnets.size(); i < total_vnets; ++i)
++	{
++		vnets.push_back(-1);
++	}
++
++	std::vector<int> vnets_pop;
++	vnets_pop.reserve(total_vnets);
++	std::vector< std::map<int,int> > iram2ipins(total_ipins/RAM_DATA_WIDTH);
++	std::vector<BpGraph::IncEdgeIt> triggerIt(trigger_width);
++	std::cerr << "# Maximum Weighted Bipartite Matching" << std::endl;
++	std::cerr << "# Total RAMs: " << iram2ipins.size() << std::endl;
++	const int trace_capacity = total_ipins*(RAM_DATA_WIDTH-RAM_DOUT_MASK)/RAM_DATA_WIDTH;
++	const int trace_width = trace_capacity*trace_fraction;
++	std::cerr << "# Used/Total IPINs: " << num_ipins << "/" << total_ipins << std::endl;
++	std::cerr << "# TraceWidth/Trace capacity: " << trace_width << "/" << trace_capacity << std::endl;
++	std::cerr << "# TriggerMatched,TraceMatched,TraceInvalid,Runtime" <<  std::endl;
++	
++	sprintf(line, "%s.match", overlay_file);
++	std::ofstream fs(line);
++
++	Timer t(false);
++
++	vnets_pop.assign(vnets.begin(), vnets.end());
++	int invalidTrace = 0;
++
++	// NB: srand(0) == srand(1)
++	srand(seed+1);
++
++	// Randomly pick a set of valid trigger signals
++	for (int i = 0; i < trigger_width; ++i)
++	{
++		const int j = i + (rand() % (num_vnets-i));
++		const int vnet = vnets_pop[j];
++		assert(vnet >= 0);
++		const BlueNode vn = vnet2bnode[vnet];
++		triggerIt[i] = BpGraph::IncEdgeIt(bpg,vn);
++		std::swap(vnets_pop[i],vnets_pop[j]);
++	}
++
++	// Now go through each trigger signal in turn, and allow it to claim a 
++	// potential ipin on a trace-buffer, if ipins remain
++	// NB: This is because of the restriction that each trace-buffer can
++	// only support RAM_ADDR_WIDTH trigger signals, whereas it can support
++	// (RAM_DATA_WIDTH-RAM_DOUT_MASK) trace signals
++	bool lfp = false;
++	while(!lfp)
++	{
++		lfp = true;
++		for (int i = 0; i < trigger_width; ++i)
++		{
++			for (BpGraph::IncEdgeIt &it = triggerIt[i]; it != INVALID; ++it)
++			{
++				const RedNode rn = bpg.asRedNode(bpg.runningNode(it));
++				const int ipin = rnode2ipin[rn];
++				const int iram = ipin / RAM_DATA_WIDTH;
++				std::map<int,int> &ipins = iram2ipins[iram];
++				const int ipin_mod = (ipin % RAM_DATA_WIDTH) % RAM_ADDR_WIDTH;
++				std::map<int,int>::const_iterator jt = ipins.find(ipin_mod);
++				assert(weight[it] == 0);
++				// If no ipins have been claimed
++				if (jt != ipins.end())
++				{
++					if (jt->second == ipin) {
++						// Give it a weight more than all trace signals
++						// NB: The net effect is that trigger signals are always
++						// given priority over trace signals
++						weight[it] = total_ipins+1;
++						lfp = false;
++					}
++				}
++				else 
++				{
++					// If not all ipins have been claimed
++					if (ipins.size() < RAM_ADDR_WIDTH)
++					{
++						// Give it a weight more than all trace signals
++						// NB: The net effect is that trigger signals are always
++						// given priority over trace signals
++						weight[it] = total_ipins+1;
++						ipins[ipin_mod] = ipin;
++						lfp = false;
++						++it;
++						break;
++					}
++				}
++			}
++		}
++	}
++
++	// Choose some trace signals (ignoring those signals selected for triggering, 
++	// but allowing the picking of potentially untraceable nets)
++	for (int i = trigger_width; i < trigger_width+trace_width; ++i)
++	{
++		const int j = i + (rand() % (total_vnets-i));
++		const int vnet = vnets_pop[j];
++		std::swap(vnets_pop[i],vnets_pop[j]);
++		// vnet is untraceable 
++		if (vnet == -1)
++		{
++			invalidTrace++;
++			continue;
++		}
++		const BlueNode vn = vnet2bnode[vnet];
++		for (BpGraph::IncEdgeIt it(bpg, vn); it != INVALID; ++it)
++		{
++			const RedNode in = bpg.asRedNode(bpg.runningNode(it));
++			const int ipin = rnode2ipin[in];
++			if ((ipin % RAM_DATA_WIDTH) >= RAM_DOUT_MASK)
++			{
++				// Give it a weight of just 1
++				weight[it] = 1;
++			}
++		}
++	}
++
++	t.restart();
++	// Use lemon bipartite matching algorithms
++	MaxWeightedMatching<BpGraph> bm(bpg, weight);
++	bm.run();
++	t.stop();
++
++	const int matchedW = bm.matchingWeight();
++	const int numTrig = matchedW / (total_ipins+1);
++	const int numTrace = matchedW % (total_ipins+1);
++
++	const MaxWeightedMatching<BpGraph>::MatchingMap &mm = bm.matchingMap();
++
++	// Clear all edge weights 
++	int matched = 0;
++	for (int i = 0; i < trigger_width+trace_width; ++i)
++	{
++		const int vnet = vnets_pop[i];
++		// Untraceable vnet
++		if (vnet == -1)
++			continue;
++		const BlueNode vn = vnet2bnode[vnet];
++
++		//for (BpGraph::IncEdgeIt it(bpg, vn); it != INVALID; ++it)
++		//{
++		//	weight[it] = 0;
++		//}
++
++		const BpGraph::Edge e = mm[vn];
++		// Unmatched net, or if it's a don't care net
++		if (e == INVALID)
++			continue;
++		assert(weight[e] > 0);
++		const RedNode in = bpg.redNode(e);
++		const int ipin = rnode2ipin[in];
++		fs << vnet << "-" << ipin/RAM_DATA_WIDTH << "." << ipin%RAM_DATA_WIDTH << "\n";
++		matched++;
++	}
++	fs << std::endl;
++
++	// Check all RAMs, and clear their ipins
++	for (std::vector< std::map<int,int> >::iterator it = iram2ipins.begin(); it != iram2ipins.end(); ++it)
++	{
++		assert(it->size() <= RAM_ADDR_WIDTH);
++		it->clear();
++	}
++
++	std::cout << numTrig << "," << numTrace << "," << invalidTrace << "," << t.userTime() << std::endl;
++	assert(matched == numTrace+numTrig);
++	fs.close();
++
++	return 0;
++}
+Index: mwbm/Makefile
+===================================================================
+--- mwbm/Makefile	(.../trunk)	(revision 0)
++++ mwbm/Makefile	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,12 @@
++LEMON=../lemon-1.3
++
++all: mwbm
++
++%: %.cpp
++	g++ -O3 $? -o $@ -I$(LEMON) -I$(LEMON)/build -L$(LEMON)/build/lemon -lemon
++
++%_debug: %.cpp
++	g++ -O0 -g $? -o $@ -I$(LEMON) -I$(LEMON)/build -L$(LEMON)/build/lemon -lemon
++
++clean:
++	rm -f mwbm mwbm_debug
+Index: vtr_flow/scripts/run_vtr_flow.pl
+===================================================================
+--- vtr_flow/scripts/run_vtr_flow.pl	(.../trunk)	(revision 2465)
++++ vtr_flow/scripts/run_vtr_flow.pl	(.../branches/overlay_release)	(revision 2465)
+@@ -12,21 +12,31 @@
+ # 
+ # Options:
+ # 	-starting_stage <stage>: Start the VTR flow at the specified stage. 
+-#								Acceptable values: odin, abc, script, vpr. 
++#								Acceptable values: odin, abc, script, vpr, overlay, match, collapse
+ #								Default value is odin.
+-#   -ending_stage <stage>: End the VTR flow at the specified stage. Acceptable 
+-#								values: odin, abc, script, vpr. Default value is 
+-#								vpr.
++#   -ending_stage <stage>: End the VTR flow at the specified stage.
++#								Acceptable values: odin, abc, script, vpr, overlay, match, collapse
++#								Default value is collapse.
+ # 	-keep_intermediate_files: Do not delete the intermediate files.
+ #
+ #   -temp_dir <dir>: Directory used for all temporary files
+ ###################################################################################
+ 
++############## KEY CHANGES BY EH FOR OVERLAY NETWORK ##############################
++# 1. In common with VTR upstream, technology-mapping at the ABC stage no longer performs area-recovery
++#    (result is that circuits have significantly better delay).
++# 2. Three final stages, "overlay", "match" and "collapse" have been added.
++#    VPR now defaults to: "--allow_unrelated_clustering off".
++# 3. The script has been changed to echo each stage's results onto screen as well as to file
++#    (as before), and also uses "<arch_file>/<benchmark_name>" as the default temp_dir
++###################################################################################
++
+ use strict;
+ use Cwd 'abs_path';
+ use File::Spec;
+ use POSIX;
+ use File::Copy;
++use List::Util 'shuffle';
+ 
+ # check the parametes.  Note PERL does not consider the script itself a parameter.
+ my $number_arguments = @ARGV;
+@@ -36,6 +46,7 @@
+ 	exit(-1);
+ }
+ 
++my $time = "/usr/bin/time";
+ 
+ # Get Absoluate Path of 'vtr_flow
+ Cwd::abs_path($0) =~ m/(.*\/vtr_flow)\//;
+@@ -46,27 +57,49 @@
+ sub expand_user_path;
+ sub file_find_and_replace;
+ 
+-my $temp_dir = "./temp";
++my $temp_dir = "";
+ 
+ my $stage_idx_odin = 1;
+ my $stage_idx_abc = 2;
+ my $stage_idx_script = 3;
+ my $stage_idx_vpr = 4;
++my $stage_idx_overlay = 5;
++my $stage_idx_match = 6;
++my $stage_idx_collapse = 7;
+ 
+ my $circuit_file_path = expand_user_path(shift(@ARGV));
+ my $architecture_file_path = expand_user_path(shift(@ARGV));
+ 
+ my $token;
+ my $starting_stage = stage_index("odin");
+-my $ending_stage = stage_index("vpr");
+-my $keep_intermediate_files = 0;
++my $ending_stage = stage_index("collapse");
++my $keep_intermediate_files = 1;
+ my $has_memory = 1;
+ my $timing_driven = "on";
+ my $min_chan_width = -1;
+ my $lut_size = -1;
++my $mem_size = -1;
+ my $vpr_cluster_seed_type = "";
++my $vpr_options = "";
++my $vpr_unrelated_clustering = "off";
++my $vpr_fix_pins = "random";
+ 
++# Channel width inflation over minimum
++my $chan_width_inflation = 1.2;
++# Fraction of total trace-buffer capacity to select signals for
++my $trace_fraction = 0.75;
++# Width of trigger
++my $trigger_width = 32;
++# Width of each memory block
++my $memory_width = 72;
++# Seed used to randomly select signals, if "time" is specified, use the current time as the seed
++my $trace_seed = 0;
+ 
++# Network connectivity (the max number of different trace-buffer inputs each net should be connected to)
++my $overlay_connectivity = 20;
++# Maximum number of routing iterations
++my $overlay_iterations = 15;
++
+ while ($token = shift(@ARGV))
+ {
+ 	if ($token eq "-starting_stage")
+@@ -97,14 +130,54 @@
+ 	{
+ 		$lut_size = shift(@ARGV);
+ 	}
++	elsif ($token eq "-mem_size")
++	{
++		$mem_size = shift(@ARGV);
++	}
++	elsif ($token eq "-vpr_unrelated_clustering")
++	{
++		$vpr_unrelated_clustering = shift(@ARGV);
++	}
+ 	elsif ($token eq "-vpr_cluster_seed_type")
+ 	{
+ 		$vpr_cluster_seed_type = shift(@ARGV);
+ 	}
++	elsif ($token eq "-vpr_fix_pins")
++	{
++		$vpr_fix_pins = shift(@ARGV);
++	}
+ 	elsif ($token eq "-temp_dir")
+ 	{
+ 		$temp_dir = shift(@ARGV);
++		print "temp_dir = $temp_dir\n"
+ 	}
++	elsif ($token eq "-fast")
++	{
++		print "*******************************\n";
++		print "***** FAST PLACEMENT MODE *****\n";
++		print "*******************************\n";
++		$vpr_options .= " --fast";
++	}
++	elsif ($token eq "-trace_fraction")
++	{
++		$trace_fraction = shift(@ARGV);
++	}
++	elsif ($token eq "-trace_seed")
++	{
++		$trace_seed = shift(@ARGV);
++	}
++	elsif ($token eq "-overlay_connectivity")
++	{
++		$overlay_connectivity = shift(@ARGV);
++	}
++	elsif ($token eq "-overlay_iterations")
++	{
++		$overlay_iterations = shift(@ARGV);
++	}
++	elsif ($token eq "-trigger_width")
++	{
++		$trigger_width = shift(@ARGV);
++	}
+ 	else
+ 	{
+ 		die "Error: Invalid argument ($token)\n";
+@@ -129,9 +202,28 @@
+ 	}
+ }
+ 
++# Get circuit name (everything up to the first '.' in the circuit file)
++my ($vol, $path, $circuit_file_name) = File::Spec->splitpath( $circuit_file_path);
++$circuit_file_name =~ m/(.*)[.].*?/;
++my $benchmark_name = $1;
++
++# Get architecture name
++$architecture_file_path =~ m/.*\/(.*?.xml)/;
++my $architecture_file_name = $1;
++
++$architecture_file_name =~ m/(.*).xml$/;
++my $architecture_name = $1;
++print "$architecture_name/$benchmark_name...\n";
++
++if ($temp_dir eq "")
++{
++	$temp_dir = "./$architecture_name/$benchmark_name";
++}
++
++
+ if (! -d $temp_dir)
+ {
+-	system "mkdir $temp_dir";
++	system "mkdir -p $temp_dir";
+ }
+ -d $temp_dir or die "Could not make temporary directory ($temp_dir)\n";
+ if (! ($temp_dir =~ /.*\/$/))
+@@ -179,21 +271,11 @@
+ my $odin_config_file_path = "$vtr_flow_path/misc/$odin_config_file_name";
+ (-e $odin_config_file_path) or die "Cannot find ODIN config template ($odin_config_file_path)";
+ 
+-# Get circuit name (everything up to the first '.' in the circuit file)
+-my ($vol, $path, $circuit_file_name) = File::Spec->splitpath( $circuit_file_path);
+-$circuit_file_name =~ m/(.*)[.].*?/;
+-my $benchmark_name = $1;
++my $mwbm_path = "$vtr_flow_path/../mwbm/mwbm";
++(-e $mwbm_path) or die "Cannot find mwbm exectuable ($mwbm_path)";
+ 
+-# Get architecture name
+-$architecture_file_path =~ m/.*\/(.*?.xml)/;
+-my $architecture_file_name = $1;
+-
+-$architecture_file_name =~ m/(.*).xml$/;
+-my $architecture_name = $1;
+-print "$architecture_name/$benchmark_name...";
+-
+ # Get Memory Size
+-my $mem_size = -1;
++#my $mem_size = -1;
+ my $line;
+ my $in_memory_block;
+ my $in_mode;
+@@ -247,6 +329,7 @@
+ } else {
+ 	$mem_size = 0;
+ }
++print "Using memory address bits: $mem_size\n";
+ 
+ # Get lut size
+ if (! $error_code)
+@@ -263,6 +346,7 @@
+ 		}			
+ 	}
+ }
++print "Using LUT size: $lut_size\n";
+ 
+ 
+ 
+@@ -305,6 +389,11 @@
+ 
+ copy ($abc_rc_path, $temp_dir);
+ 
++if ($vpr_fix_pins ne "random")
++{
++		copy($vpr_fix_pins, $temp_dir);
++}
++
+ # Call executable and time it
+ my $StartTime = time;
+ my $q = "not_run";
+@@ -343,6 +432,7 @@
+ 				system "rm -f ${temp_dir}*.v";
+ 				system "rm -f $odin_config_file_path";
+ 			}
++			print "succeeded: odin\n";
+ 		}
+ 		else
+ 		{
+@@ -361,8 +451,8 @@
+                           		"abc.out",
+                           		$timeout,
+                           		$temp_dir,
+-								"-c", 
+-								"read $odin_output_file_name; time; resyn; resyn2; if -K $lut_size -a; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; write_hie $odin_output_file_name $abc_output_file_name; print_stats"
++					"-c", 
++					"\"read $odin_output_file_name; time; resyn; resyn2; if -K $lut_size; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; scleanup; time; write_hie $odin_output_file_name $abc_output_file_name; print_stats\""
+ 	);
+ 	
+ 	if (-e $abc_output_file_path)
+@@ -373,6 +463,7 @@
+ 			system "rm -f $odin_output_file_path";
+ 			system "rm -f ${temp_dir}*.rc";
+ 		}
++		print "succeeded: abc\n";
+ 	}
+ 	else
+ 	{
+@@ -408,6 +499,7 @@
+ 		{
+ 			system "rm -f $abc_output_file_path";
+ 		}
++		print "succeeded: scripts\n";
+ 	}
+ 	else
+ 	{
+@@ -421,19 +513,30 @@
+ ################################## VPR ##########################################
+ #################################################################################
+ 
+-if ($ending_stage >= $stage_idx_vpr and ! $error_code)
++if ($starting_stage <= $stage_idx_vpr and $ending_stage >= $stage_idx_vpr and ! $error_code)
+ {
+ 	if($min_chan_width < 0) {
++		# If default BLIF file does not exist, try again
++		if (! -e "$temp_dir$scripts_output_file_name") 
++		{
++			$scripts_output_file_name = "$benchmark_name" . file_ext_for_stage($stage_idx_script);
++			(-e "$temp_dir$scripts_output_file_name") or die "Cannot find file $temp_dir$scripts_output_file_name";
++		}
+ 		$q = &system_with_timeout($vpr_path, 
+ 									"vpr.out",
+ 									$timeout,
+ 									$temp_dir,
+ 									$architecture_file_name,
+ 									"$benchmark_name",
++									$vpr_options, 
++									"--fix_pins", $vpr_fix_pins,
++									"--allow_unrelated_clustering", "$vpr_unrelated_clustering",
+ 									"--blif_file", "$scripts_output_file_name",									
+ 									"--timing_analysis", "$timing_driven",
+ 									"--timing_driven_clustering", "$timing_driven",
+ 									"--cluster_seed_type", "$vpr_cluster_seed_type",
++									# In the first iteration, dump all nets
++									"--inc_dump_all_nets",
+ 									"--nodisp"									
+ 		);
+ 		if($timing_driven eq "on") {
+@@ -458,7 +561,7 @@
+ 				}		
+ 			}			
+ 
+-			$min_chan_width = ($min_chan_width * 1.3);
++			$min_chan_width = ($min_chan_width * $chan_width_inflation);
+ 			$min_chan_width = floor($min_chan_width);
+ 			if($min_chan_width % 2) {
+ 				$min_chan_width = $min_chan_width + 1;
+@@ -477,7 +580,6 @@
+ 										"--place_file", "$benchmark_name.place",									
+ 										"--route",
+ 										"--route_chan_width", "$min_chan_width",
+-										"--cluster_seed_type", "$vpr_cluster_seed_type",
+ 										"--nodisp",
+ 				);
+ 			}
+@@ -499,7 +601,8 @@
+ 	}
+ 			
+ 	  					
+-	if (-e $vpr_route_output_file_path)
++	my $vpr_place_output_file_path = "$temp_dir$benchmark_name.place";
++	if (-e $vpr_place_output_file_path)
+ 	{
+ 		if (! $keep_intermediate_files)
+ 		{
+@@ -511,6 +614,7 @@
+ 			
+ 			
+ 		}
++		print ("succeeded: vpr\n");
+ 	}
+ 	else
+ 	{
+@@ -555,6 +659,120 @@
+ #system "rm -f core.*";
+ #system "rm -f gc.txt";
+ 
++#################################################################################
++############################ INSERT OVERLAY NETWORK  ############################
++#################################################################################
++
++if ($starting_stage <= $stage_idx_overlay and $ending_stage >= $stage_idx_overlay and ! $error_code)
++{
++	# Read previous channel width
++	open(VPROUT, "<${temp_dir}vpr.crit_path.out") or die "Cannot open ${temp_dir}vpr.crit_path.out";
++	undef $/;
++	my $content = <VPROUT>;
++	close (VPROUT);
++	$/ = "\n";     # Restore for normal behaviour later in script
++	
++	if ($content =~ m/(.*Error.*)/i) {
++		$error = $1;
++	}
++	
++	$content =~ /Circuit successfully routed with a channel width factor of (\d+)/m or die;
++	$min_chan_width = $1 ;
++
++	$q = &system_with_timeout($vpr_path, 
++				"overlay.out",
++				$timeout,
++				$temp_dir,
++				$architecture_file_name,
++				"$benchmark_name",
++				"--route",
++				"--router_algorithm", "read_route",
++				"--route_chan_width", $min_chan_width,
++				"--timing_analysis", "$timing_driven",
++				"-inc_instrument_type", "overlay",
++				"-inc_connectivity", "$overlay_connectivity",
++				"-max_router_iterations", "$overlay_iterations",
++				"--nodisp"
++	);
++}
++
++#################################################################################
++############################# MATCH OVERLAY NETWORK #############################
++#################################################################################
++
++if ($starting_stage <= $stage_idx_match and $ending_stage >= $stage_idx_match and ! $error_code)
++{
++	print "\n";
++
++	# Read in all vnet signals
++	open(MAP, "<$temp_dir$benchmark_name".".map") or die "Cannot open $temp_dir$benchmark_name".".map";
++	my @nets = ();
++	while (<MAP>) {
++		my $vnet = (split(',', $_))[0];
++		push(@nets, $vnet);
++	}
++	close(MAP);
++	my $total_nets = @nets;
++
++	if ($trace_seed eq "time")
++	{
++		$trace_seed = time ^ $$;
++	}
++
++	$q = &system_with_timeout($mwbm_path, 
++				"match.out",
++				$timeout,
++				$temp_dir,
++				"$benchmark_name.overlay",
++				"$trigger_width",
++				"$total_nets",
++				"$trace_fraction",
++				"$trace_seed"
++	);
++}
++
++#################################################################################
++############################ COLLAPSE OVERLAY NETWORK ###########################
++#################################################################################
++
++if ($ending_stage >= $stage_idx_collapse and ! $error_code)
++{
++	# Read previous channel width
++	open(VPROUT, "<${temp_dir}vpr.crit_path.out") or die "Cannot open ${temp_dir}vpr.crit_path.out";
++	undef $/;
++	my $content = <VPROUT>;
++	close (VPROUT);
++	$/ = "\n";     # Restore for normal behaviour later in script
++	
++	if ($content =~ m/(.*Error.*)/i) {
++		$error = $1;
++	}
++	
++	$content =~ /Circuit successfully routed with a channel width factor of (\d+)/m or die;
++	$min_chan_width = $1 ;
++
++	$q = &system_with_timeout($vpr_path, 
++				"collapse.out",
++				$timeout,
++				$temp_dir,
++				$architecture_file_name,
++				"$benchmark_name",
++				"--route",
++				"--router_algorithm", "read_route",
++				"--route_chan_width", $min_chan_width,
++				"--timing_analysis", "$timing_driven",
++				"--inc_instrument_type", "overlay",
++#				"-inc_connectivity", "$overlay_connectivity",
++#				"-max_router_iterations", "$overlay_iterations",
++				"--inc_router_algorithm" , "read_route",
++				"--inc_route_file", "${benchmark_name}.overlay.route",
++				"--inc_match_file", "${benchmark_name}.overlay.match",
++				"--nodisp"
++	);
++}
++
++
++
+ if (! $error_code)
+ {
+ 	system "rm -f *.echo";
+@@ -572,7 +790,7 @@
+ {
+     # Check args
+     ($#_ > 2) or die "system_with_timeout: not enough args\n";
+-    (-f $_[0]) or die "system_with_timeout: can't find executable\n";
++    (-f $_[0]) or which($_[0]) or die "system_with_timeout: can't find executable\n";
+     ($_[2] > 0) or die "system_with_timeout: invalid timeout\n";
+ 
+     # Save the pid of child process
+@@ -583,10 +801,6 @@
+         # Redirect STDOUT for vpr
+         chdir $_[3];
+         
+-        open(STDOUT, "> $_[1]");
+-        open(STDERR, "> $_[1]");
+-	
+-
+         # Copy the args and cut out first four
+         my @VPRARGS = @_;
+         shift @VPRARGS;
+@@ -598,8 +812,12 @@
+         # This must be an exec call and there most be no special shell characters
+         # like redirects so that perl will use execvp and $pid will actually be
+         # that of vpr so we can kill it later.
+-		print "$_[0] @VPRARGS\n";
+-        exec $_[0], @VPRARGS;
++	#print "$_[0] @VPRARGS\n";
++	#exec $time, $_[0], @VPRARGS;
++	open(FILE, ">$_[1]");
++        print FILE "$time $_[0]  @VPRARGS 2>&1\n";
++	close(FILE);
++        exec "$time $_[0]  @VPRARGS 2>&1 | tee -a $_[1]";
+     }
+     else
+     {
+@@ -669,6 +887,18 @@
+ 	{
+ 		return $stage_idx_vpr;
+ 	}
++	if (lc($stage_name) eq "overlay")
++	{
++		return $stage_idx_overlay;
++	}
++	if (lc($stage_name) eq "match")
++	{
++		return $stage_idx_match;
++	}
++	if (lc($stage_name) eq "collapse")
++	{
++		return $stage_idx_collapse;
++	}
+ 	return -1;	
+ }
+ 
+@@ -716,4 +946,4 @@
+ 	open (FILE_OUT, ">$file_path");
+ 	print FILE_OUT $file_contents;
+ 	close (FILE_OUT);
+-}
+\ No newline at end of file
++}
+
+Index: vpr/SRC/timing/path_delay.c
+===================================================================
+--- vpr/SRC/timing/path_delay.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/timing/path_delay.c	(.../branches/overlay_release)	(revision 2465)
+@@ -250,6 +250,7 @@
+     for(inet = 0; inet < num_timing_nets; inet++)
+ 	{
+ 	    inode = net_to_driver_tnode[inet];
++	    assert(inode >= 0);
+ 	    tedge = tnode[inode].out_edges;
+ 
+ /* Note that the edges of a tnode corresponding to a CLB or INPAD opin must  *
+@@ -314,6 +315,8 @@
+ 		}
+ 	    fprintf(fp, "\n");
+ 	}
++
++    fclose(fp);
+ }
+ 
+ /* Count # of tnodes, allocates space, and loads the tnodes and its associated edges */
+@@ -470,6 +473,7 @@
+ 				assert(local_rr_graph[irr_node].net_num != OPEN);
+ 				inet = vpack_to_clb_net_mapping[local_rr_graph[irr_node].net_num];
+ 				assert(inet != OPEN);
++				assert(inet < num_nets);
+ 				net_to_driver_tnode[inet] = i;
+ 				tnode[i].num_edges = clb_net[inet].num_sinks;
+ 				tnode[i].out_edges = (t_tedge *) my_chunk_malloc(clb_net[inet].num_sinks *
+@@ -510,7 +514,8 @@
+ 						tnode[i].out_edges[j-1].to_node = d_rr_graph[block[dblock].pb->pb_graph_node->clock_pins[dport][dpin].pin_count_in_cluster].tnode->index;
+ 					} else {
+ 						assert(dpin != OPEN);
+-						assert(inet == vpack_to_clb_net_mapping[d_rr_graph[block[dblock].pb->pb_graph_node->input_pins[dport][dpin].pin_count_in_cluster].net_num]);
++						/* EDDIE: Disabled so that timing analysis can be performed on overused routing solutions */
++						/*assert(inet == vpack_to_clb_net_mapping[d_rr_graph[block[dblock].pb->pb_graph_node->input_pins[dport][dpin].pin_count_in_cluster].net_num]);*/
+ 						/* delays are assigned post routing */
+ 						tnode[i].out_edges[j-1].to_node = d_rr_graph[block[dblock].pb->pb_graph_node->input_pins[dport][dpin].pin_count_in_cluster].tnode->index;
+ 					}
+@@ -1291,7 +1296,6 @@
+     free_int_list(&critical_path_head);
+ }
+ 
+-
+ t_linked_int *
+ allocate_and_load_critical_path(void)
+ {
+Index: vpr/SRC/timing/path_delay2.c
+===================================================================
+--- vpr/SRC/timing/path_delay2.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/timing/path_delay2.c	(.../branches/overlay_release)	(revision 2465)
+@@ -259,8 +259,8 @@
+ 	pb_graph_pin = tnode[inode].pb_graph_pin;
+ 
+ 
+-    fprintf(fp, "Node: %d  %s Block #%d (%s)\n", inode,
+-	    tnode_type_names[type], iblk, block[iblk].name);
++    fprintf(fp, "Node: %d  %s Block #%d (%s) at (%d,%d)\n", inode,
++	    tnode_type_names[type], iblk, block[iblk].name, block[iblk].x, block[iblk].y);
+ 
+ 	if(pb_graph_pin == NULL) {
+ 		assert(type == INPAD_SOURCE || type == OUTPAD_SINK || type == FF_SOURCE || type == FF_SINK );
+Index: vpr/SRC/inc/inc_misc.h
+===================================================================
+--- vpr/SRC/inc/inc_misc.h	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_misc.h	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,5 @@
++void inc_dump_nets(struct s_file_name_opts *FileNameOpts);
++void inc_infer_vpack_blocks_and_pins(void);
++
++boolean inc_read_route(const char *route_file);
++void inc_print_route(char *route_file, struct s_trace **old_trace_tail);
+Index: vpr/SRC/inc/inc_route_dir.h
+===================================================================
+--- vpr/SRC/inc/inc_route_dir.h	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_route_dir.h	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,12 @@
++boolean
++inc_directed_search_route_net(int inet,
++		float pres_fac,
++		float astar_fac,
++		float bend_cost,
++		struct s_trace **old_trace_tail,
++		int old_num_nets,
++		struct s_router_opts *router_opts,
++		int num_tb,
++		t_trace_buffer *tb,
++		float criticality,
++		int **inode2fanouts);
+Index: vpr/SRC/inc/inc_collapse.c
+===================================================================
+--- vpr/SRC/inc/inc_collapse.c	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_collapse.c	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,326 @@
++#include <stdio.h>
++#include <assert.h>
++#include <string.h>
++#include <time.h>
++#include <limits.h>
++#include <float.h>
++#include <signal.h>
++
++#include "vpr_types.h"
++#include "globals.h"
++#include "route_common.h"
++#include "check_netlist.h"
++#include "check_route.h"
++#include "cluster_legality.h"
++#include "heapsort.h"
++#include "rr_graph_util.h"
++#include "rr_graph2.h"
++#include "mst.h"
++#include "route_export.h"
++
++#include "inc_trace.h"
++#include "inc_route.h"
++#include "inc_misc.h"
++#include "inc_collapse.h"
++
++/**
++ * Build the traceback that the match specifies
++ */
++static boolean
++inc_collapse_match( 
++		const int *trace_sinks,
++		int *trace_nets,
++		const int num_trace_nets,
++		const int old_num_nets,
++		struct s_trace ** const old_trace_tail,
++		const float pres_fac,
++		int ** const inode2fanouts,
++		t_ivec ** const clb_opins_used_locally)
++{
++	int itrace;
++
++	/* Go through each trace net */
++	for (itrace = 0; itrace < num_trace_nets; itrace++)
++	{
++		struct s_trace *tptr, *tptr_inc_head, *tptr_last_sink;
++		int inet, target_inode;
++		boolean global, discard;
++
++		inet = trace_nets[itrace];
++		if (inet == OPEN)
++			continue;
++
++		global = inet < old_num_nets;
++		if (global)
++		{
++			tptr_inc_head = old_trace_tail[inet]->next;
++		}
++		else
++		{
++			tptr_inc_head = trace_head[inet];
++		}
++		assert(tptr_inc_head);
++
++		/* Remove rr_node.occ */
++		pathfinder_update_one_cost(trace_head[inet], -1, pres_fac);
++		/* Remove rr_node.inc_occ */
++		if (global)
++		{
++			if (old_trace_tail[inet]->next)
++				inc_update_one_cost(tptr_inc_head->next, -1, inode2fanouts, pres_fac);
++		}
++		else
++		{
++			inc_update_one_cost(tptr_inc_head, -1, inode2fanouts, pres_fac);
++		}
++
++		target_inode = trace_sinks[itrace];
++
++		/* If this net doesn't connect to a trace-buffer input */
++		if (target_inode == OPEN)
++		{
++			/* Then remove it */
++			if (global)
++			{
++				inc_free_traceback(inet, old_trace_tail);
++
++				assert(trace_tail[inet] == old_trace_tail[inet]);
++				assert(trace_tail[inet]->next == NULL);
++			}
++			else
++			{
++				inc_remove_clb_net(inet);
++
++				assert(trace_head[inet] == NULL);
++				assert(trace_tail[inet] == NULL);
++				assert(old_trace_tail[inet] == NULL);
++			}
++			trace_nets[itrace] = OPEN;
++			
++			pathfinder_update_one_cost(trace_head[inet], 1, pres_fac);
++
++			continue;
++		}
++		assert(rr_node[target_inode].type == SINK);
++
++		/* Remove everything after the sink */
++		tptr = tptr_inc_head;
++		tptr_last_sink = NULL;
++		discard = FALSE;
++
++		/* Follow the traceback to find the sink net is matched to */
++		while (tptr)
++		{
++			int inode;
++			struct s_trace *tn;
++
++			inode = tptr->index;
++			tn = tptr->next;
++			
++			if (discard)
++			{
++				free_trace_data(tptr);
++			}
++			else if (rr_node[inode].type == SINK)
++			{
++				if (inode == target_inode)
++				{
++					discard = TRUE;
++					trace_tail[inet] = tptr;
++					tptr->next = NULL;
++				}
++				else
++				{
++					tptr_last_sink = tptr;
++				}
++			}
++
++			tptr = tn;
++		}
++		assert(discard);
++
++		while (tptr_last_sink) 
++		{
++			int inode;
++			struct s_trace *tptr_last_last_sink, *tptr_target;
++			struct s_trace *tn;
++
++			/* Starting from tptr_inc_head, 
++			 * try and find the first instance it is used */
++			tptr = tptr_inc_head;
++			target_inode = tptr_last_sink->next->index;
++
++
++			/* Find first occurrence of inode */
++			inode = tptr->index;
++			tptr_last_last_sink = NULL;
++			while (inode != target_inode) {
++				tptr = tptr->next;
++				assert(tptr);
++				inode = tptr->index;
++				if (rr_node[inode].type == SINK)
++					tptr_last_last_sink = tptr;
++			}
++			/* If the first instance is after the instance
++			 * of the last sink, this means that this is the only 
++			 * occurrence, so break */
++			if (tptr == tptr_last_sink->next)
++			{
++				old_trace_tail[inet]->next = tptr;
++				break;
++			}
++
++			/* Free everything after that point */
++			tn = tptr->next;
++			tptr_target = tptr_last_sink->next->next;
++			tptr->next = tptr_target;
++			tptr = tn;
++			while (tptr != tptr_target)
++			{
++				tn = tptr->next;
++				free_trace_data(tptr);
++				tptr = tn;
++				assert(tptr);
++			}
++
++			assert(tptr_last_last_sink != tptr_last_sink);
++			tptr_last_sink = tptr_last_last_sink;
++		}
++		
++
++		/* TODO: free from old_trace_tail onwards? */
++		if (tptr)
++		{
++			if (global)
++				tptr_inc_head = old_trace_tail[inet]->next;
++			else
++				tptr_inc_head = trace_head[inet];
++		}
++
++		/* Add rr_node.occ back again */
++		pathfinder_update_one_cost(trace_head[inet], 1, pres_fac);
++		if (global)
++		{
++			if (old_trace_tail[inet]->next)
++				inc_update_one_cost(old_trace_tail[inet]->next->next, 1, inode2fanouts, pres_fac);
++		}
++		else
++		{
++			inc_update_one_cost(trace_head[inet], 1, inode2fanouts, pres_fac);
++		}
++
++		/* Triple check that this is the only incremental sink */
++		tptr = tptr_inc_head;
++		while(tptr)
++		{
++			int inode;
++			inode = tptr->index;
++			if (rr_node[inode].type == SINK)
++				break;
++			tptr = tptr->next;
++		}
++		assert(tptr);
++		assert(tptr->next == NULL);
++		assert(tptr == trace_tail[inet]);
++	}
++
++	recompute_occupancy_from_scratch(clb_opins_used_locally);
++	/* Double check that everything is feasible now */
++	assert(feasible_routing());
++
++	return TRUE;
++}
++
++/**
++ * Read in a match file and then check it
++ */
++boolean
++inc_collapse_match_from_file( 
++		char *fn,
++		int *trace_nets,
++		int num_trace_nets,
++		t_trace_buffer *tb,
++		int num_tb,
++		int old_num_nets,
++		struct s_trace **old_trace_tail,
++		float pres_fac,
++		int **inode2fanouts,
++		t_ivec **clb_opins_used_locally)
++{
++	FILE *fp;
++	char *line;
++	int itrace;
++	int *trace_sinks;
++	int matches;
++
++	fp = fopen(fn, "r");
++	assert(fp);
++
++	line = malloc(1024*1024*sizeof(char));
++	trace_sinks = malloc(num_trace_nets*sizeof(int));
++	for (itrace = 0; itrace < num_trace_nets; ++itrace)
++	{
++		trace_sinks[itrace] = OPEN;
++	}
++
++	/* Get the first line */
++	line = fgets(line, 1024*1024, fp);
++	assert(line);
++
++	matches = 0;
++	while(line)
++	{
++		char *pch;
++		pch = strtok(line, "-\n");	
++		if (pch) 
++		{
++			int vnet, inet, itb, ipin;
++			vnet = atoi(pch);
++			assert(vnet < num_logical_nets);
++			inet = vpack_to_clb_net_mapping[vnet];
++			assert(inet != OPEN);
++			pch = strtok(NULL, ".");	
++			assert(pch);
++			itb = atoi(pch);
++			assert(itb < num_tb);
++			pch = strtok(NULL, "\n");	
++			assert(pch);
++			ipin = atoi(pch);
++			assert(ipin < tb[itb].capacity);
++
++			/*printf("%d - %d.%d\n", vnet, itb, ipin);*/
++			for (itrace = 0; itrace < num_trace_nets; ++itrace)
++			{
++				/* Find the itrace */
++				if (trace_nets[itrace] == inet)
++				{
++					int inode;
++					assert(trace_sinks[itrace] == OPEN);
++					inode = get_rr_node_index(tb[itb].x, tb[itb].y, SINK, 
++						ipin+tb[itb].data_pin, rr_node_indices);
++					assert(rr_node[inode].xlow == tb[itb].x);
++					assert(rr_node[inode].ylow == tb[itb].y);
++					assert(rr_node[inode].type == SINK);
++					/* Assign the itrace to the trace-buffer sink inode */
++					trace_sinks[itrace] = inode;
++					break;
++				}
++			}
++			assert(itrace < num_trace_nets);
++			matches++;
++		}
++
++		line = fgets(line, 1024*1024, fp);
++	}
++	free(line);
++	fclose(fp);
++
++	printf("\nRead %d net-to-trace match(es) from %s\n", matches, fn);
++	inc_collapse_match(trace_sinks, trace_nets, num_trace_nets,
++			old_num_nets, old_trace_tail,
++			pres_fac, inode2fanouts, clb_opins_used_locally);
++	printf("Match collapsed!\n\n");
++
++
++	return TRUE;
++}
+Index: vpr/SRC/inc/inc_route.h
+===================================================================
+--- vpr/SRC/inc/inc_route.h	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_route.h	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,5 @@
++void inc_reset_rr_node_route_structs(void);
++void inc_update_one_cost(struct s_trace *route_segment_start, int add_or_sub, int **inode2fanout, float pres_fac);
++void inc_free_traceback(int inet, struct s_trace **old_trace_tail);
++int inc_local_OPINs(int inet, int old_num_nets, int **sources);
++int inc_get_expected_segs_to_target(int inode, int *num_segs_ortho_dir_ptr, int target_x, int target_y);
+Index: vpr/SRC/inc/inc_trace.h
+===================================================================
+--- vpr/SRC/inc/inc_trace.h	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_trace.h	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,34 @@
++typedef struct s_trace_buffer
++{
++	int x, y;
++	int iblk;
++	int data_pin;
++	int usage;
++	int capacity;
++	int *sink_inodes;
++} t_trace_buffer;
++
++boolean 
++inc_trace(
++		int *trace_nets,
++		int num_trace_nets,
++		int new_num_nets,
++		t_trace_buffer *tb,
++		int num_tb,
++		struct s_router_opts *router_opts, 
++		struct s_det_routing_arch det_routing_arch,
++		t_timing_inf timing_inf,
++		struct s_file_name_opts *FileNameOpts,
++		t_ivec **clb_opins_used_locally,
++		float **net_slack,
++		float T_crit);
++
++int 
++inc_reclaim_tbs(t_trace_buffer **tb, const t_arch *arch);
++
++int 
++inc_setup_trace(int **trace_nets, int *new_num_nets);
++
++void 
++inc_remove_clb_net(int inet);
++
+Index: vpr/SRC/inc/inc_collapse.h
+===================================================================
+--- vpr/SRC/inc/inc_collapse.h	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_collapse.h	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,13 @@
++boolean
++inc_collapse_match_from_file( 
++		char *fn,
++		int *trace_nets,
++		int num_trace_nets,
++		t_trace_buffer *tb,
++		int num_tb,
++		int old_num_nets,
++		struct s_trace **old_trace_tail,
++		float pres_fac,
++		int **inode2fanouts,
++		t_ivec **clb_opins_used_locally);
++
+Index: vpr/SRC/inc/inc_route_bfs.c
+===================================================================
+--- vpr/SRC/inc/inc_route_bfs.c	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_route_bfs.c	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,201 @@
++#include <stdio.h>
++#include "vpr_types.h"
++#include "globals.h"
++#include "mst.h"
++#include "route_common.h"
++#include "route_breadth_first.h"
++#include "inc_trace.h"
++#include "inc_route.h"
++#include "inc_route_bfs.h"
++#include <assert.h>
++
++/** 
++ * Adapted from breadth_first_expand_neighbours 
++ */
++	static void
++inc_breadth_first_expand_neighbours(int inode,
++		float pcost,
++		int inet,
++		float bend_cost)
++{
++
++	/* Puts all the rr_nodes adjacent to inode on the heap.  rr_nodes outside   *
++	 * the expanded bounding box specified in route_bb are not added to the     *
++	 * heap.  pcost is the path_cost to get to inode.                           */
++
++	int iconn, to_node, num_edges;
++	t_rr_type from_type, to_type;
++	float tot_cost;
++
++	num_edges = rr_node[inode].num_edges;
++	for(iconn = 0; iconn < num_edges; iconn++)
++	{
++		to_node = rr_node[inode].edges[iconn];
++
++		/*	    
++			    if(rr_node[to_node].xhigh < route_bb[inet].xmin || 
++			    rr_node[to_node].xlow > route_bb[inet].xmax || 
++			    rr_node[to_node].yhigh < route_bb[inet].ymin || 
++			    rr_node[to_node].ylow > route_bb[inet].ymax) 
++			    continue;*/	/* Node is outside (expanded) bounding box. */
++
++		/* EH: Ignore nodes that are already fully occupied by
++		 * the user circuit */
++		if((rr_node[to_node].occ-rr_node[to_node].inc_occ) >= rr_node[to_node].capacity)
++			continue;
++
++		tot_cost = pcost + get_rr_cong_cost(to_node);
++
++		if(bend_cost != 0.)
++		{
++			from_type = rr_node[inode].type;
++			to_type = rr_node[to_node].type;
++			if((from_type == CHANX && to_type == CHANY) ||
++					(from_type == CHANY && to_type == CHANX))
++				tot_cost += bend_cost;
++		}
++
++		node_to_heap(to_node, tot_cost, inode, iconn, OPEN, OPEN);
++	}
++}
++
++
++/**
++ * Adapted from breadth_first_add_source_to_heap() 
++ */
++static void inc_breadth_first_add_inode_to_heap(int inode)
++{
++	float cost;
++	cost = get_rr_cong_cost(inode);
++	node_to_heap(inode, cost, NO_PREVIOUS, NO_PREVIOUS, OPEN, OPEN);
++}
++
++/**
++ * Adapted from breadth_first_route_net() 
++ */
++boolean inc_breadth_first_route_net(int inet, float bend_cost, struct s_trace **old_trace_tail, int old_num_nets, struct s_router_opts *router_opts)
++{
++	/* Uses a maze routing (Dijkstra's) algorithm to route a net.  The net       *
++	 * begins at the net output, and expands outward until it hits a target      *
++	 * pin.  The algorithm is then restarted with the entire first wire segment  *
++	 * included as part of the source this time.  For an n-pin net, the maze     *
++	 * router is invoked n-1 times to complete all the connections.  Inet is     *
++	 * the index of the net to be routed.  Bends are penalized by bend_cost      *
++	 * (which is typically zero for detailed routing and nonzero only for global *
++	 * routing), since global routes with lots of bends are tougher to detailed  *
++	 * route (using a detailed router like SEGA).                                *
++	 * If this routine finds that a net *cannot* be connected (due to a complete *
++	 * lack of potential paths, rather than congestion), it returns FALSE, as    *
++	 * routing is impossible on this architecture.  Otherwise it returns TRUE.   */
++
++	int inode, prev_node, remaining_connections_to_sink;
++	int itarget, target_inode, target_iblk;
++	int max_mdist;
++	float pcost, new_pcost;
++	struct s_heap *current;
++	struct s_trace *tptr;
++
++	/* Rip up incremental trace only */
++	inc_free_traceback(inet, old_trace_tail);
++
++	inode = net_rr_terminals[inet][0];
++
++	/* EH: Extract the assigned TB target */
++	itarget = clb_net[inet].num_sinks;
++	target_inode = net_rr_terminals[inet][itarget+1];
++	assert(target_inode != OPEN);
++	target_iblk = clb_net[inet].node_block[itarget+1];
++
++	/* If LE symmetry enabled, and inet was local, add all CLB_OPINs 
++	 * from other local nets onto heap too */
++	if (router_opts->inc_le_symmetry && inet >= old_num_nets)
++	{
++		int num_sources, *sources;
++		int i;
++		boolean found = FALSE;
++		num_sources = inc_local_OPINs(inet, old_num_nets, &sources);
++		for (i = 0; i < num_sources; i++)
++		{
++			inc_breadth_first_add_inode_to_heap(sources[i]);
++			if (sources[i] == inode)
++				found = TRUE;
++		}
++		assert(found == TRUE);
++		free(sources);
++	}
++	else
++	{
++		breadth_first_add_source_to_heap(inet);
++	}
++	/*mark_ends(inet); */
++
++	tptr = trace_head[inet];
++	remaining_connections_to_sink = 0;
++	max_mdist = 0;
++
++	/*    for(i = 1; i <= clb_net[inet].num_sinks; i++) */
++	{			/* Need n-1 wires to connect n pins */
++		breadth_first_expand_trace_segment(tptr,
++				remaining_connections_to_sink);
++		current = get_heap_head();
++
++		if(current == NULL)
++		{		/* Infeasible routing.  No possible path for net. */
++			reset_path_costs();	/* Clean up before leaving. */
++			return (FALSE);
++		}
++
++		inode = current->index;
++
++		/*while(rr_node_route_inf[inode].target_flag == 0)*/
++		while(rr_node_route_inf[inode].target_flag != target_iblk)
++		{
++			/*max_mdist = max(max_mdist, inc_traceback_len(current));*/
++			pcost = rr_node_route_inf[inode].path_cost;
++			new_pcost = current->cost;
++			if(pcost > new_pcost)
++			{	/* New path is lowest cost. */
++				rr_node_route_inf[inode].path_cost = new_pcost;
++				prev_node = current->u.prev_node;
++				rr_node_route_inf[inode].prev_node = prev_node;
++				rr_node_route_inf[inode].prev_edge =
++					current->prev_edge;
++
++				if(pcost > 0.99 * HUGE_FLOAT)	/* First time touched. */
++					add_to_mod_list(&rr_node_route_inf[inode].
++							path_cost);
++
++				inc_breadth_first_expand_neighbours(inode, new_pcost,
++						inet, bend_cost);
++			}
++
++			free_heap_data(current);
++			current = get_heap_head();
++
++			if(current == NULL)
++			{	/* Impossible routing. No path for net. */
++				fprintf(stdout, "\ninet %d (vnet %d) failed", inet, clb_to_vpack_net_mapping[inet]);
++				empty_heap();
++				reset_path_costs();
++				return (FALSE);
++			}
++
++			inode = current->index;
++		}
++
++		/*rr_node_route_inf[inode].target_flag--;*/	/* Connected to this SINK. */
++		remaining_connections_to_sink =
++			rr_node_route_inf[inode].target_flag;
++
++		tptr = update_traceback(current, inet);
++		free_heap_data(current);
++	}
++
++	/*printf("max_mdist = %d\n", max_mdist);*/
++	empty_heap();
++	reset_path_costs();
++
++	return (TRUE);
++}
++
++
+Index: vpr/SRC/inc/inc_misc.c
+===================================================================
+--- vpr/SRC/inc/inc_misc.c	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_misc.c	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,319 @@
++#include <stdio.h>
++#include <string.h>
++#include <assert.h>
++
++#include "vpr_types.h"
++#include "globals.h"
++#include "route_common.h"
++#include "rr_graph_util.h"
++#include "rr_graph2.h"
++
++#include "inc_misc.h"
++
++/**
++ * Write out the net name -> vnet mapping into <circuitname>.map
++ */
++void 
++inc_dump_nets(struct s_file_name_opts *FileNameOpts)
++{
++	FILE *fp;
++	int vnet, inet, iblk;
++	char *map_file;
++
++	inc_infer_vpack_blocks_and_pins();
++
++	map_file = malloc(sizeof(char)*strlen(FileNameOpts->CircuitName)+strlen(".map")+1);
++	strcpy(map_file, FileNameOpts->CircuitName);
++	strcat(map_file, ".map");
++	fp = fopen(map_file, "w");
++	for (vnet = 0; vnet < num_logical_nets; vnet++)
++	{
++		inet = vpack_to_clb_net_mapping[vnet];
++		if (inet == OPEN)
++			iblk = vpack_net[vnet].node_block[0];
++		else
++			iblk = clb_net[inet].node_block[0];
++		if ((inet == OPEN || !clb_net[inet].is_global) && iblk != OPEN)
++			fprintf(fp, "%d,%s,%d,%d\n", vnet, vpack_net[vnet].name, block[iblk].x, block[iblk].y);
++	}
++	fclose(fp);
++	free(map_file);
++}
++
++/**
++ * Infer each vpack_net with node_block[] and node_block_pins[] 
++ * from its block's pb structure
++ */
++void 
++inc_infer_vpack_blocks_and_pins(void)
++{
++	int iblk;
++
++	assert(strcmp(type_descriptors[2].name, "clb") == 0);
++	for (iblk = 0; iblk < num_blocks; iblk++)
++	{
++		if (block[iblk].type->index == 2) /* clb */
++		{
++			int ible, nbles;
++			assert(block[iblk].pb->pb_graph_node->pb_type->num_pb == 1);
++			assert(block[iblk].pb->pb_graph_node->pb_type->num_modes == 1);
++			assert(block[iblk].pb->pb_graph_node->pb_type->modes[0].num_pb_type_children == 1);
++			nbles = block[iblk].pb->pb_graph_node->pb_type->modes[0].pb_type_children[0].num_pb;
++			for (ible = 0; ible < nbles; ible++)
++			{
++				int ipin, npins;
++				assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_ports == 1);
++				npins = block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_pins[0];
++				for (ipin = 0; ipin < npins; ipin++)
++				{
++					int ptc, inet;
++					/*assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_pins[0] == 1);*/
++					/* BLE OPIN ptc */
++					ptc = block[iblk].pb->child_pbs[0][ible].pb_graph_node->output_pins[0][ipin]
++						.pin_count_in_cluster;
++					inet = block[iblk].pb->rr_graph[ptc].net_num;
++					if (inet == OPEN) continue;
++
++					assert(block[iblk].pb->pb_graph_node->num_output_ports == 1);
++					/*assert(block[iblk].pb->pb_graph_node->num_output_pins[0] == 10);*/
++					/* CLB OPIN */
++					ptc = block[iblk].pb->pb_graph_node->output_pins[0][ible*npins+ipin].pin_count_in_cluster;
++
++					if (vpack_net[inet].node_block[0] != iblk)
++					{
++						assert(vpack_net[inet].node_block[0] == OPEN);
++						vpack_net[inet].node_block[0] = iblk;
++					}
++
++					if (vpack_net[inet].node_block_pin[0] != ptc)
++					{
++						assert(vpack_net[inet].node_block_pin[0] == OPEN);
++						vpack_net[inet].node_block_pin[0] = ptc;
++					}
++				}
++			}
++		}
++	}
++}
++
++/** 
++ * Read in just the overlay routing from file route_file.  
++ */
++boolean
++inc_read_route(const char *route_file)
++{
++	FILE *fp;
++	char line[1024], tmp[1024], *pline, name[1024];
++	int i, inet, inode, ilow, jlow, ptc_num;
++	int chanwidth;
++	t_rr_type rr_type;
++	char *name_type[] =
++		{ "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY", "INTRA_CLUSTER_EDGE" };
++	char type[7], c;
++
++	fp = my_fopen(route_file, "r", 0);
++	assert(fp);
++
++	assert(fscanf(fp, "Array size: %d x %d logic blocks.\n", &nx, &ny) == 2);
++	fscanf(fp, "Channel Width: %d.\n", &chanwidth);
++    	fscanf(fp, "\nRouting:");
++	c = fgetc(fp); assert(c == '\n');
++
++	while(!feof(fp))
++	{
++		c = fgetc(fp); assert(c == '\n');
++		assert(fgets(line, 1024, fp));
++		assert(sscanf(line, "Net %d %n", &inet, &i) == 1);
++		pline = line + i;
++		assert(inet < num_nets);
++		assert(sscanf(pline, "(%[^)])%n", name, &i) == 1);
++		pline += i;
++		assert(strcmp(clb_net[inet].name, name) == 0);
++		if (*pline == '\n') 
++		{
++			struct s_trace **ptptr;
++			struct s_trace *tptr_prev;
++			assert(clb_net[inet].is_global == FALSE);
++			c = fgetc(fp); assert(c == '\n');
++			if (trace_tail[inet])
++			{
++				ptptr = &(trace_tail[inet]->next);
++			}
++			else
++			{
++				ptptr = &(trace_head[inet]);
++			}
++			tptr_prev = NULL;
++
++			while(fgets(line, 1024, fp) && line[0] != '\n')
++			{
++				assert(sscanf(line, "%6s (%d,%d) %n", type, &ilow, &jlow, &i) == 3);
++				pline = line + i;
++				for (i = 0; i < 7; i++)
++				{
++					if (strcmp(name_type[i], type) == 0)
++					{
++						rr_type = i;
++						break;
++					}
++				}
++				assert(i < 7);
++				assert(sscanf(pline, "%[^:]: %n", tmp, &i) == 1);
++				pline += i;
++				assert(sscanf(pline, "%d  %n", &ptc_num, &i) == 1);
++				pline += i;
++				inode = get_rr_node_index(ilow, jlow, rr_type, ptc_num, rr_node_indices);
++				
++				if (tptr_prev != NULL) {
++					int iedge;
++					int inode_prev;
++					inode_prev = tptr_prev->index;
++
++					for (iedge = 0; iedge < rr_node[inode_prev].num_edges; iedge++)
++					{
++						if (rr_node[inode_prev].edges[iedge] == inode) break;
++					}
++					assert(iedge < rr_node[inode_prev].num_edges);
++
++					tptr_prev->iswitch = rr_node[inode_prev].switches[iedge];
++				}
++
++				assert(rr_node[inode].type == rr_type);
++				assert(rr_node[inode].xlow == ilow);
++				assert(rr_node[inode].ylow == jlow);
++				assert(rr_node[inode].ptc_num == ptc_num);
++
++				*ptptr = alloc_trace_data();
++				(*ptptr)->index = inode;
++				trace_tail[inet] = *ptptr;
++				if (rr_node[inode].type == SINK)
++				{
++					(*ptptr)->iswitch = OPEN;
++					tptr_prev = NULL;
++				}
++				else
++					tptr_prev = *ptptr;
++				ptptr = &((*ptptr)->next);
++			}
++			*ptptr = NULL;
++		}
++		else if (*pline == ':')
++		{
++			assert(FALSE);
++		}
++		else
++		{
++			assert(*pline == '\n' || *pline == ':');
++		}
++	}
++	return (TRUE);
++}
++
++/** 
++ * Prints out just the overlay routing to file route_file.  
++ */
++void 
++inc_print_route(char *route_file, struct s_trace **old_trace_tail)
++{
++
++    int inet, inode, ilow, jlow;
++    t_rr_type rr_type;
++    struct s_trace *tptr;
++    char *name_type[] =
++	{ "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY", "INTRA_CLUSTER_EDGE" };
++    FILE *fp;
++
++    fp = fopen(route_file, "w");
++
++    fprintf(fp, "Array size: %d x %d logic blocks.\n", nx, ny);
++    fprintf(fp, "\nRouting:");
++    for(inet = 0; inet < num_nets; inet++)
++	{
++		if (clb_net[inet].is_global)
++			continue;
++
++		if (old_trace_tail[inet])
++			tptr = old_trace_tail[inet]->next;
++		else
++			tptr = trace_head[inet];
++
++		if (!tptr || !tptr->next)
++			continue;
++
++		fprintf(fp, "\n\nNet %d (%s)\n\n", inet, clb_net[inet].name);
++
++		while(tptr != NULL)
++		{
++			inode = tptr->index;
++			rr_type = rr_node[inode].type;
++			ilow = rr_node[inode].xlow;
++			jlow = rr_node[inode].ylow;
++
++			fprintf(fp, "%6s (%d,%d) ", name_type[rr_type],
++				ilow, jlow);
++
++			if((ilow != rr_node[inode].xhigh) || (jlow !=
++							  rr_node
++							  [inode].
++							  yhigh))
++			fprintf(fp, "to (%d,%d) ",
++				rr_node[inode].xhigh,
++				rr_node[inode].yhigh);
++
++			switch (rr_type)
++			{
++
++			case IPIN:
++			case OPIN:
++				if(grid[ilow][jlow].type == IO_TYPE)
++				{
++					fprintf(fp, " Pad: ");
++				}
++				else
++				{	/* IO Pad. */
++					fprintf(fp, " Pin: ");
++				}
++				break;
++
++			case CHANX:
++			case CHANY:
++				fprintf(fp, " Track: ");
++				break;
++
++			case SOURCE:
++			case SINK:
++				if(grid[ilow][jlow].type == IO_TYPE)
++				{
++					fprintf(fp, " Pad: ");
++				}
++				else
++				{	/* IO Pad. */
++					fprintf(fp, " Class: ");
++				}
++				break;
++
++			default:
++				printf
++				("Error in print_route:  Unexpected traceback element "
++				 "type: %d (%s).\n", rr_type,
++				 name_type[rr_type]);
++				exit(1);
++				break;
++			}
++
++			fprintf(fp, "%d  ", rr_node[inode].ptc_num);
++
++			/* Uncomment line below if you're debugging and want to see the switch types *
++			 * used in the routing.                                                      */
++			/*fprintf (fp, "Switch: %d", tptr->iswitch);*/
++
++			fprintf(fp, "\n");
++
++			tptr = tptr->next;
++		}
++	}
++
++    fclose(fp);
++}
++
++
+Index: vpr/SRC/inc/inc_route_dir.c
+===================================================================
+--- vpr/SRC/inc/inc_route_dir.c	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_route_dir.c	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,649 @@
++#include <stdio.h>
++#include <assert.h>
++#include <signal.h>
++#include <limits.h>
++
++#include "vpr_types.h"
++#include "globals.h"
++#include "mst.h"
++#include "route_common.h"
++#include "route_directed_search.h"
++
++#include "inc_trace.h"
++#include "inc_route.h"
++#include "inc_route_dir.h"
++
++/**
++ * Adapted from get_directed_search_expected_cost()
++ */
++	static float
++inc_get_directed_search_expected_cost(int inode,
++		int target_x, int target_y,
++		float criticality_fac)
++{
++
++	/* Determines the expected cost (due to resouce cost i.e. distance) to reach  *
++	 * the target node from inode.  It doesn't include the cost of inode --       *
++	 * that's already in the "known" path_cost.                                   */
++
++	t_rr_type rr_type;
++	int cost_index, ortho_cost_index, num_segs_same_dir, num_segs_ortho_dir;
++	float cong_cost;
++
++	rr_type = rr_node[inode].type;
++
++	if(rr_type == CHANX || rr_type == CHANY)
++	{
++		num_segs_same_dir =
++			inc_get_expected_segs_to_target(inode, &num_segs_ortho_dir, target_x, target_y);
++		cost_index = rr_node[inode].cost_index;
++		ortho_cost_index = rr_indexed_data[cost_index].ortho_cost_index;
++
++		cong_cost =
++			num_segs_same_dir * rr_indexed_data[cost_index].base_cost +
++			num_segs_ortho_dir *
++			rr_indexed_data[ortho_cost_index].base_cost;
++		cong_cost +=
++			rr_indexed_data[IPIN_COST_INDEX].base_cost +
++			rr_indexed_data[SINK_COST_INDEX].base_cost;
++		return (1. - criticality_fac) * cong_cost;
++	}
++
++	else if(rr_type == IPIN)
++	{			/* Change if you're allowing route-throughs */
++		return (rr_indexed_data[SINK_COST_INDEX].base_cost);
++	}
++
++	else
++	{			/* Change this if you want to investigate route-throughs */
++		return (0.);
++	}
++}
++
++/**
++ * Adapted from directed_search_expand_trace_segment()
++ */
++	static void
++inc_directed_search_expand_trace_segment(struct s_trace *start_ptr,
++		float astar_fac,
++		int inet,
++		int remaining_connections_to_sink,
++		int target_x, int target_y,
++		float criticality_fac)
++{
++
++	/* Adds all the rr_nodes in the entire traceback from SOURCE to all SINKS   *
++	 * routed so far (partial routing). 
++	 * This allows expansion to begin from the existing wiring.  The            *
++	 * remaining_connections_to_sink value is 0 if the route segment ending     *
++	 * at this location is the last one to connect to the SINK ending the route *
++	 * segment.  This is the usual case.  If it is not the last connection this *
++	 * net must make to this SINK, I have a hack to ensure the next connection  *
++	 * to this SINK goes through a different IPIN.  Without this hack, the      *
++	 * router would always put all the connections from this net to this SINK   *
++	 * through the same IPIN.  With LUTs or cluster-based logic blocks, you     *
++	 * should never have a net connecting to two logically-equivalent pins on   *
++	 * the same logic block, so the hack will never execute.  If your logic     *
++	 * block is an and-gate, however, nets might connect to two and-inputs on   *
++	 * the same logic block, and since the and-inputs are logically-equivalent, *
++	 * this means two connections to the same SINK.                             *
++	 *                                                                          *
++	 * For high-fanout nets, return the radius of the expansion bin,            *
++	 * undefined otherwise                                                      */
++
++	struct s_trace *tptr;
++	int inode, backward_path_cost, tot_cost;
++	/*int target_x, target_y;*/
++	/*int rlim, area;
++	  boolean success;*/
++
++	/*
++	   target_x = rr_node[target_node].xhigh;
++	   target_y = rr_node[target_node].yhigh;
++	   */
++
++#if 0
++	area = (route_bb[inet].xmax - route_bb[inet].xmin) * (route_bb[inet].ymax - route_bb[inet].ymin);
++	if(area <= 0) {
++		area = 1;
++	}
++
++	if(clb_net[inet].num_sinks < HIGH_FANOUT_NET_LIM) {
++		rlim = 1;
++	} else {
++		rlim = ceil(sqrt((float)area / (float)clb_net[inet].num_sinks));
++		if(start_ptr == NULL) {
++			/* For first node, route normally since there is nothing in the current traceback path */
++			rlim = max(nx + 2, ny + 2);
++		}
++	}
++	success = FALSE;
++	/* determine quickly a feasible bin radius to route sink for high fanout nets 
++	   this is necessary to prevent super long runtimes for high fanout nets; in best case, a reduction in complexity from O(N^2logN) to O(NlogN) (Swartz fast router)
++	   */
++	while(success == FALSE && start_ptr != NULL) {
++		tptr = start_ptr;
++		while(tptr != NULL && success == FALSE)
++		{
++			inode = tptr->index;
++			if(!(rr_node[inode].type == IPIN || rr_node[inode].type == SINK)) {
++				if( clb_net[inet].num_sinks < HIGH_FANOUT_NET_LIM ||
++						(rr_node[inode].xlow <= target_x + rlim &&
++						 rr_node[inode].xhigh >= target_x - rlim &&
++						 rr_node[inode].ylow <= target_y + rlim &&
++						 rr_node[inode].yhigh >= target_y - rlim)) {
++					success = TRUE;
++				}
++			}
++			tptr = tptr->next;
++		}
++
++		if(success == FALSE) {
++			if(rlim > max(nx + 2, ny + 2)) { 
++				printf(ERRTAG "VPR internal error, net %s has paths that are not found in traceback\n", clb_net[inet].name);
++				exit(1);
++			}
++			/* if sink not in bin, increase bin size until fit */
++			rlim *= 2;
++		} else {
++			/* Sometimes might just catch a wire in the end segment, need to give it some channel space to explore */
++			rlim += 4;
++		}
++	}
++#endif
++
++	if(remaining_connections_to_sink == 0)
++	{			/* Usual case. */
++		tptr = start_ptr;
++		while(tptr != NULL)
++		{
++			/* WMF: partial routing is added to the heap with path cost of 0, because
++			 * new extension to the next sink can start at any point on current partial 
++			 * routing. However, for directed search the total cost must be made to favor
++			 * the points of current partial routing that are NEAR the next sink (target sink) */
++
++			/* WMF: IPINs and SINKs should be excluded from the heap in this
++			 * since they NEVER connect TO any rr_node (no to_edges), but since they have
++			 * no to_edges, it's ok (ROUTE_THROUGHS are disabled). To clarify, see 
++			 * rr_graph.c to find out rr_node[inode].num_edges = 0 for SINKs and
++			 * rr_node[inode].num_edges = 1 for INPINs */
++
++			inode = tptr->index;
++			if(!
++					(rr_node[inode].type == IPIN
++					 || rr_node[inode].type == SINK))
++			{
++				/*
++				   if( clb_net[inet].num_sinks < HIGH_FANOUT_NET_LIM ||
++				   (rr_node[inode].xlow <= target_x + rlim &&
++				   rr_node[inode].xhigh >= target_x - rlim &&
++				   rr_node[inode].ylow <= target_y + rlim &&
++				   rr_node[inode].yhigh >= target_y - rlim)) */ {
++					   backward_path_cost = 0;
++					   tot_cost =
++						   backward_path_cost +
++						   astar_fac *
++						   inc_get_directed_search_expected_cost(inode, target_x, target_y, criticality_fac);
++					   node_to_heap(inode, tot_cost, NO_PREVIOUS,
++							   NO_PREVIOUS, backward_path_cost,
++							   OPEN);
++				   }
++			}
++
++			tptr = tptr->next;
++		}
++	}
++	else
++	{			/* This case never executes for most logic blocks. */
++		printf("Warning: Multiple connections from net to the same sink. "
++				"This should not happen for LUT/Cluster based logic blocks. Aborting.\n");
++		exit(1);
++	}
++	return /*rlim*/;
++}
++
++/**
++ * Adapted from directed_search_add_source_to_heap()
++ */
++	static void
++inc_directed_search_add_inode_to_heap(int inode,
++		float astar_fac,
++		int target_x, int target_y,
++		float criticality_fac)
++{
++
++	/* Adds the SOURCE of this net to the heap.  Used to start a net's routing. */
++
++	/*int inode;*/
++	float back_cost, tot_cost;
++
++	/*inode = net_rr_terminals[inet][0];*/	/* SOURCE */
++	back_cost = 0.0 + get_rr_cong_cost(inode);
++
++	/* setting the total cost to 0 because it's the only element on the heap */
++	/*
++	   if(!is_empty_heap())
++	   {
++	   printf
++	   ("Error: Wrong Assumption: in directed_search_add_source_to_heap "
++	   "the heap is not empty. Need to properly calculate source node's cost.\n");
++	   exit(1);
++	   }
++	   */
++
++	/* WMF: path cost is 0. could use tot_cost = 0 to save some computation time, but
++	 * for consistency, I chose to do the expected cost calculation. */
++	tot_cost =
++		back_cost + astar_fac * inc_get_directed_search_expected_cost(inode, target_x, target_y, criticality_fac);
++
++	node_to_heap(inode, tot_cost, NO_PREVIOUS, NO_PREVIOUS, back_cost, OPEN);
++}
++
++/**
++ * Adapted from directed_search_expand_neighbours()
++ */
++static void
++inc_directed_search_expand_neighbours(struct s_heap *current,
++		int inet, /* FIXME: not needed */
++		float bend_cost,
++		/*int target_node,*/
++		int target_x,
++		int target_y,
++		float astar_fac,
++		float criticality_fac,
++		int **inode2fanouts)
++{
++
++	/* Puts all the rr_nodes adjacent to current on the heap.  rr_nodes outside   *
++	 * the expanded bounding box specified in route_bb are not added to the     *
++	 * heap.  back_cost is the path_cost to get to inode. total cost i.e.
++	 * tot_cost is path_cost + (expected_cost to target sink) */
++
++	int iconn, to_node, num_edges, inode/*, target_x, target_y*/;
++	t_rr_type from_type, to_type;
++	float new_tot_cost, old_back_pcost, new_back_pcost;
++
++	inode = current->index;
++	old_back_pcost = current->backward_path_cost;
++	num_edges = rr_node[inode].num_edges;
++
++	/*
++	   target_x = rr_node[target_node].xhigh;
++	   target_y = rr_node[target_node].yhigh;
++	   */
++
++	for(iconn = 0; iconn < num_edges; iconn++)
++	{
++		to_node = rr_node[inode].edges[iconn];
++
++		/*
++		   if(rr_node[to_node].xhigh < route_bb[inet].xmin ||
++		   rr_node[to_node].xlow > route_bb[inet].xmax ||
++		   rr_node[to_node].yhigh < route_bb[inet].ymin ||
++		   rr_node[to_node].ylow > route_bb[inet].ymax)
++		   continue;*/	/* Node is outside (expanded) bounding box. */
++
++		/*
++		   if(clb_net[inet].num_sinks >= HIGH_FANOUT_NET_LIM) {
++		   if(rr_node[to_node].xhigh < target_x - highfanout_rlim ||
++		   rr_node[to_node].xlow > target_x + highfanout_rlim ||
++		   rr_node[to_node].yhigh < target_y - highfanout_rlim ||
++		   rr_node[to_node].ylow > target_y + highfanout_rlim)
++		   continue;*/	/* Node is outside high fanout bin. */
++		/*}*/
++
++		/* Prune away IPINs that lead to blocks other than the target one.  Avoids  *
++		 * the issue of how to cost them properly so they don't get expanded before *
++		 * more promising routes, but makes route-throughs (via CLBs) impossible.   *
++		 * Change this if you want to investigate route-throughs.                   */
++
++		/*
++		   to_type = rr_node[to_node].type;
++		   if(to_type == IPIN && (rr_node[to_node].xhigh != target_x ||
++		   rr_node[to_node].yhigh != target_y))
++		   continue;
++		   */
++
++		/* EH: Ignore nodes that are already fully occupied by
++		 * the user circuit */
++		if((rr_node[to_node].occ-rr_node[to_node].inc_occ) >= rr_node[to_node].capacity)
++		{
++			assert(rr_node[to_node].type != OPIN);
++			continue;
++		}
++
++		if((rr_node[to_node].occ) == USHRT_MAX)
++		{
++			continue;
++		}
++
++		/* new_back_pcost stores the "known" part of the cost to this node -- the   *
++		 * congestion cost of all the routing resources back to the existing route  *
++		 * new_tot_cost 
++		 * is this "known" backward cost + an expected cost to get to the target.   */
++
++		new_back_pcost = old_back_pcost + (1. - criticality_fac) * get_rr_cong_cost(to_node);
++
++		if(bend_cost != 0.)
++		{
++			from_type = rr_node[inode].type;
++			to_type = rr_node[to_node].type;
++			if((from_type == CHANX && to_type == CHANY) ||
++					(from_type == CHANY && to_type == CHANX))
++				new_back_pcost += bend_cost;
++		}
++
++		/* Make it cheaper to use existing incremental routes 
++		 * i.e. only if the node we're going to is an incremental one
++		 * and if this edge already has one or more incremental fanouts */
++		if (rr_node[to_node].inc_occ == 0 || inode2fanouts[inode] == NULL || inode2fanouts[inode][iconn] == 0)
++		{
++			new_tot_cost = new_back_pcost + astar_fac *
++				inc_get_directed_search_expected_cost(to_node, target_x, target_y, criticality_fac);
++		}
++		else
++		{
++			assert(bend_cost == 0.);
++			assert(inode2fanouts[inode][iconn] > 0);
++			new_back_pcost = old_back_pcost + (1. - criticality_fac) * get_rr_cong_cost(to_node) / inode2fanouts[inode][iconn];
++			new_tot_cost = new_back_pcost;
++		}
++
++#if 0
++		/* Calculate the new total cost = path cost + astar_fac * remaining distance to target */
++		new_tot_cost = new_back_pcost + astar_fac *
++			inc_get_directed_search_expected_cost(to_node, target_x, target_y, criticality_fac);
++#endif
++
++		node_to_heap(to_node, new_tot_cost, inode, iconn, new_back_pcost,
++				OPEN);
++	}
++}
++
++/**
++ * Adapted from directed_search_route_net()
++ */
++	boolean
++inc_directed_search_route_net(int inet,
++		float pres_fac,
++		float astar_fac,
++		float bend_cost,
++		struct s_trace **old_trace_tail,
++		int old_num_nets,
++		struct s_router_opts *router_opts,
++		int num_tb,
++		t_trace_buffer *tb,
++		float target_criticality,
++		int **inode2fanouts)
++{
++
++	/* Uses a maze routing (Dijkstra's) algorithm to route a net.  The net       *
++	 * begins at the net output, and expands outward until it hits a target      *
++	 * pin.  The algorithm is then restarted with the entire first wire segment  *
++	 * included as part of the source this time.  For an n-pin net, the maze     *
++	 * router is invoked n-1 times to complete all the connections.  Inet is     *
++	 * the index of the net to be routed.  Bends are penalized by bend_cost      *
++	 * (which is typically zero for detailed routing and nonzero only for global *
++	 * routing), since global routes with lots of bends are tougher to detailed  *
++	 * route (using a detailed router like SEGA).                                *
++	 * If this routine finds that a net *cannot* be connected (due to a complete *
++	 * lack of potential paths, rather than congestion), it returns FALSE, as    *
++	 * routing is impossible on this architecture.  Otherwise it returns TRUE.   */
++	/* WMF: This is the directed search (A-star) version of maze router. */
++
++	int inode, remaining_connections_to_sink;
++	int itarget, jtarget, target_iblk;
++	struct s_heap *current;
++	struct s_trace *new_route_start_tptr;
++	float old_tcost, new_tcost, old_back_cost, new_back_cost;
++	int target_x, target_y;
++	int num_sources, *sources;
++	/*int highfanout_rlim;*/
++	int connectivity = router_opts->inc_connectivity;
++	int *target_inodes;
++	int *target_flags;
++
++	/* Rip-up any old routing. */
++	/* WMF: For the 1st router iteration trace_head[inet] is NULL, as it is 
++	 * my_calloc'ed in alloc_route_structs() so the following does nothing.
++	 * However, for subsequent iterations, trace_head[inet] contains the previous
++	 * ieration's routing for this net. */
++	/*
++	   pathfinder_update_one_cost(trace_head[inet], -1, pres_fac);
++	   free_traceback(inet);*/	/* kills trace, and set the trace head and tail to NULL */
++
++	/* Rip up incremental trace only */
++	inc_free_traceback(inet, old_trace_tail);
++
++	/* adding the SOURCE node to the heap with correct total cost */
++	/*
++	   target_pin = mst[inet][0].to_node;
++	   target_node = net_rr_terminals[inet][target_pin];
++	   */
++	inode = net_rr_terminals[inet][0];
++
++	/* EH: Extract the assigned TB target */
++	itarget = clb_net[inet].num_sinks;
++#if 0
++	target_inode = net_rr_terminals[inet][itarget+1];
++	assert(target_inode != OPEN);
++	target_iblk = clb_net[inet].node_block[itarget+1];
++	target_x = rr_node[target_inode].xlow;
++	target_y = rr_node[target_inode].ylow;
++#endif
++
++	/* If LE symmetry enabled, and inet was local, add all CLB_OPINs 
++	 * from other local nets onto heap too */
++	/* Do not do this for global nets */
++	if (router_opts->inc_le_symmetry && inet >= old_num_nets)
++	{
++		int i;
++		num_sources = inc_local_OPINs(inet, old_num_nets, &sources);
++		assert(num_sources > 0);
++		for (i = 0; i < num_sources; i++)
++		{
++			if (sources[i] == inode) break;
++		}
++		assert(i < num_sources);
++	}
++	else
++	{
++		sources = malloc(sizeof(int));
++		sources[0] = inode;
++		num_sources = 1;
++	}
++	/*mark_ends(inet);*/
++
++	remaining_connections_to_sink = 0;
++
++	target_inodes = malloc(connectivity*sizeof(int));
++	target_flags = malloc(connectivity*sizeof(int));
++	itarget = 0;
++	srand(inet);
++	for(itarget = 0; itarget < connectivity; itarget++)
++	{
++		int i;
++		/*
++		   target_pin = mst[inet][itarget].to_node;
++		   target_node = net_rr_terminals[inet][target_pin];
++		   */
++
++		/* Move towards a random trace buffer */
++		int itb;
++		itb = rand() % num_tb;
++		target_iblk = tb[itb].iblk;
++		target_x = tb[itb].x;
++		target_y = tb[itb].y;
++
++		/*    printf ("Target #%d, pin number %d, target_node: %d.\n",
++		 * itarget, target_pin, target_node);  */
++
++		/* Put all sources onto heap for the first target only,
++		 * after that, re-use the same source as before */
++		/* TODO: Leave from multiple OPINs! */
++		/* Challenge: how to discard tracebacks with multiple sources,
++		 * how timing analysis will react to multiple source nets... */
++		if (itarget == 0)
++		{
++			for (i = 0; i < num_sources; i++)
++			{
++				inc_directed_search_add_inode_to_heap(sources[i], astar_fac, target_x, target_y, target_criticality);
++			}
++		}
++
++		/* WMF: since the heap has been emptied, need to restart the wavefront
++		 * from the current partial routing, starting at the trace_head (SOURCE) 
++		 * Note: in the 1st iteration, there is no trace (no routing at all for this net)
++		 * i.e. trace_head[inet] == NULL (found in free_traceback() in route_common.c, 
++		 * which is called before the routing of any net), 
++		 * so this routine does nothing, but the heap does have the SOURCE node due 
++		 * to directed_search_add_source_to_heap (inet) before the loop */
++		/*highfanout_rlim = */inc_directed_search_expand_trace_segment(trace_head[inet],
++				astar_fac, inet,
++				remaining_connections_to_sink,
++				target_x, target_y,
++				target_criticality);
++
++		current = get_heap_head();
++
++		if(current == NULL)
++		{		/* Infeasible routing.  No possible path for net. */
++			reset_path_costs();	/* Clean up before leaving. */
++			return (FALSE);
++		}
++
++		inode = current->index;
++
++		/*while(inode != target_node)*/
++		/*while(rr_node_route_inf[inode].target_flag != target_iblk)*/
++		while(rr_node_route_inf[inode].target_flag == 0)
++		{
++			old_tcost = rr_node_route_inf[inode].path_cost;
++			new_tcost = current->cost;
++
++			/* WMF: not needed if Vaughn initialized rr_node_route_inf[inode].backward_path_cost
++			 * to HUGE_FLOAT along with rr_node_route_inf[inode].path_cost */
++			if(old_tcost > 0.99 * HUGE_FLOAT)	/* First time touched. */
++				old_back_cost = HUGE_FLOAT;
++			else
++				old_back_cost =
++					rr_node_route_inf[inode].backward_path_cost;
++
++			new_back_cost = current->backward_path_cost;
++
++			/* I only re-expand a node if both the "known" backward cost is lower  *
++			 * in the new expansion (this is necessary to prevent loops from       *
++			 * forming in the routing and causing havoc) *and* the expected total  *
++			 * cost to the sink is lower than the old value.  Different R_upstream *
++			 * values could make a path with lower back_path_cost less desirable   *
++			 * than one with higher cost.  Test whether or not I should disallow   *
++			 * re-expansion based on a higher total cost.                          */
++
++			/* updating the maze (Dijktra's min dist algorithm) if found "shorter" path */
++			if(old_tcost > new_tcost && old_back_cost > new_back_cost)
++				/*       if (old_tcost > new_tcost)      */
++			{
++				rr_node_route_inf[inode].prev_node =
++					current->u.prev_node;
++				rr_node_route_inf[inode].prev_edge =
++					current->prev_edge;
++				rr_node_route_inf[inode].path_cost = new_tcost;
++				rr_node_route_inf[inode].backward_path_cost =
++					new_back_cost;
++
++				if(old_tcost > 0.99 * HUGE_FLOAT)	/* First time touched. */
++					add_to_mod_list(&rr_node_route_inf[inode].
++							path_cost);
++
++				inc_directed_search_expand_neighbours(current, inet,
++						bend_cost,
++						target_x, target_y,
++						astar_fac,
++						target_criticality,
++						inode2fanouts);
++			}
++
++			free_heap_data(current);
++			current = get_heap_head();
++
++			if(current == NULL)
++			{	/* Impossible routing.  No path for net. */
++				if (itarget == 0)
++				{
++					printf("Failed to route net %s #%d pin %d num_sinks %d\n", clb_net[inet].name, inet, itarget, clb_net[inet].num_sinks);
++
++					for (jtarget = 0; jtarget < itarget; jtarget++)
++					{
++						int jnode;
++						jnode = target_inodes[jtarget];
++						assert(rr_node_route_inf[jnode].target_flag == 0);
++						rr_node_route_inf[jnode].target_flag = target_flags[jtarget];
++					}
++					free(target_inodes);
++					free(target_flags);
++					free(sources);
++
++					empty_heap();
++					reset_path_costs();
++					return (FALSE);
++				}
++				else
++				{
++					printf("Failed to route net %s #%d beyond connectivity of %d\n", clb_net[inet].name, inet, itarget);
++					/* Increase the accumulated cost of this source by the number of targets that were unreachable */
++					rr_node_route_inf[trace_head[inet]->index].acc_cost += (connectivity-itarget)*router_opts->acc_fac;
++					connectivity = itarget;
++					empty_heap();
++					reset_path_costs();
++					goto end;
++				}
++			}
++
++			inode = current->index;
++		}
++
++		/* Check we haven't connected to this target before */
++		for (jtarget = 0; jtarget < itarget; jtarget++)
++		{
++			assert(inode != target_inodes[jtarget]);
++		}
++		/* Temporarily remove this target flag so we 
++		 * don't route to it again, but store it */
++		target_inodes[itarget] = inode;
++		target_flags[itarget] = rr_node_route_inf[inode].target_flag;
++		rr_node_route_inf[inode].target_flag = 0;	/* Connected to this SINK. */
++
++		remaining_connections_to_sink =
++			rr_node_route_inf[inode].target_flag;
++
++		/* keep info on the current routing of this net */
++		new_route_start_tptr = update_traceback(current, inet);
++
++		free_heap_data(current);
++		/* update the congestion costs of rr_nodes due to the routing to this sink 
++		 * so only those nodes used in the partial routing of this sink and not 
++		 * of the entire net (remember we're in a loop for this net over its sinks) */
++		/*pathfinder_update_one_cost(new_route_start_tptr, 1, pres_fac);*/
++
++		/* WMF: MUST empty heap and recalculate all total costs, because
++		 * for the next sink, the target destination is changed, so the expected
++		 * cost calculation is changed also, meaning all the nodes on the heap have
++		 * "stale" total costs (costs based on last sink). */
++		empty_heap();
++		reset_path_costs();
++	}
++
++end:
++	/* Restore the target_flag for other routes */
++	for (itarget = 0; itarget < connectivity; itarget++)
++	{
++		inode = target_inodes[itarget];
++		assert(rr_node_route_inf[inode].target_flag == 0);
++		rr_node_route_inf[inode].target_flag = target_flags[itarget];
++	}
++	free(target_inodes);
++	free(target_flags);
++	free(sources);
++
++	return (TRUE);
++}
+Index: vpr/SRC/inc/inc_route_bfs.h
+===================================================================
+--- vpr/SRC/inc/inc_route_bfs.h	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_route_bfs.h	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1 @@
++boolean inc_breadth_first_route_net(int inet, float bend_cost, struct s_trace **user_trace_tail, int old_num_nets, struct s_router_opts *router_opts);
+Index: vpr/SRC/inc/inc_route.c
+===================================================================
+--- vpr/SRC/inc/inc_route.c	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_route.c	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,434 @@
++#include <stdio.h>
++#include "vpr_types.h"
++#include "globals.h"
++#include "mst.h"
++#include "route_common.h"
++#include "route_breadth_first.h"
++#include "inc_trace.h"
++#include "inc_route.h"
++#include "inc_route_bfs.h"
++#include <signal.h>
++#include <assert.h>
++#include <string.h>
++#include <limits.h>
++
++/** 
++ * Free incremental traceback of inet
++ * Adapted from free_traceback()
++ */
++void
++inc_free_traceback(int inet, struct s_trace **old_trace_tail)
++{
++	struct s_trace *cnet, *nnet;
++
++	trace_tail[inet] = old_trace_tail[inet];
++	if (trace_tail[inet] == NULL) return;
++
++	cnet = trace_tail[inet]->next;
++
++	while(cnet)
++	{
++		nnet = cnet->next;
++		free_trace_data(cnet);
++		cnet = nnet;
++	}
++
++	trace_tail[inet]->next = NULL;
++}
++
++/**
++ * Return all local OPINs in the cluster
++ */
++int
++inc_local_OPINs(int inet, int old_num_nets, int **sources)
++{
++	int iblk, ptc, vnet;
++	int ipin;
++    	int nbles, ible;
++	int inode;
++	int num_sources;
++
++    	iblk = clb_net[inet].node_block[0];
++	ipin = clb_net[inet].node_block_pin[0];
++	if (inet < old_num_nets)
++	{
++		vnet = block[iblk].pb->rr_graph[ipin].net_num;
++		assert(vpack_to_clb_net_mapping[vnet] == inet);
++	}
++	num_sources = 0;
++
++    	assert(strcmp(type_descriptors[2].name, "clb") == 0);
++    	if (block[iblk].type->index == 2)
++    	{
++		int ninpins, noutpins;
++    		assert(block[iblk].pb->pb_graph_node->pb_type->num_pb == 1);
++    		assert(block[iblk].pb->pb_graph_node->pb_type->num_modes == 1);
++    		assert(block[iblk].pb->pb_graph_node->pb_type->modes[0].num_pb_type_children == 1);
++    		nbles = block[iblk].pb->pb_graph_node->pb_type->modes[0].pb_type_children[0].num_pb;
++    		assert(block[iblk].pb->child_pbs[0][0].pb_graph_node->num_input_ports == 1);
++		ninpins = block[iblk].pb->child_pbs[0][0].pb_graph_node->num_input_pins[0];
++  		assert(block[iblk].pb->child_pbs[0][0].pb_graph_node->num_output_ports == 1);
++		noutpins = block[iblk].pb->child_pbs[0][0].pb_graph_node->num_output_pins[0];
++		*sources = malloc(sizeof(int) * nbles * noutpins);
++
++    		for (ible = 0; ible < nbles; ible++)
++    		{
++			int used_inputs;
++			boolean fractured;
++
++    			assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_input_ports == 1);
++			assert(ninpins == block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_input_pins[0]);
++
++			used_inputs = 0;
++			for (ipin = 0; ipin < ninpins; ipin++)
++			{
++	   			ptc = block[iblk].pb->child_pbs[0][ible].pb_graph_node->input_pins[0][ipin]
++    					.pin_count_in_cluster;
++    				vnet = block[iblk].pb->rr_graph[ptc].net_num;
++				if (vnet != OPEN)
++				{
++					used_inputs++;
++				}
++			}
++			fractured = used_inputs < ninpins;
++
++    			assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_ports == 1);
++			assert(noutpins == block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_pins[0]);
++
++			/* Fracture{d,able} */
++			if (fractured)
++			{
++				int new_sources;
++				boolean source_ble;
++				new_sources = 0;
++				source_ble = FALSE;
++				for (ipin = 0; ipin < noutpins; ipin++)
++				{
++    					/* BLE OPIN ptc */
++    					ptc = block[iblk].pb->child_pbs[0][ible].pb_graph_node->output_pins[0][ipin]
++    						.pin_count_in_cluster;
++    					vnet = block[iblk].pb->rr_graph[ptc].net_num;
++
++					/* if this is our source ble */
++					if (clb_to_vpack_net_mapping[inet] == vnet)
++					{
++						source_ble = TRUE;
++					}
++    					/* if this net is a local net (has no global net, or has a global net which we created for tracing) */
++					if (vnet == OPEN || clb_to_vpack_net_mapping[inet] == vnet || vpack_to_clb_net_mapping[vnet] == OPEN || vpack_to_clb_net_mapping[vnet] >= old_num_nets) 
++    					{
++    						assert(block[iblk].pb->pb_graph_node->num_output_ports == 1);
++    						/* CLB OPIN */
++    						ptc = block[iblk].pb->pb_graph_node->output_pins[0][ible*noutpins+ipin].pin_count_in_cluster;
++
++    						/* get rr_node index of CLB_OPIN SOURCE */
++    						inode = get_rr_node_index(block[iblk].x, block[iblk].y, 
++    							SOURCE, block[iblk].type->pin_class[ptc], rr_node_indices);
++
++						assert((rr_node[inode].occ - rr_node[inode].inc_occ) < rr_node[inode].capacity);
++
++						(*sources)[num_sources + new_sources] = inode;
++						new_sources++;
++    					}
++				}
++
++				/* Only add those sources if ALL pins are available (not global) */
++				if (source_ble || new_sources == noutpins)
++				{
++					num_sources += new_sources;
++				}
++			}
++			else /* Not fractured */
++			{
++    				/* BLE OPIN ptc */
++    				ptc = block[iblk].pb->child_pbs[0][ible].pb_graph_node->output_pins[0][0]
++    					.pin_count_in_cluster;
++    				vnet = block[iblk].pb->rr_graph[ptc].net_num;
++
++    				/* if this net is a local net (has no global net, or has a global net which we created for tracing) */
++    				if (vnet == OPEN || clb_to_vpack_net_mapping[inet] == vnet || vpack_to_clb_net_mapping[vnet] == OPEN || vpack_to_clb_net_mapping[vnet] >= old_num_nets) 
++    				{
++    					assert(block[iblk].pb->pb_graph_node->num_output_ports == 1);
++    					/* CLB OPIN */
++    					ptc = block[iblk].pb->pb_graph_node->output_pins[0][ible*noutpins].pin_count_in_cluster;
++
++    					/* get rr_node index of CLB_OPIN SOURCE */
++    					inode = get_rr_node_index(block[iblk].x, block[iblk].y, 
++    						SOURCE, block[iblk].type->pin_class[ptc], rr_node_indices);
++
++					assert((rr_node[inode].occ - rr_node[inode].inc_occ) < rr_node[inode].capacity);
++
++					(*sources)[num_sources] = inode;
++					num_sources++;
++    				}
++			}
++    		}
++    	}
++	return num_sources;
++}
++
++/** 
++ * Modify the incremental occupancy (inc_occ) field of the rr_node 
++ * Adapted from pathfinder_update_one_cost()
++ */
++void 
++inc_update_one_cost(struct s_trace *route_segment_start,
++					int add_or_sub,
++					int **inode2fanouts,
++					float pres_fac)
++{
++
++/* This routine updates the occupancy and pres_cost of the rr_nodes that are *
++ * affected by the portion of the routing of one net that starts at          *
++ * route_segment_start.  If route_segment_start is trace_head[inet], the     *
++ * cost of all the nodes in the routing of net inet are updated.  If         *
++ * add_or_sub is -1 the net (or net portion) is ripped up, if it is 1 the    *
++ * net is added to the routing.  The size of pres_fac determines how severly *
++ * oversubscribed rr_nodes are penalized.                                    */
++
++    struct s_trace *tptr;
++    int inode, occ;
++
++    tptr = route_segment_start;
++    if(tptr == NULL)		/* No routing yet. */
++	return;
++
++    while(tptr)
++	{
++	    inode = tptr->index;
++		assert(inode != OPEN);
++
++	    occ = rr_node[inode].inc_occ + add_or_sub;
++	    assert(occ >= 0 && occ <= USHRT_MAX);
++
++	    rr_node[inode].inc_occ = occ;
++
++		if (rr_node[inode].type == CHANX || rr_node[inode].type == CHANY ||
++			rr_node[inode].type == IPIN || rr_node[inode].type == OPIN || 
++			rr_node[inode].type == SINK)
++		{
++			assert(rr_node[inode].occ == rr_node[inode].inc_occ);
++
++			/* If this is the first incremental route, extend its capacity */
++			if (rr_node[inode].type != OPIN)
++			{
++				if (add_or_sub > 0)
++				{
++					if (rr_node[inode].inc_occ == 1)
++					{
++						assert(rr_node[inode].capacity == 1);
++						rr_node[inode].capacity = USHRT_MAX;
++					}
++				}
++				/* But if the last incremental route was removed,
++				 * reset capacity to 1 */
++				else if (add_or_sub < 0)
++				{
++					if (rr_node[inode].inc_occ == 0)	
++					{
++						assert(rr_node[inode].capacity == USHRT_MAX);
++						rr_node[inode].capacity = 1;
++					}
++				}
++			}
++
++			/* Update inode2fanouts structure */
++			if (rr_node[inode].type == CHANX || rr_node[inode].type == CHANY/* ||
++				rr_node[inode].type == OPIN*/)
++			{
++				int next_inode, iedge, edges_used;
++
++				next_inode = tptr->next->index;
++				for (iedge = 0; iedge < rr_node[inode].num_edges; iedge++)
++				{
++					if (rr_node[inode].edges[iedge] == next_inode) break;
++				}
++				assert(iedge < rr_node[inode].num_edges);
++
++				if (inode2fanouts[inode] == NULL)
++				{
++					inode2fanouts[inode] = calloc(rr_node[inode].num_edges, sizeof(int));
++					assert(add_or_sub > 0);
++				}
++				inode2fanouts[inode][iedge] += add_or_sub;
++
++				edges_used = 0;
++				for (iedge = 0; iedge < rr_node[inode].num_edges; iedge++)
++				{
++					if (inode2fanouts[inode][iedge] > 0) edges_used++;
++				}			
++
++				/*assert(edges_used > 0);*/
++				if (edges_used > 1)
++				{
++					rr_node_route_inf[inode].pres_cost +=
++						1. + edges_used * pres_fac;
++				}
++			}
++		}
++
++	    if(rr_node[inode].type == SINK)
++		{
++		    tptr = tptr->next;	/* Skip next segment. */
++		    if(tptr == NULL)
++			break;
++		}
++
++	    tptr = tptr->next;
++
++	}			/* End while loop -- did an entire traceback. */
++}
++
++
++
++
++
++/** 
++ * Adapted from reset_rr_node_route_structs 
++ */
++void inc_reset_rr_node_route_structs()
++{
++    int inode;
++
++    assert(rr_node_route_inf != NULL);
++
++    for(inode = 0; inode < num_rr_nodes; inode++)
++	{
++	    rr_node_route_inf[inode].prev_node = NO_PREVIOUS;
++	    rr_node_route_inf[inode].prev_edge = NO_PREVIOUS;
++	    rr_node_route_inf[inode].pres_cost = 1.;
++	    rr_node_route_inf[inode].acc_cost = 1.;
++	    rr_node_route_inf[inode].path_cost = HUGE_FLOAT;
++	    /*rr_node_route_inf[inode].target_flag = 0; */
++	    
++	    rr_node[inode].inc_occ = 0;
++	}
++}
++
++/* Macro used below to ensure that fractions are rounded up, but floating   *
++ * point values very close to an integer are rounded to that integer.       */
++
++#define ROUND_UP(x) (ceil (x - 0.001))
++
++/**
++ * Adapted from get_expected_segs_to_target()
++ */
++int
++inc_get_expected_segs_to_target(int inode, int *num_segs_ortho_dir_ptr,
++				int target_x, int target_y)
++{
++
++/* Returns the number of segments the same type as inode that will be needed *
++ * to reach target_node (not including inode) in each direction (the same    *
++ * direction (horizontal or vertical) as inode and the orthogonal direction).*/
++
++    t_rr_type rr_type;
++    int num_segs_same_dir, cost_index, ortho_cost_index;
++    int no_need_to_pass_by_clb;
++    float inv_length, ortho_inv_length, ylow, yhigh, xlow, xhigh;
++
++    /*
++    target_x = rr_node[target_node].xlow;
++    target_y = rr_node[target_node].ylow;
++    */
++    cost_index = rr_node[inode].cost_index;
++    inv_length = rr_indexed_data[cost_index].inv_length;
++    ortho_cost_index = rr_indexed_data[cost_index].ortho_cost_index;
++    ortho_inv_length = rr_indexed_data[ortho_cost_index].inv_length;
++    rr_type = rr_node[inode].type;
++
++    if(rr_type == CHANX)
++	{
++	    ylow = rr_node[inode].ylow;
++	    xhigh = rr_node[inode].xhigh;
++	    xlow = rr_node[inode].xlow;
++
++	    /* Count vertical (orthogonal to inode) segs first. */
++
++	    if(ylow > target_y)
++		{		/* Coming from a row above target? */
++		    *num_segs_ortho_dir_ptr =
++			ROUND_UP((ylow - target_y + 1.) * ortho_inv_length);
++		    no_need_to_pass_by_clb = 1;
++		}
++	    else if(ylow < target_y - 1)
++		{		/* Below the CLB bottom? */
++		    *num_segs_ortho_dir_ptr = ROUND_UP((target_y - ylow) *
++						       ortho_inv_length);
++		    no_need_to_pass_by_clb = 1;
++		}
++	    else
++		{		/* In a row that passes by target CLB */
++		    *num_segs_ortho_dir_ptr = 0;
++		    no_need_to_pass_by_clb = 0;
++		}
++
++	    /* Now count horizontal (same dir. as inode) segs. */
++
++	    if(xlow > target_x + no_need_to_pass_by_clb)
++		{
++		    num_segs_same_dir =
++			ROUND_UP((xlow - no_need_to_pass_by_clb -
++				  target_x) * inv_length);
++		}
++	    else if(xhigh < target_x - no_need_to_pass_by_clb)
++		{
++		    num_segs_same_dir =
++			ROUND_UP((target_x - no_need_to_pass_by_clb -
++				  xhigh) * inv_length);
++		}
++	    else
++		{
++		    num_segs_same_dir = 0;
++		}
++	}
++
++    else
++	{			/* inode is a CHANY */
++	    ylow = rr_node[inode].ylow;
++	    yhigh = rr_node[inode].yhigh;
++	    xlow = rr_node[inode].xlow;
++
++	    /* Count horizontal (orthogonal to inode) segs first. */
++
++	    if(xlow > target_x)
++		{		/* Coming from a column right of target? */
++		    *num_segs_ortho_dir_ptr =
++			ROUND_UP((xlow - target_x + 1.) * ortho_inv_length);
++		    no_need_to_pass_by_clb = 1;
++		}
++	    else if(xlow < target_x - 1)
++		{		/* Left of and not adjacent to the CLB? */
++		    *num_segs_ortho_dir_ptr = ROUND_UP((target_x - xlow) *
++						       ortho_inv_length);
++		    no_need_to_pass_by_clb = 1;
++		}
++	    else
++		{		/* In a column that passes by target CLB */
++		    *num_segs_ortho_dir_ptr = 0;
++		    no_need_to_pass_by_clb = 0;
++		}
++
++	    /* Now count vertical (same dir. as inode) segs. */
++
++	    if(ylow > target_y + no_need_to_pass_by_clb)
++		{
++		    num_segs_same_dir =
++			ROUND_UP((ylow - no_need_to_pass_by_clb -
++				  target_y) * inv_length);
++		}
++	    else if(yhigh < target_y - no_need_to_pass_by_clb)
++		{
++		    num_segs_same_dir =
++			ROUND_UP((target_y - no_need_to_pass_by_clb -
++				  yhigh) * inv_length);
++		}
++	    else
++		{
++		    num_segs_same_dir = 0;
++		}
++	}
++
++    return (num_segs_same_dir);
++}
++
+Index: vpr/SRC/inc/inc_trace.c
+===================================================================
+--- vpr/SRC/inc/inc_trace.c	(.../trunk)	(revision 0)
++++ vpr/SRC/inc/inc_trace.c	(.../branches/overlay_release)	(revision 2465)
+@@ -0,0 +1,1736 @@
++#include <stdio.h>
++#include <assert.h>
++#include <string.h>
++#include <time.h>
++#include <limits.h>
++#include <float.h>
++#include <signal.h>
++
++#include "vpr_types.h"
++#include "globals.h"
++#include "route_common.h"
++#include "check_netlist.h"
++#include "check_route.h"
++#include "cluster_legality.h"
++#include "heapsort.h"
++#include "rr_graph_util.h"
++#include "rr_graph2.h"
++#include "mst.h"
++#include "route_export.h"
++
++#include "inc_trace.h"
++#include "inc_route.h"
++#include "inc_route_bfs.h"
++#include "inc_route_dir.h"
++#include "inc_misc.h"
++#include "inc_collapse.h"
++
++/**
++ * Finds the index of the "memory" type (returned value)
++ * and populates the data_pin and data_width params
++ */
++static int 
++inc_find_mem(int *data_pin, int *data_width)
++{
++	int i;
++
++	/* Go through all the types looking for the name "memory" */
++	for (i = 0; i < num_types; i++) 
++	{
++		if (strcmp(type_descriptors[i].name, "memory") == 0) 
++		{
++			int j, type, pin;
++			type = i;
++			pin = 0;
++			/* Go through each port looking for the name "data" */
++			for (j = 0; j < type_descriptors[i].pb_type->num_ports; j++)
++			{
++				if (strcmp(type_descriptors[i].pb_type->ports[j].name, "data") == 0)
++				{
++					*data_pin = pin;
++					*data_width = type_descriptors[i].pb_type->ports[j].num_pins;
++				}
++				else
++					pin += type_descriptors[i].pb_type->ports[j].num_pins;
++			}
++			return type;
++		}
++	}
++	printf(ERRTAG "\"memory\" type not found!");
++	exit(1);
++}
++
++/**
++ * Wrapper function for alloc_and_load_rr_graph_for_pb_garph_node()
++ * which clobbers the rr_node global
++ */
++static void 
++inc_alloc_and_load_rr_graph_for_pb_graph_node(	
++		INP t_pb_graph_node *pb_graph_node, 
++		INP const t_arch* arch, 
++		int mode, 
++		t_rr_node *local_rr_node) 
++{
++	t_rr_node *global_rr_node;
++
++	global_rr_node = rr_node;
++	rr_node = local_rr_node;
++	alloc_and_load_rr_graph_for_pb_graph_node(pb_graph_node, arch, mode);
++	rr_node = global_rr_node;
++}
++
++
++/**
++ * Place a new block into the circuit, returning its index
++ */
++static int 
++inc_place_block(short x, short y, int type, const t_arch *arch)
++{
++	int iblk;
++	int i;
++	iblk = num_blocks;
++	num_blocks++;
++	block = (struct s_block*)realloc(block, num_blocks*sizeof(struct s_block));
++	block[iblk].name = NULL;
++	block[iblk].x = x;
++	block[iblk].y = y;
++	block[iblk].z = 0;
++	block[iblk].type = &type_descriptors[type];
++	block[iblk].pb = calloc(1, sizeof(t_pb));
++	block[iblk].pb->pb_graph_node = block[iblk].type->pb_graph_head;
++	block[iblk].pb->rr_graph = calloc(block[iblk].type->pb_graph_head->total_pb_pins, sizeof(t_rr_node));
++	inc_alloc_and_load_rr_graph_for_pb_graph_node(block[iblk].pb->pb_graph_node, arch, 0, block[iblk].pb->rr_graph);
++	block[iblk].nets = malloc(block[iblk].type->num_pins*sizeof(int));
++	for (i = 0; i < block[iblk].type->num_pins; i++)
++	{
++		block[iblk].nets[i] = OPEN;
++	}
++
++	assert(grid[block[iblk].x][block[iblk].y].usage < grid[block[iblk].x][block[iblk].y].type->capacity);
++	grid[block[iblk].x][block[iblk].y].blocks[grid[block[iblk].x][block[iblk].y].usage] = iblk;
++	grid[block[iblk].x][block[iblk].y].usage++;
++
++	return iblk;
++}
++
++/**
++ * Reclaims all spare memory blocks as trace-buffers
++ * Populate the tb parameter with their data
++ */
++int 
++inc_reclaim_tbs(t_trace_buffer **tb, const t_arch *arch)
++{
++	int mem_type, data_pin, data_width;
++	int i, num_tb;
++
++	mem_type = inc_find_mem(&data_pin, &data_width);
++	num_tb = 0;
++
++	/* Search the FPGA grid for unused memory blocks,
++	 * and place a trace-buffer into those */
++	for (i = 0; i <= nx+1; i++) 
++	{
++		int j;
++		for (j = 0; j <= ny+1; j++)
++		{
++			if (grid[i][j].offset == 0 && grid[i][j].type->index == mem_type)
++			{
++				if (grid[i][j].usage == 0)
++				{
++					*tb = realloc(*tb, sizeof(**tb) * (num_tb+1));
++					(*tb)[num_tb].x = i; 
++					(*tb)[num_tb].y = j; 
++					(*tb)[num_tb].iblk = num_blocks;
++					(*tb)[num_tb].data_pin = data_pin;
++					(*tb)[num_tb].usage = 0;
++					(*tb)[num_tb].capacity = data_width;
++					(*tb)[num_tb].sink_inodes = NULL;
++					inc_place_block(i, j, mem_type, arch);
++					num_tb++;
++				}
++			}
++		}
++	}
++
++	if (num_tb == 0)
++	{
++		printf(ERRTAG "No free memory blocks to reclaim as trace-buffers!");
++		exit(1);
++	}
++	return num_tb;
++}
++
++/**
++ * Mark all trace-buffer "data" nodes as targets
++ * (NB: I'm using target_flag as an indicator for which
++ * trace-buffer it belongs to)
++ * Adapted from mark_ends() 
++ * */
++static void 
++inc_mark_targets(int num_tb, t_trace_buffer *tb)
++{
++	int inode;
++	int i, j;
++	for (i = 0; i < num_tb; i++) 
++	{
++		for (j = 0; j < tb[i].capacity; j++) 
++		{
++			inode = get_rr_node_index(tb[i].x, tb[i].y, SINK, 
++					j+tb[i].data_pin, rr_node_indices);
++			assert(rr_node_route_inf[inode].target_flag == 0);
++			rr_node_route_inf[inode].target_flag = tb[i].iblk;
++		}
++	}
++}
++
++/**
++ * Find the block corresponding to the x/y coordinates given
++ */
++static int 
++inc_find_block(short x, short y)
++{
++	int i = 0;
++	for (i = 0; i < num_blocks; i++)
++	{
++		if (block[i].x == x && block[i].y == y)
++		{
++			return i;
++		}
++	}
++	return -1;
++}
++
++/**
++ * Connect the specified net to the block/pin specified 
++ */
++static void 
++inc_connect_net(int inet, int iblk, int ptc)
++{
++	int isink;
++	int node1, node2;
++
++	assert(iblk >= 0);
++
++	clb_net[inet].num_sinks++;
++	isink = clb_net[inet].num_sinks;
++#if 0
++	if (clb_net[inet].node_block[isink] != OPEN)
++		assert(clb_net[inet].node_block[isink] == iblk);
++	else
++		clb_net[inet].node_block[isink] = iblk;
++#endif
++	clb_net[inet].node_block = realloc(clb_net[inet].node_block, (isink+1)*sizeof(int));
++	clb_net[inet].node_block[isink] = iblk;
++	assert(clb_net[inet].node_block_port == NULL);
++	clb_net[inet].node_block_pin = realloc(clb_net[inet].node_block_pin, (isink+1)*sizeof(int));
++	clb_net[inet].node_block_pin[isink] = ptc;
++
++	/*	assert(block[iblk].nets[ptc] == OPEN);*/
++	block[iblk].nets[ptc] = inet;
++
++	/*	assert(block[iblk].pb->rr_graph[ptc].net_num == OPEN);*/
++	block[iblk].pb->rr_graph[ptc].net_num = clb_to_vpack_net_mapping[inet];
++
++	/* Use mode zero (which in sample_arch.xml is the widest) */
++	/* node1 -- interconnect */
++	node1 = block[iblk].pb->rr_graph[ptc].edges[0];
++	/*	assert(node1 == block[iblk].pb->rr_graph[ptc].pb_graph_pin->output_edges[0]->output_pins[0]->pin_count_in_cluster);*/
++	/*	assert(block[iblk].pb->rr_graph[node1].prev_node == OPEN);*/
++	block[iblk].pb->rr_graph[node1].prev_node = ptc;
++	/*	assert(block[iblk].pb->rr_graph[node1].prev_edge == OPEN);*/
++	block[iblk].pb->rr_graph[node1].prev_edge = 0;
++	/*	assert(block[iblk].pb->rr_graph[node1].net_num == OPEN);*/
++	block[iblk].pb->rr_graph[node1].net_num = clb_to_vpack_net_mapping[inet];
++	/*	assert(block[iblk].pb->rr_graph[node1].num_edges == 1);*/
++
++	/* node2 -- sink */
++	node2 = block[iblk].pb->rr_graph[node1].edges[0];
++	/*	assert(block[iblk].pb->rr_graph[node2].type == SINK);*/
++	/*	assert(block[iblk].pb->rr_graph[node2].prev_node == OPEN);*/
++	block[iblk].pb->rr_graph[node2].prev_node = node1;
++	/*	assert(block[iblk].pb->rr_graph[node2].prev_edge == OPEN);*/
++	block[iblk].pb->rr_graph[node2].prev_edge = 0;
++	/*	assert(block[iblk].pb->rr_graph[node2].net_num == OPEN);*/
++	block[iblk].pb->rr_graph[node2].net_num = clb_to_vpack_net_mapping[inet];
++}
++
++/**
++ * Connect all trace nets to their trace_tail sinks 
++ */
++static void 
++inc_connect_trace(
++		int *trace_nets, 
++		int num_trace_nets, 
++		int old_num_nets)
++{
++	int i, j;
++	int inet, sink_inode, inode;
++	int iblk, ptc;
++	int isink;
++
++	for (i = 0; i < num_trace_nets; i++) 
++	{
++		struct s_trace *tptr;
++
++		inet = trace_nets[i];
++		if (inet == OPEN)
++			continue;
++
++		tptr = trace_head[inet];
++		while (tptr)
++		{
++			sink_inode = tptr->index;
++			if (rr_node[sink_inode].type == SINK &&
++					rr_node[sink_inode].inc_occ > 0)
++			{
++				sink_inode = tptr->index;
++				assert(rr_node[sink_inode].type == SINK);
++				iblk = inc_find_block(rr_node[sink_inode].xlow, rr_node[sink_inode].ylow);
++				ptc = rr_node[sink_inode].ptc_num;
++				inc_connect_net(inet, iblk, ptc);
++
++				isink = clb_net[inet].num_sinks;
++
++				/* Update net_rr_terminals if its empty, or if many-to-many 
++				 * flexibility is enabled */
++				net_rr_terminals[inet] = realloc(net_rr_terminals[inet], (isink+1)*sizeof(int *));
++				net_rr_terminals[inet][isink] = sink_inode;
++
++				/* Fix wrong class error in check_source() 
++				 * for newly formed (global) inets */
++				if (inet >= old_num_nets)
++				{
++					int x, y;
++					t_type_ptr type;
++					inode = trace_head[inet]->index;
++					x = rr_node[inode].xlow;
++					y = rr_node[inode].ylow;
++					type = grid[x][y].type;
++					for (j = 0; j < type->num_pins; j++)
++					{
++						if (type->pin_class[j] == rr_node[inode].ptc_num)
++						{
++							clb_net[inet].node_block_pin[0] = j;
++							break;
++						}
++					}
++					assert(j < type->num_pins);
++				}
++			}
++			tptr = tptr->next;
++		}
++	}
++}
++
++/**
++ * Check that the OPIN of inet is legitimate
++ */
++static boolean 
++inc_feasible_outpin(	
++		int inet,
++		int old_num_nets)
++{
++	int iblk, ipin, vnet, ptc;
++	int ible, nbles;
++	int inode, source_inode;
++	int ninpins, noutpins;
++	iblk = clb_net[inet].node_block[0];
++	ipin = clb_net[inet].node_block_pin[0];
++
++	vnet = block[iblk].pb->rr_graph[ipin].net_num;
++	assert(vpack_to_clb_net_mapping[vnet] == inet);
++
++	assert(block[iblk].pb->pb_graph_node->pb_type->num_pb == 1);
++	assert(block[iblk].pb->pb_graph_node->pb_type->num_modes == 1);
++	assert(block[iblk].pb->pb_graph_node->pb_type->modes[0].num_pb_type_children == 1);
++	nbles = block[iblk].pb->pb_graph_node->pb_type->modes[0].pb_type_children[0].num_pb;
++	assert(block[iblk].pb->child_pbs[0][0].pb_graph_node->num_input_ports == 1);
++	ninpins = block[iblk].pb->child_pbs[0][0].pb_graph_node->num_input_pins[0];
++	assert(block[iblk].pb->child_pbs[0][0].pb_graph_node->num_output_ports == 1);
++	noutpins = block[iblk].pb->child_pbs[0][0].pb_graph_node->num_output_pins[0];
++
++	assert(inet >= old_num_nets);
++	/* FIXME: Do for all inodes in net */
++	source_inode = trace_head[inet]->index;
++
++	for (ible = 0; ible < nbles; ible++)
++	{
++		int used_inputs;
++		boolean fractured;
++
++		assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_input_ports == 1);
++		assert(ninpins == block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_input_pins[0]);
++
++		/* Count how many used inputs there are in its BLE */
++		used_inputs = 0;
++		for (ipin = 0; ipin < ninpins; ipin++)
++		{
++			ptc = block[iblk].pb->child_pbs[0][ible].pb_graph_node->input_pins[0][ipin]
++				.pin_count_in_cluster;
++			vnet = block[iblk].pb->rr_graph[ptc].net_num;
++			if (vnet != OPEN)
++			{
++				used_inputs++;
++			}
++		}
++		/* If we are not using all the input pins, then this net can 
++		 * be considered fractured ... because in the k6_N10_memDepth16384...
++		 * arch file both fractured 5LUTs use the same inputs */
++		/* FIXME: Make this more generic */
++		fractured = used_inputs < ninpins;
++
++		/* Find the CLB OPIN that this inet originates from */
++		inode = OPEN;
++		for (ipin = 0; ipin < noutpins; ipin++)
++		{
++			/* BLE OPIN ptc */
++			ptc = block[iblk].pb->child_pbs[0][ible].pb_graph_node->output_pins[0][ipin]
++				.pin_count_in_cluster;
++			vnet = block[iblk].pb->rr_graph[ptc].net_num;
++			/* If this net is a local net (has no global net, or has a global net which we created for tracing) */
++			if (vnet == OPEN || clb_to_vpack_net_mapping[inet] == vnet || vpack_to_clb_net_mapping[vnet] == OPEN || vpack_to_clb_net_mapping[vnet] >= old_num_nets) 
++			{
++				assert(block[iblk].pb->pb_graph_node->num_output_ports == 1);
++				/* CLB OPIN */
++				ptc = block[iblk].pb->pb_graph_node->output_pins[0][ible*noutpins+ipin].pin_count_in_cluster;
++
++				/* Get the rr_node index of CLB_OPIN SOURCE */
++				inode = get_rr_node_index(block[iblk].x, block[iblk].y, 
++						SOURCE, block[iblk].type->pin_class[ptc], rr_node_indices);
++
++				if (source_inode == inode)
++				{
++					break;
++				}
++			}
++		}
++
++		/* If this is the BLE */
++		if (source_inode == inode)
++		{
++			int ineligible;
++			ineligible = 0;
++			/* Make sure there's at most one ineligible output pin for
++			 * fractured, but none for unfractured */
++			for (ipin = 0; ipin < noutpins; ipin++)
++			{
++				ptc = block[iblk].pb->child_pbs[0][ible].pb_graph_node->output_pins[0][ipin]
++					.pin_count_in_cluster;
++				vnet = block[iblk].pb->rr_graph[ptc].net_num;
++
++				if (!(vnet == OPEN || clb_to_vpack_net_mapping[inet] == vnet || vpack_to_clb_net_mapping[vnet] == OPEN || vpack_to_clb_net_mapping[vnet] >= old_num_nets))
++				{
++					ineligible++;
++				}
++			}
++
++			if ((fractured && ineligible > 1) || (!fractured && ineligible > 0))
++			{
++				return FALSE;
++			}
++			return TRUE;
++		}
++	}
++	assert(ible < nbles);
++	return TRUE;
++}
++
++
++/**
++ * Check if just the incremental routing is feasible 
++ * Also, track how many nets and nodes were overused
++ * Adapted from feasible_routing()
++ */
++static boolean 
++inc_feasible_routing(
++		int num_trace_nets, 
++		int *trace_nets, 
++		struct s_trace **old_trace_tail, 
++		int *opins_overuse,
++		int *fanout_overuse,
++		int old_num_nets,
++		int **inode2fanouts)
++{
++	int i, inet, inode;
++	struct s_trace *tptr;
++	boolean net_overuse;
++	*opins_overuse = 0;
++
++	/* Go through each trace net in turn */
++	for (i = 0; i < num_trace_nets; i++)
++	{
++		inet = trace_nets[i];
++		if (inet == OPEN)
++			continue;
++
++		/* Find when the incremental trace starts */
++		if (old_trace_tail[inet])
++			tptr = old_trace_tail[inet]->next->next;
++		else
++			tptr = trace_head[inet];
++
++		/* Check that each incremental node does
++		 * not exceed occupancy */
++		net_overuse = FALSE;
++		while (tptr)
++		{
++			inode = tptr->index;
++			if (rr_node[inode].occ > rr_node[inode].capacity)
++			{
++				assert(rr_node[inode].type == SOURCE || rr_node[inode].type == OPIN);
++				net_overuse = TRUE;
++			}
++			tptr = tptr->next;
++		}
++
++		/* If this is a new global net, then
++		 * check that its OPIN is feasible too */
++		if (inet >= old_num_nets)
++		{
++			if (!inc_feasible_outpin(inet, old_num_nets))
++			{
++				net_overuse = TRUE;
++			}
++		}
++
++		if (net_overuse)
++			(*opins_overuse)++;
++	}
++
++	/* Check edges overused */
++	*fanout_overuse = 0;
++	for (inode = 0; inode < num_rr_nodes; inode++)
++	{
++		/* Allow multiple fan-out if only one occupancy */
++		if (inode2fanouts[inode])
++		{
++			int iedge, fanout_used;
++
++			fanout_used = 0;
++			for (iedge = 0; iedge < rr_node[inode].num_edges; iedge++)
++			{
++				if (inode2fanouts[inode][iedge] > 0) fanout_used++;
++			}
++
++			if (fanout_used > 1)
++			{
++				assert(rr_node[inode].inc_occ > 1);
++				/*printf("inode %d uses %d output edges!\n", inode, fanout_used);*/
++				*fanout_overuse += fanout_used - 1;
++			}
++		}
++	}
++
++	/* To be extra safe, double-check using the vanilla 
++	 * feasible_routing() */
++	assert(feasible_routing() == (*opins_overuse == 0));
++
++	return (*opins_overuse == 0) && (*fanout_overuse == 0);
++}
++
++/**
++ * inc_update_cost() penalizes incremental nets
++ * that have infeasible OPINs 
++ */
++static void 
++inc_update_cost(
++		int num_trace_nets, 
++		int *trace_nets, 
++		int old_num_nets,
++		float pres_fac,
++		float acc_fac,
++		int **inode2fanouts)
++{
++	int i, inet, inode;
++	for (i = 0; i < num_trace_nets; i++)
++	{
++		inet = trace_nets[i];
++		if (inet == OPEN)
++			continue;
++
++		/* If this is a new global net */
++		if (inet >= old_num_nets)
++		{
++			inode = trace_head[inet]->index;
++			if (!inc_feasible_outpin(inet, old_num_nets))
++			{
++				/* Penalize as if it was over capacity by one */
++				rr_node_route_inf[inode].acc_cost += acc_fac;
++			}
++		}
++	}
++
++	for (inode = 0; inode < num_rr_nodes; inode++)
++	{
++		/* Allow multiple fan-out if only one occupancy */
++		if (inode2fanouts[inode])
++		{
++			int iedge, fanout_used;
++
++			fanout_used = 0;
++			for (iedge = 0; iedge < rr_node[inode].num_edges; iedge++)
++			{
++				if (inode2fanouts[inode][iedge] > 0) fanout_used++;
++			}
++
++			if (fanout_used > 1)
++			{
++				assert(rr_node[inode].inc_occ > 1);
++
++				/* Same penalty as pathfinder_update_one_cost() */
++				rr_node_route_inf[inode].acc_cost += 
++					(fanout_used - 1) * acc_fac;
++				rr_node_route_inf[inode].pres_cost +=
++					1. + fanout_used * pres_fac;
++			}
++		}
++		/* For trace-buffer sinks, set their cost to the incremental occupancy
++		 * to try and encourage nets to spread out a bit? */
++		else if (rr_node[inode].type == SINK)
++		{
++			if (rr_node[inode].inc_occ > 0)
++			{
++				rr_node_route_inf[inode].pres_cost = rr_node[inode].inc_occ;
++			}
++		}
++	}
++
++}
++
++/**
++ * Undoes what inc_add_clb_net() does 
++ */
++void 
++inc_remove_clb_net(int inet)
++{
++	int iblk, ptc;
++
++	/* Restore all data structures */
++	free_traceback(inet);
++
++	/*assert(trace_head[inet] == NULL);*/
++	/*assert(trace_tail[inet] == NULL);*/
++	assert(vpack_to_clb_net_mapping[clb_to_vpack_net_mapping[inet]] == inet);
++	vpack_to_clb_net_mapping[clb_to_vpack_net_mapping[inet]] = OPEN;
++	iblk = clb_net[inet].node_block[0];
++	ptc = clb_net[inet].node_block_pin[0];
++	assert(block[iblk].pb->rr_graph[ptc].net_num = clb_to_vpack_net_mapping[inet]);
++	block[iblk].pb->rr_graph[ptc].net_num = OPEN;
++	assert(block[iblk].pb->rr_graph[ptc].prev_node != OPEN);
++	block[iblk].pb->rr_graph[ptc].prev_node = OPEN;
++	assert(block[iblk].pb->rr_graph[ptc].prev_edge != OPEN);
++	block[iblk].pb->rr_graph[ptc].prev_edge = OPEN;
++}
++
++/**
++ * Resolve congestion by iteratively (according to inet) 
++ * discarding each net if it has any over-used resources,
++ * until a valid solution remains 
++ */
++static void 
++inc_resolve_congestion(
++		int num_trace_nets, 
++		int *trace_nets, 
++		struct s_trace **old_trace_tail,
++		int old_num_nets,
++		struct s_router_opts *router_opts,
++		int *num_failed_nets,
++		int *num_failed_seg,
++		int **inode2fanouts,
++		t_ivec **clb_opins_used_locally,
++		float pres_fac)
++{
++	int i, inet, inode;
++	boolean global;
++
++	/* Determine which inode fanout edge to keep */
++	int *keep_inode_iedge = calloc(num_rr_nodes, sizeof(int));
++	for (inode = 0; inode < num_rr_nodes; inode++)
++	{
++		int iedge, iedge_max;
++		if (inode2fanouts[inode] == NULL) continue;
++
++		/* Find the first edge with the max fanout */
++		iedge_max = 0;
++		for (iedge = 0; iedge < rr_node[inode].num_edges; iedge++)
++		{
++			if (inode2fanouts[inode][iedge] > inode2fanouts[inode][iedge_max])
++				iedge_max = iedge;
++		}
++		keep_inode_iedge[inode] = iedge_max;
++	}
++
++	/* Go through each trace net */
++	for (i = 0; i < num_trace_nets; i++)
++	{
++		int ndiscarded;
++		struct s_trace *tptr, *tptr_last_srcsnk;
++		boolean opin_overuse, discard_seg;
++
++		inet = trace_nets[i];
++		if (inet == OPEN)
++			continue;
++
++		global = inet < old_num_nets;
++		if (global)
++		{
++			tptr = old_trace_tail[inet]->next->next;
++			tptr_last_srcsnk = old_trace_tail[inet];
++		}
++		else
++		{
++			tptr = trace_head[inet];
++			tptr_last_srcsnk = tptr;
++		}
++		assert(tptr);
++
++		/* Find out if net is overused */
++		opin_overuse = (!global && !inc_feasible_outpin(inet, old_num_nets));
++		assert(opin_overuse == FALSE);
++		discard_seg = FALSE;
++		ndiscarded = 0;
++
++		/* Remove rr_node.occ */
++		pathfinder_update_one_cost(trace_head[inet], -1, pres_fac);
++		/* Remove rr_node.inc_occ */
++		if (global)
++		{
++			if (old_trace_tail[inet]->next)
++				inc_update_one_cost(old_trace_tail[inet]->next->next, -1, inode2fanouts, pres_fac);
++		}
++		else
++		{
++			inc_update_one_cost(trace_head[inet], -1, inode2fanouts, pres_fac);
++		}
++
++		if (!opin_overuse)
++		{
++			while (tptr)
++			{
++				inode = tptr->index;
++				assert(inode != OPEN);
++
++				/* If SOURCE or OPIN is overused */
++				if ((rr_node[inode].occ+1) > rr_node[inode].capacity)
++				{
++					assert(rr_node[inode].type == SOURCE || rr_node[inode].type == OPIN);
++					opin_overuse = TRUE;
++					break;
++				}
++
++				/* If this node has >1 fanouts, then discard this net
++				 * only if it's not the maximum */
++				if (inode2fanouts[inode] && !discard_seg)
++				{
++					int iedge, inode_next;
++					assert(tptr->next);
++					inode_next = tptr->next->index;
++					for (iedge = 0; iedge < rr_node[inode].num_edges; iedge++)
++					{
++						if (rr_node[inode].edges[iedge] == inode_next) break;
++					}
++					assert(iedge < rr_node[inode].num_edges);
++					assert(inode2fanouts[inode][iedge] >= 0);
++
++					/* If this edge isn't the one we want to keep,
++					 * discard it */
++					if (iedge != keep_inode_iedge[inode])
++					{
++						discard_seg = TRUE;
++					}
++				}
++
++				if (rr_node[inode].type == SINK)
++				{
++					struct s_trace *t;
++					if (discard_seg)
++					{
++						struct s_trace *tn;
++						/* Now free the traceback between last src/snk
++						 * and the current snk (inclusive) */
++						t = tptr_last_srcsnk->next;
++						tn = t->next;
++						do {
++							free_trace_data(t);
++							t = tn;
++							tn = t->next;
++						} while (t != tptr);
++						free_trace_data(tptr);
++
++						/* Set the last src/snk next pointer to the 
++						 * next pointer of this snk */
++						tptr_last_srcsnk->next = tn;
++						tptr = tn;
++						/*discard_seg = FALSE;*/
++						ndiscarded++;
++					}
++					else
++					{
++						tptr_last_srcsnk = tptr;
++						tptr = tptr->next;
++					}
++					if (tptr == NULL) break;
++					assert(rr_node[tptr->index].type != SOURCE && rr_node[tptr->index].type != SINK);
++
++					/* Check that tptr exists in this traceback,
++					 * otherwise, discard that too */
++					t = trace_head[inet];
++					discard_seg = TRUE;
++					while(t && t != tptr)
++					{
++						if (tptr->index == t->index)
++						{
++							discard_seg = FALSE;
++							break;
++						}
++						t = t->next;
++					}
++				}
++				tptr = tptr->next;
++			}
++		} /* if overuse */
++
++		/* If net is overused in any way */
++		if (opin_overuse || ndiscarded > 0)
++		{
++			if (opin_overuse)
++			{
++				fprintf(stdout, "Abandoning trace_nets[%d]: vnet=%d inet=%d due to infeasible OPIN!\n", 
++						i, clb_to_vpack_net_mapping[inet], inet);
++				ndiscarded = router_opts->inc_connectivity;
++			}
++			else
++			{
++				fprintf(stdout, "Discarding %d segments(s) from trace_nets[%d]: vnet=%d inet=%d due to fanout congestion!\n", 
++						ndiscarded, i, clb_to_vpack_net_mapping[inet], inet);
++			}
++
++			if (global)
++			{
++				/* Only remove the incremental (and not the user) trace */
++				if (opin_overuse && old_trace_tail[inet]->next)
++				{
++					inc_free_traceback(inet, old_trace_tail);
++					assert(trace_tail[inet] == old_trace_tail[inet]);
++					assert(trace_tail[inet]->next == NULL);
++				}
++
++				if (opin_overuse || !old_trace_tail[inet]->next)
++				{
++					trace_nets[i] = OPEN;
++					(*num_failed_nets)++;
++					*num_failed_seg += router_opts->inc_connectivity;
++				}
++			}
++			else
++			{
++				if (opin_overuse || !trace_head[inet]->next)
++				{
++					inc_remove_clb_net(inet);
++
++					trace_nets[i] = OPEN;
++					(*num_failed_nets)++;
++				}
++			}
++			*num_failed_seg += ndiscarded;
++		}
++
++		/* Add rr_node.occ */
++		pathfinder_update_one_cost(trace_head[inet], 1, pres_fac);
++		if (global)
++		{
++			if (old_trace_tail[inet]->next)
++				inc_update_one_cost(old_trace_tail[inet]->next->next, 1, inode2fanouts, pres_fac);
++		}
++		else
++		{
++			inc_update_one_cost(trace_head[inet], 1, inode2fanouts, pres_fac);
++		}
++	}
++
++	/* Double check that everything is feasible now */
++	recompute_occupancy_from_scratch(clb_opins_used_locally);
++	assert(feasible_routing());
++
++	free(keep_inode_iedge);
++}
++
++/**
++ * Convert a vpack (local) net into a new clb (global) net
++ */
++static int 
++inc_add_clb_net(int vnet, const int new_inet)
++{
++	int iblk, ptc, inode, i, clb_inet;
++	/* Create a new clb_net element */
++	clb_net = realloc(clb_net, (new_inet+1)*sizeof(struct s_net));
++	clb_net[new_inet].name = malloc((strlen(vpack_net[vnet].name)+1)*sizeof(char));
++	strcpy(clb_net[new_inet].name, vpack_net[vnet].name);
++	clb_net[new_inet].num_sinks = 0;
++	clb_net[new_inet].node_block = malloc(sizeof(int));
++	clb_net[new_inet].node_block[0] = iblk = vpack_net[vnet].node_block[0];
++	assert(iblk != OPEN);
++	clb_net[new_inet].node_block_port = NULL;
++	clb_net[new_inet].node_block_pin = malloc(sizeof(int));
++	clb_net[new_inet].node_block_pin[0] = ptc = vpack_net[vnet].node_block_pin[0];
++	assert(ptc != OPEN);
++	clb_net[new_inet].is_global = FALSE;
++	clb_net[new_inet].is_const_gen = FALSE;
++	/* Create a new clb_to_vpack_mapping element */
++	clb_to_vpack_net_mapping = realloc(clb_to_vpack_net_mapping, (new_inet+1)*sizeof(int));
++	clb_to_vpack_net_mapping[new_inet] = vnet;
++
++	/* CLB_OPIN ptc */
++	assert(block[iblk].pb->rr_graph[ptc].net_num == OPEN);
++	block[iblk].pb->rr_graph[ptc].net_num = vnet;
++	assert(block[iblk].pb->rr_graph[ptc].pb_graph_pin->num_input_edges == 1);
++	assert(block[iblk].pb->rr_graph[ptc].pb_graph_pin->input_edges[0]->num_input_pins == 1);
++	inode = block[iblk].pb->rr_graph[ptc].pb_graph_pin->input_edges[0]
++		->input_pins[0]->pin_count_in_cluster;
++	assert(block[iblk].pb->rr_graph[ptc].prev_node == OPEN);
++	block[iblk].pb->rr_graph[ptc].prev_node = inode;
++	assert(block[iblk].pb->rr_graph[inode].net_num == vnet);
++
++	/* Enable the edge that connects the previous inode (BLE_OPIN) to this CLB_OPIN */
++	for (i = 0; i < block[iblk].pb->rr_graph[inode].num_edges; i++)
++	{
++		if (block[iblk].pb->rr_graph[inode].edges[i] == ptc)
++			break;
++	}
++	assert(i < block[iblk].pb->rr_graph[inode].num_edges);
++	assert(block[iblk].pb->rr_graph[ptc].prev_edge == OPEN);
++	block[iblk].pb->rr_graph[ptc].prev_edge = i;
++
++	clb_inet = new_inet;
++
++	return clb_inet;
++}
++
++/**
++ * Add all non global vnets to the trace_nets array
++ */
++int 
++inc_setup_trace(int **trace_nets, int *new_num_nets)
++{
++	int inet, vnet, num_trace_nets;
++
++	*trace_nets = malloc(sizeof(int));
++	*new_num_nets = num_nets;
++	num_trace_nets = 0;
++
++	for (vnet = 0; vnet < num_logical_nets; vnet++)
++	{
++		int iblk;
++
++		inet = vpack_to_clb_net_mapping[vnet];
++		if (inet == OPEN)
++			iblk = vpack_net[vnet].node_block[0];
++		else
++			iblk = clb_net[inet].node_block[0];
++
++		if ((inet != OPEN && clb_net[inet].is_global) || iblk == OPEN)
++			continue;
++
++		/* If net is local, make it global */
++		if (vpack_to_clb_net_mapping[vnet] == OPEN)
++		{
++			inet = inc_add_clb_net(vnet, *new_num_nets);
++			(*new_num_nets)++;
++			vpack_to_clb_net_mapping[vnet] = inet;
++
++			assert(clb_net[inet].num_sinks == 0);
++			clb_net[inet].node_block = realloc(clb_net[inet].node_block, 2*sizeof(int));
++			clb_net[inet].node_block[1] = OPEN;
++
++			/* Create a new net_rr_terminals if appropriate 
++			 * (during post-map) */
++			if (net_rr_terminals)
++			{
++				int /*iblk,*/ ptc, inode;
++				/*iblk = clb_net[inet].node_block[0];*/
++				assert(iblk == clb_net[inet].node_block[0]);
++				ptc = clb_net[inet].node_block_pin[0];
++				inode = get_rr_node_index(block[iblk].x, block[iblk].y, 
++						SOURCE, block[iblk].type->pin_class[ptc], rr_node_indices);
++
++				net_rr_terminals = realloc(net_rr_terminals, (*new_num_nets)*sizeof(int *));
++				net_rr_terminals[inet] = malloc(2*sizeof(int));
++				net_rr_terminals[inet][0] = inode;
++				net_rr_terminals[inet][1] = OPEN;
++			}
++		}
++		else
++		{
++			int num_sinks;
++
++			inet = vpack_to_clb_net_mapping[vnet];
++			num_sinks = clb_net[inet].num_sinks;
++
++			clb_net[inet].node_block = realloc(clb_net[inet].node_block, (num_sinks+2)*sizeof(int));
++			clb_net[inet].node_block[num_sinks+1] = OPEN;
++
++			if (net_rr_terminals)
++			{
++				int *tmp;
++
++				/* Code below doesn't work because net_rr_terminals[inet] was 
++				 * allocated using my_chunk_alloc(); instead copy the entire array */
++				/* net_rr_terminals[inet] = realloc(net_rr_terminals[inet], (clb_net[inet].num_sinks+1)*sizeof(int)); */
++				tmp = (int*)malloc((num_sinks+2)*sizeof(int));
++				memcpy(tmp, net_rr_terminals[inet], (num_sinks+1)*sizeof(int));
++				net_rr_terminals[inet] = tmp;
++				net_rr_terminals[inet][num_sinks+1] = OPEN;
++			}
++		}
++
++		/* Add to trace_nets[] */
++		*trace_nets = realloc(*trace_nets, (num_trace_nets+1) * sizeof(int));
++		(*trace_nets)[num_trace_nets] = inet;
++		num_trace_nets++;
++	}
++	return num_trace_nets;
++}
++
++/** 
++ * Recompute a new inode2fanout structure, and check that it is identical 
++ * to the one we had before
++ */
++static void 
++inc_check_inode2fanouts_and_verify(
++		int *trace_nets,
++		int num_trace_nets,
++		struct s_trace **old_trace_tail,
++		int **_inode2fanouts)
++{
++	int inode, itrace;
++	int **inode2fanouts;
++	inode2fanouts = calloc(num_rr_nodes, sizeof(int*));
++
++	for (itrace = 0; itrace < num_trace_nets; itrace++)
++	{
++		int inet;
++		struct s_trace *tptr;
++
++		inet = trace_nets[itrace];
++		if (inet == OPEN) continue;
++
++		tptr = old_trace_tail[inet];
++		/* If this is a local-turned-global net, 
++		 * then use trace_head instead */
++		if (tptr == NULL) tptr = trace_head[inet];
++		assert(tptr);
++
++		while(tptr)
++		{
++			inode = tptr->index;
++			assert(inode != OPEN);
++
++			if (rr_node[inode].type == CHANX || rr_node[inode].type == CHANY)
++			{
++				int next_inode, iedge;
++				assert(tptr->next);
++				next_inode = tptr->next->index;
++				assert(next_inode != OPEN);
++
++				if (inode2fanouts[inode] == NULL)
++					inode2fanouts[inode] = calloc(rr_node[inode].num_edges, sizeof(int));
++
++				for (iedge = 0; iedge < rr_node[inode].num_edges; iedge++)
++				{
++					if (rr_node[inode].edges[iedge] == next_inode) break;
++				}
++				assert(iedge < rr_node[inode].num_edges);
++
++				inode2fanouts[inode][iedge]++;
++			}
++
++			if (rr_node[inode].type == SINK)
++			{
++				tptr = tptr->next;
++				if (tptr == NULL) break;
++			}
++
++			tptr = tptr->next;
++		}
++	}
++
++	for (inode = 0; inode < num_rr_nodes; inode++)
++	{
++		if (inode2fanouts[inode] == NULL)
++		{
++			if (_inode2fanouts[inode])
++			{
++				int iedge;
++				for (iedge = 0; iedge < rr_node[inode].num_edges; iedge++)
++				{
++					assert(_inode2fanouts[inode][iedge] == 0);
++				}
++			}
++			else
++				assert(_inode2fanouts[inode] == NULL);
++		}
++		else
++		{
++			int iedge;
++			for (iedge = 0; iedge < rr_node[inode].num_edges; iedge++)
++			{
++				assert(_inode2fanouts[inode][iedge] == inode2fanouts[inode][iedge]);
++			}
++		}
++		free(inode2fanouts[inode]);
++	}
++	free(inode2fanouts);
++}
++
++/**
++ * Try and iteratively route the trace nets
++ * Adapted from try_<algo>_route()
++ */
++static boolean 
++inc_try_trace(
++		int *trace_nets,
++		const int num_trace_nets, 
++		struct s_trace **old_trace_tail,
++		const int old_num_nets,
++		struct s_router_opts *router_opts, 
++		struct s_file_name_opts *FileNameOpts,
++		struct s_det_routing_arch det_routing_arch,
++		t_timing_inf timing_inf,
++		t_trace_buffer *tb,
++		int num_tb,
++		t_ivec **clb_opins_used_locally,
++		float *criticality)
++{
++	int inet;
++	float pres_fac;
++	boolean success;
++	int i, j;
++	clock_t begin, end;
++	int opins_overuse, fanout_overuse;
++	int num_failed_nets, num_failed_seg;
++	int inode;
++
++	int **inode2fanouts;
++
++	printf("Performing incremental-routing...\n");
++	begin = clock();
++
++	/* Reset accumulated costs stored in rr_node_route_inf */
++	inc_reset_rr_node_route_structs();
++
++	inode2fanouts = calloc(num_rr_nodes, sizeof(int*));
++	pres_fac = router_opts->first_iter_pres_fac;
++
++	num_failed_nets = 0;
++	num_failed_seg = 0;
++
++	if (router_opts->inc_router_algorithm == READ_ROUTE)
++	{
++		int itrace;
++
++		printf("Confirming Router Algorithm: Reading from %s.\n", router_opts->inc_route_file);
++		inc_read_route(router_opts->inc_route_file);
++
++		for (itrace = 0; itrace < num_trace_nets; itrace++)
++		{
++			boolean global;
++
++			inet = trace_nets[itrace];
++			assert(inet != OPEN);
++
++			global = inet < old_num_nets;
++
++
++			if (global)
++			{
++				if (old_trace_tail[inet]->next == NULL)
++				{
++					assert(old_trace_tail[inet] == trace_tail[inet]);
++					trace_nets[itrace] = OPEN;
++					num_failed_nets++;
++				}
++				else
++				{
++					pathfinder_update_one_cost(old_trace_tail[inet]->next->next, 1, pres_fac);
++					inc_update_one_cost(old_trace_tail[inet]->next->next, 1, inode2fanouts, pres_fac);
++				}
++			}
++			else
++			{
++				if (trace_head[inet] == NULL)
++				{
++					assert(old_trace_tail[inet] == NULL);
++					assert(trace_tail[inet] == NULL);
++
++					inc_remove_clb_net(inet);
++					trace_nets[itrace] = OPEN;
++					num_failed_nets++;
++				}
++				else
++				{
++					pathfinder_update_one_cost(trace_head[inet], 1, pres_fac);
++					inc_update_one_cost(trace_head[inet], 1, inode2fanouts, pres_fac);
++				}
++			}
++		}
++
++		recompute_occupancy_from_scratch(clb_opins_used_locally);
++
++		inc_check_inode2fanouts_and_verify(trace_nets,
++				num_trace_nets,
++				old_trace_tail,
++				inode2fanouts);
++
++		printf("Incremental-routing successful for %d/%d nets\n", 
++				num_trace_nets - num_failed_nets, num_trace_nets);
++		success = TRUE;
++	}
++	else /* (router_opts->inc_router_algorithm != READ_ROUTE) */
++	{
++		float bend_cost = router_opts->bend_cost;
++
++		/* For every routing iteration */
++		for (i = 1; i <= router_opts->max_router_iterations; i++) 
++		{
++			int nsuccess = 0;
++			/* For every trace net */
++			for (j = 0; j < num_trace_nets; j++)
++			{
++				boolean global;
++				inet = trace_nets[j];
++				if (inet == OPEN)
++					continue;
++				global = inet < old_num_nets;
++
++				/* Remove rr_node.occ */
++				pathfinder_update_one_cost(trace_head[inet], -1, pres_fac);
++				/* Remove rr_node.inc_occ */
++				if (global)
++				{
++					if (old_trace_tail[inet]->next)
++						inc_update_one_cost(old_trace_tail[inet]->next->next, -1, inode2fanouts, pres_fac);
++				}
++				else
++				{
++					inc_update_one_cost(trace_head[inet], -1, inode2fanouts, pres_fac);
++					free_traceback(inet);
++				}
++
++				switch(router_opts->inc_router_algorithm)
++				{
++					case BREADTH_FIRST:
++						printf("BREADTH_FIRST not currently supported!");
++						exit(1);
++						success = inc_breadth_first_route_net(inet, bend_cost, old_trace_tail, old_num_nets, router_opts);
++						break;
++						/* Difference between (non) timing-driven directed search is that for
++						 * non timing-driven, all net criticalities are zero */
++					case DIRECTED_SEARCH:
++					case TIMING_DRIVEN:
++						success = inc_directed_search_route_net(inet, pres_fac, router_opts->astar_fac, bend_cost, 
++								old_trace_tail, old_num_nets, router_opts, num_tb, tb, criticality[j], inode2fanouts);
++						break;
++					default:
++						assert(FALSE);
++				}
++
++				if (success)
++				{
++					/* Add rr_node.occ */
++					pathfinder_update_one_cost(trace_head[inet], 1, pres_fac);
++					/* Add rr_node.inc_occ */
++					nsuccess += 1;
++					if (global)
++						inc_update_one_cost(old_trace_tail[inet]->next->next, 1, inode2fanouts, pres_fac);
++					else
++						inc_update_one_cost(trace_head[inet], 1, inode2fanouts, pres_fac);
++				}
++				else
++				{
++					/* Routing this net is completely impossible: 
++					 * if best effort is not enabled bail out here */
++					if (!router_opts->inc_best_effort)
++					{
++						goto end;
++					}
++					/* Should only be impossible on the first iteration!?! */
++					assert(i == 1);
++
++					if (global)
++					{
++						if (trace_tail[inet] != old_trace_tail[inet])
++						{
++							/* TODO: At least one connection made... can salvage! */
++							inc_free_traceback(inet, old_trace_tail);
++						}
++						/* Add rr_node.occ */
++						assert(trace_tail[inet] == old_trace_tail[inet]);
++						pathfinder_update_one_cost(trace_head[inet], 1, pres_fac);
++						assert(rr_node[trace_head[inet]->index].occ == 1);
++						assert(rr_node[trace_head[inet]->index].inc_occ == 0);
++					}
++					else
++					{
++						if (trace_head[inet] == NULL)
++						{
++							inc_remove_clb_net(inet);
++						}
++						else
++						{
++							assert(rr_node[trace_head[inet]->index].occ == 0);
++							assert(rr_node[trace_head[inet]->index].inc_occ == 0);
++							/* TODO: Salvage */
++							inc_remove_clb_net(inet);
++						}
++						assert(trace_head[inet] == NULL);
++						assert(trace_tail[inet] == NULL);
++					}
++
++					/* Give up tracing this net permanently */
++					trace_nets[j] = OPEN;
++					num_failed_nets++;
++				}
++			}
++
++
++			/* Check if incremental trace is feasible */
++			success = inc_feasible_routing(num_trace_nets, trace_nets, old_trace_tail, 
++					&opins_overuse, &fanout_overuse, old_num_nets, inode2fanouts);
++			if (success) goto end;
++
++			if (i == 1)
++				pres_fac = router_opts->initial_pres_fac;
++			else
++				pres_fac *= router_opts->pres_fac_mult;
++
++			pres_fac = min(pres_fac, HUGE_FLOAT / 1e5);
++
++			pathfinder_update_cost(pres_fac, router_opts->acc_fac);
++			inc_update_cost(num_trace_nets, trace_nets, old_num_nets, 
++					pres_fac, router_opts->acc_fac, inode2fanouts);
++			fprintf(stdout, "Iteration %d: %d/%d successfully traced but found %d opins over-used, and %d nodes with >1 incremental fanout!\n", 
++					i, nsuccess, num_trace_nets, opins_overuse, fanout_overuse);
++			fflush(stdout);
++		}
++		/* Remove one here because for loop would have incremented i to beyond max_router_iterations */
++		i--;
++
++		/* If congestion wasn't full resolvable after the set number of iterations,
++		 * then use inc_resolve_congestion() which iteratively discards until
++		 * legal solution is found */
++		fprintf(stdout, "Congestion unresolved after %d iteration(s). Abandon ship...\n", i);
++		inc_resolve_congestion(num_trace_nets, trace_nets, old_trace_tail, old_num_nets, router_opts,
++				&num_failed_nets, &num_failed_seg, inode2fanouts, clb_opins_used_locally, pres_fac);
++		success = inc_feasible_routing(num_trace_nets, trace_nets, old_trace_tail, 
++				&opins_overuse, &fanout_overuse, old_num_nets, inode2fanouts);
++		assert(success);
++
++end:	
++		printf("Incremental-routing ran for %d iteration(s).\n", i);
++	}
++
++	if (success)
++	{
++		if (router_opts->inc_router_algorithm != READ_ROUTE)
++		{
++			char fn[1024];
++			sprintf(fn, "%s.overlay.route", FileNameOpts->CircuitName);
++			inc_print_route(fn, old_trace_tail);
++		}
++		else
++		{
++			char fn[1024];
++			sprintf(fn, "%s.overlay.route_rewrite", FileNameOpts->CircuitName);
++			inc_print_route(fn, old_trace_tail);
++		}
++
++		/* If a match file has been specified, collapse the
++		 * overlay network to the matches given */
++		if (router_opts->inc_match_file)
++		{
++			inc_collapse_match_from_file(router_opts->inc_match_file, 
++					trace_nets, num_trace_nets, tb, num_tb, 
++					old_num_nets, old_trace_tail, pres_fac,
++					inode2fanouts, clb_opins_used_locally);
++		}
++
++		/* Make sure there are no holes in clb_net;
++		 * holes created by abandoning impossible nets 
++		 * during the routing procedure, or during
++		 * inc_resolve_congestion() */
++		for (i = old_num_nets; i < num_nets; i++)
++		{
++			if (trace_head[i] == NULL)
++			{
++				assert(trace_tail[i] == NULL);
++				while(trace_head[num_nets-1] == NULL)
++				{
++					assert(trace_tail[num_nets-1] == NULL);
++					num_nets--;
++				}
++				if (num_nets == i)
++					continue;
++				assert(num_nets > i);
++				assert(trace_head[num_nets-1] != NULL);
++				assert(trace_tail[num_nets-1] != NULL);
++
++				trace_head[i] = trace_head[num_nets-1];
++				trace_tail[i] = trace_tail[num_nets-1];
++				trace_head[num_nets-1] = NULL;
++				trace_tail[num_nets-1] = NULL;
++				clb_net[i] = clb_net[num_nets-1];
++				assert(vpack_to_clb_net_mapping[clb_to_vpack_net_mapping[num_nets-1]] == num_nets-1);
++				vpack_to_clb_net_mapping[clb_to_vpack_net_mapping[num_nets-1]] = i;
++				clb_to_vpack_net_mapping[i] = clb_to_vpack_net_mapping[num_nets-1];
++				clb_to_vpack_net_mapping[num_nets-1] = OPEN;
++				assert(vpack_to_clb_net_mapping[clb_to_vpack_net_mapping[i]] == i);
++				net_rr_terminals[i] = net_rr_terminals[num_nets-1];
++				net_rr_terminals[num_nets-1] = NULL;
++
++				for (j = 0; j < num_trace_nets; j++)
++				{
++					if (trace_nets[j] == (num_nets-1))
++					{
++						trace_nets[j] = i;
++						break;
++					}
++				}
++				assert(j < num_trace_nets);
++				num_nets--;
++			}
++		}
++
++		for (i = old_num_nets; i < num_nets; i++)
++		{
++			assert(trace_head[i] != NULL);
++			assert(trace_tail[i] != NULL);
++		}
++
++		inc_check_inode2fanouts_and_verify(trace_nets,
++				num_trace_nets,
++				old_trace_tail,
++				inode2fanouts);
++
++		/* Check that all nets are traced */
++		for (i = 0; i < num_trace_nets; i++)
++		{
++			inet = trace_nets[i];
++			if (inet == OPEN)
++				continue;
++			assert(inet < num_nets);
++			assert(trace_head[inet] != NULL);
++			assert(trace_tail[inet] != NULL);
++		}
++
++		/* Connect them up */
++		inc_connect_trace(trace_nets, num_trace_nets, old_num_nets);
++
++		check_route(router_opts->route_type,
++				det_routing_arch.num_switch,
++				clb_opins_used_locally);
++
++		/* Double check that all wiring on the user net has capacity one too */
++		for (i = 0; i < old_num_nets; i++)
++		{
++			struct s_trace *tptr;
++			tptr = trace_head[i];
++			while(tptr != old_trace_tail[i])
++			{
++				inode = tptr->index;
++				if (rr_node[inode].type == CHANX || rr_node[inode].type == CHANY)
++				{
++					assert(rr_node[inode].capacity == 1);
++				}
++				tptr = tptr->next;
++			}
++
++		}
++	}
++
++	for (inode = 0; inode < num_rr_nodes; inode++)
++	{
++		free(inode2fanouts[inode]);
++	}
++	free(inode2fanouts);
++
++	end = clock();
++#ifdef CLOCKS_PER_SEC
++	printf("Incremental-routing took %g seconds\n", (float)(end - begin) / CLOCKS_PER_SEC);
++#else
++	printf("Incremental-routing took %g seconds\n", (float)(end - begin) / CLK_PER_SEC);
++#endif
++
++	if (success)
++	{
++		if (router_opts->inc_router_algorithm != READ_ROUTE) 
++		{
++			printf("Incremental-routing successful for %d/%d nets (%d/%d segments)\n", 
++					num_trace_nets - num_failed_nets, num_trace_nets,
++					(num_trace_nets * router_opts->inc_connectivity) - num_failed_seg,
++					num_trace_nets * router_opts->inc_connectivity);
++		}
++	}
++	else
++	{
++		printf("Incremental-routing failed!\n");
++	}
++	fflush(stdout);
++
++	return success;
++}
++
++static
++int **inc_tb_to_nets(	
++		int *trace_nets,
++		int num_trace_nets,
++		t_trace_buffer *tb,
++		int num_tb,
++		int ****_tb_nets)
++{
++	int itrace, itb, inode;
++	int ***tb_nets, **num_tb_nets;
++
++	tb_nets = calloc(num_tb, sizeof(int**));
++	num_tb_nets = calloc(num_tb, sizeof(int*));
++	for (itb = 0; itb < num_tb; itb++)
++	{
++		const int tb_width = tb[itb].capacity;
++		tb_nets[itb] = calloc(tb_width, sizeof(int*));
++		num_tb_nets[itb] = calloc(tb_width, sizeof(int));
++	}
++
++	/* First scan through all trace-backs looking for
++	 * incrementally-connected SINKs */
++	for (itrace = 0; itrace < num_trace_nets; itrace++)
++	{
++		int inet;
++		struct s_trace *tptr;
++		inet = trace_nets[itrace];
++		if (inet == OPEN) 
++			continue;
++		tptr = trace_head[inet];
++		while (tptr)
++		{
++			inode = tptr->index;
++			if (rr_node[inode].type == SINK &&
++					rr_node[inode].inc_occ > 0)
++			{
++				for (itb = 0; itb < num_tb; itb++)
++				{
++					if (rr_node[inode].xlow == tb[itb].x &&
++							rr_node[inode].ylow == tb[itb].y)
++					{
++						/* If found, add this net to the table */
++						int ipin, num;
++						ipin = rr_node[inode].ptc_num - tb[itb].data_pin;
++						num = num_tb_nets[itb][ipin];
++						tb_nets[itb][ipin] = realloc(tb_nets[itb][ipin], (num+1)*sizeof(int));
++						tb_nets[itb][ipin][num] = clb_to_vpack_net_mapping[inet];
++						num_tb_nets[itb][ipin]++;
++					}
++				}
++			}
++			tptr = tptr->next;
++		}
++	}
++
++	*_tb_nets = tb_nets;
++	return num_tb_nets;
++}
++
++/**
++ * Write out the *.overlay file, which specifies the vnets that
++ * can reach every RAM ipin 
++ */
++static void 
++inc_write_overlay(	
++		char *fn,
++		int num_tb,
++		t_trace_buffer *tb,
++		int ***tb_nets,
++		int **num_tb_nets)
++{
++	FILE *fp;
++	int itb;
++
++	fp = fopen(fn, "w");
++	assert(fp);
++
++	/* Calculate the number of times each net is connected */
++	for (itb = 0; itb < num_tb; itb++)
++	{
++		int ipin;
++		for (ipin = 0; ipin < tb[itb].capacity; ipin++)
++		{
++			int nets, iedge;
++			if (num_tb_nets[itb] != NULL)
++			{
++				nets = num_tb_nets[itb][ipin];
++				if (nets > 0) 
++				{
++					for (iedge = 0; iedge < nets; iedge++)
++					{
++						int vnet;
++						vnet = tb_nets[itb][ipin][iedge];
++						/*fprintf(fp, "%s,", vpack_net[vnet].name);*/
++						fprintf(fp, "%d,", vnet);
++					}
++				}
++			}
++			fprintf(fp, "\n");
++		}
++	}
++	fclose(fp);
++}
++
++
++/** 
++ * Main entry point for inserting overlay network
++ * */
++boolean 
++inc_trace(
++		int *trace_nets, 
++		int num_trace_nets,
++		int new_num_nets,
++		t_trace_buffer *tb,
++		int num_tb,
++		struct s_router_opts *router_opts, 
++		struct s_det_routing_arch det_routing_arch,
++		t_timing_inf timing_inf,
++		struct s_file_name_opts *FileNameOpts,
++		t_ivec **clb_opins_used_locally,
++		float **net_slack,
++		float T_crit)
++{
++	boolean success;
++	int old_num_nets;
++	float *criticality;
++	int inet, itrace;
++	struct s_trace **old_trace_tail;
++
++	alloc_and_load_rr_node_route_structs();
++
++	old_num_nets = num_nets;
++	num_nets = new_num_nets;
++
++
++	/* Copy the existing trace_tail structure  */
++	old_trace_tail = (struct s_trace **)malloc(num_nets * sizeof(struct s_trace *));
++	memcpy(old_trace_tail, trace_tail, old_num_nets * sizeof(struct s_trace *));
++
++	/* Reallocate trace_head and trace_tail structures */
++	trace_head = realloc(trace_head, num_nets*sizeof(struct s_trace*));
++	trace_tail = realloc(trace_tail, num_nets*sizeof(struct s_trace*));
++
++	/* Zero out all the new trace back structures */
++	for (inet = old_num_nets; inet < num_nets; inet++)
++	{
++		trace_head[inet] = NULL;
++		trace_tail[inet] = NULL;
++		old_trace_tail[inet] = NULL;
++	}
++
++	criticality = calloc(num_trace_nets, sizeof(float));
++	/* Compute the criticality of each trace net for TIMING_DRIVEN,
++	 * otherwise criticality = 0. */
++	if (router_opts->inc_router_algorithm == TIMING_DRIVEN)
++	{
++		for (itrace = 0; itrace < num_trace_nets; itrace++)
++		{
++			int num_sinks;
++			inet = trace_nets[itrace];
++			num_sinks = clb_net[inet].num_sinks;
++
++			/* Adapted from timing_driven_route_net() */
++			if (inet < old_num_nets)
++			{
++				int ipin;
++				for (ipin = 1; ipin <= num_sinks; ipin++)
++				{
++					float pin_crit;
++					pin_crit = max(router_opts->max_criticality - net_slack[inet][ipin] / T_crit, 0.);
++					pin_crit = pow(pin_crit, router_opts->criticality_exp);
++					pin_crit = min(pin_crit, router_opts->max_criticality);
++					criticality[itrace] = max(criticality[itrace], pin_crit);
++				}
++			}
++			else
++			{
++				int iblk, ptc;
++				t_tnode *ttnode;
++				float pin_crit, slack;
++				assert(num_sinks == 0);
++				iblk = clb_net[inet].node_block[0];
++				/* CLB OPIN ptc */
++				ptc = clb_net[inet].node_block_pin[0];
++				/* BLE OPIN ptc */
++				ptc = block[iblk].pb->rr_graph[ptc].prev_node;
++				assert(ptc != OPEN);
++				ttnode = block[iblk].pb->rr_graph[ptc].tnode;
++				slack = ttnode->T_req - ttnode->T_arr;
++
++				pin_crit = max(router_opts->max_criticality - slack / T_crit, 0.);
++				pin_crit = pow(pin_crit, router_opts->criticality_exp);
++				pin_crit = min(pin_crit, router_opts->max_criticality);
++				criticality[itrace] = pin_crit;
++			}
++		}
++	}
++
++	/* Mark all available memories as targets */
++	inc_mark_targets(num_tb, tb);
++
++	/* Start tracing */
++	success = inc_try_trace(trace_nets,
++			num_trace_nets,
++			old_trace_tail,
++			old_num_nets,
++			router_opts, 
++			FileNameOpts, 
++			det_routing_arch, 
++			timing_inf, 
++			tb, 
++			num_tb,
++			clb_opins_used_locally,
++			criticality);
++
++	/* Write out overlay map -- which nets are connected 
++	 * to which pins (determined by line number) */
++	if (success && !router_opts->inc_match_file)
++	{
++		int itb;
++		int ***tb_nets, **num_tb_nets;
++		char fn[1024];
++
++		num_tb_nets = inc_tb_to_nets(	trace_nets,
++				num_trace_nets,
++				tb,
++				num_tb,
++				&tb_nets);
++		sprintf(fn, "%s.overlay", FileNameOpts->CircuitName);
++		inc_write_overlay(	fn,
++				num_tb,
++				tb,
++				tb_nets, 
++				num_tb_nets);
++
++		for (itb = 0; itb < num_tb; itb++)
++		{
++			int ipin;
++			for (ipin = 0; ipin < tb[itb].capacity; ipin++)
++			{
++				free(tb_nets[itb][ipin]);
++			}
++			free(tb_nets[itb]);
++			free(num_tb_nets[itb]);
++		}
++		free(tb_nets);
++		free(num_tb_nets);
++	}
++
++	free_rr_node_route_structs();
++	free(criticality);
++	free(old_trace_tail);
++
++	return success;
++}
+
+Index: vpr/SRC/base/read_blif.c
+===================================================================
+--- vpr/SRC/base/read_blif.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/read_blif.c	(.../branches/overlay_release)	(revision 2465)
+@@ -40,13 +40,6 @@
+ static char *model;
+ static FILE *blif;
+ 
+-static int add_vpack_net(char *ptr,
+-		   int type,
+-		   int bnum,
+-		   int bport,
+-		   int bpin,
+-		   	boolean is_global,
+-		   int doall);
+ static void get_tok(char *buffer,
+ 		    int pass,
+ 		    int doall,
+@@ -115,7 +108,7 @@
+ 	}
+     fclose(blif);
+     check_net(sweep_hanging_nets_and_inputs);
+-    free_parse();
++    /*free_parse();*/
+ }
+ 
+ static void
+@@ -865,7 +858,7 @@
+ }
+ 
+ 
+-static int
++int
+ add_vpack_net(char *ptr,
+ 	int type,
+ 	int bnum,
+Index: vpr/SRC/base/read_blif.h
+===================================================================
+--- vpr/SRC/base/read_blif.h	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/read_blif.h	(.../branches/overlay_release)	(revision 2465)
+@@ -1,3 +1,12 @@
+ void read_blif (char *blif_file, boolean sweep_hanging_nets_and_inputs,
+ 				t_model *user_models, t_model *library_models);
+ void echo_input (char *blif_file, char *echo_file, t_model *library_models); 
++
++int add_vpack_net(char *ptr,
++		   int type,
++		   int bnum,
++		   int bport,
++		   int bpin,
++		   	boolean is_global,
++		   int doall);
++
+Index: vpr/SRC/base/place_and_route.c
+===================================================================
+--- vpr/SRC/base/place_and_route.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/place_and_route.c	(.../branches/overlay_release)	(revision 2465)
+@@ -2,6 +2,9 @@
+ #include <stdio.h>
+ #include <sys/types.h>
+ #include <time.h>
++#include <float.h>
++#include <signal.h>
++
+ #include "util.h"
+ #include "vpr_types.h"
+ #include "vpr_utils.h"
+@@ -19,14 +22,16 @@
+ #include "net_delay.h"
+ #include "timing_place.h"
+ #include "read_xml_arch_file.h"
++#include "route_export.h"
++#include "route_common.h"
+ 
++#include "inc_trace.h"
++#include "inc_misc.h"
++
+ /******************* Subroutines local to this module ************************/
+ 
+ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
+-					 char *place_file,
+-					 char *net_file,
+-					 char *arch_file,
+-					 char *route_file,
++					 struct s_file_name_opts *FileNameOpts,
+ 					 boolean full_stats,
+ 					 boolean verify_binary_search,
+ 					 struct s_annealing_sched
+@@ -50,23 +55,20 @@
+ 
+ void free_pb_data(t_pb *pb);
+ 
+-
+ /************************* Subroutine Definitions ****************************/
+ 
+ void
+ place_and_route(enum e_operation operation,
+ 		struct s_placer_opts placer_opts,
+-		char *place_file,
+-		char *net_file,
+-		char *arch_file,
+-		char *route_file,
++		struct s_file_name_opts *FileNameOpts,
+ 		struct s_annealing_sched annealing_sched,
+ 		struct s_router_opts router_opts,
+ 		struct s_det_routing_arch det_routing_arch,
+ 		t_segment_inf * segment_inf,
+ 		t_timing_inf timing_inf,
+ 		t_chan_width_dist chan_width_dist,
+-		struct s_model *models)
++		struct s_model *models,
++		t_arch *Arch)
+ {
+ 
+ /* This routine controls the overall placement and routing of a circuit. */
+@@ -78,8 +80,13 @@
+     t_ivec **clb_opins_used_locally;	/* [0..num_blocks-1][0..num_class-1] */
+     t_mst_edge **mst = NULL;	/* Make sure mst is never undefined */
+     int max_pins_per_clb;
+-	clock_t begin, end;
++    clock_t begin, end;
+ 
++    int *trace_nets, num_trace_nets, new_num_nets, old_num_nets;
++
++	int num_tb;
++	t_trace_buffer *tb;
++
+ 	Fc_clipped = FALSE;
+ 
+     max_pins_per_clb = 0;
+@@ -91,10 +98,11 @@
+ 		}
+ 	}
+ 
++    begin = clock();
+     if(placer_opts.place_freq == PLACE_NEVER)
+ 	{
+ 	    /* Read the placement from a file */
+-	    read_place(place_file, net_file, arch_file, nx, ny, num_blocks,
++	    read_place(FileNameOpts->PlaceFile, FileNameOpts->NetFile, FileNameOpts->ArchFile, nx, ny, num_blocks,
+ 		       block);
+ 	    sync_grid_to_blocks(num_blocks, block, nx, ny, grid);
+ 	}
+@@ -102,19 +110,20 @@
+ 	{
+ 	    assert((PLACE_ONCE == placer_opts.place_freq) ||
+ 		   (PLACE_ALWAYS == placer_opts.place_freq));
+-		begin = clock();
+ 	    try_place(placer_opts, annealing_sched, chan_width_dist,
+ 		      router_opts, det_routing_arch, segment_inf,
+ 		      timing_inf, &mst);
+-	    print_place(place_file, net_file, arch_file);
+-		end = clock();
++	    print_place(FileNameOpts->PlaceFile, FileNameOpts->NetFile, FileNameOpts->ArchFile);
++
++	}
++    end = clock();
+ #ifdef CLOCKS_PER_SEC
+-		printf("Placement took %g seconds\n", (float)(end - begin) / CLOCKS_PER_SEC);
++    printf("Placement took %g seconds\n", (float)(end - begin) / CLOCKS_PER_SEC);
+ #else
+-		printf("Placement took %g seconds\n", (float)(end - begin) / CLK_PER_SEC);
++    printf("Placement took %g seconds\n", (float)(end - begin) / CLK_PER_SEC);
+ #endif
+-	}
+-	begin = clock();
++
++    begin = clock();
+     post_place_sync(num_blocks, block);
+ 
+ 
+@@ -134,8 +143,20 @@
+ 	mst = NULL;
+ 
+ 	if(!router_opts.doRouting)
+-	return;
++		return;
+ 
++	/* EDDIE: If we're doing any incremental routing */
++    if (router_opts.inc_type != INC_NONE)
++    {
++	    /* Infer each vpack_net with node_block[] and 
++		 * node_block_pins[] from pb structure */
++		inc_infer_vpack_blocks_and_pins();
++
++		/* Place trace-buffers into all spare memory locations */
++		tb = NULL;
++		num_tb = inc_reclaim_tbs(&tb, Arch);
++    }
++
+     mst = (t_mst_edge **) my_malloc(sizeof(t_mst_edge *) * num_nets);
+     for(inet = 0; inet < num_nets; inet++)
+ 	{
+@@ -144,11 +165,11 @@
+ 
+     width_fac = router_opts.fixed_channel_width;
+ 
++
+     /* If channel width not fixed, use binary search to find min W */
+     if(NO_FIXED_CHANNEL_WIDTH == width_fac)
+ 	{
+-	    binary_search_place_and_route(placer_opts, place_file,
+-					  net_file, arch_file, route_file,
++	    binary_search_place_and_route(placer_opts, FileNameOpts,
+ 					  router_opts.full_stats, router_opts.verify_binary_search,
+ 					  annealing_sched, router_opts,
+ 					  det_routing_arch, segment_inf,
+@@ -169,7 +190,6 @@
+ 		}
+ 	    /* Other constraints can be left to rr_graph to check since this is one pass routing */
+ 
+-
+ 	    /* Allocate the major routing structures. */
+ 
+ 	    clb_opins_used_locally = alloc_route_structs();
+@@ -190,7 +210,7 @@
+ 		try_route(width_fac, router_opts, det_routing_arch,
+ 			  segment_inf, timing_inf, net_slack, net_delay,
+ 			  chan_width_dist, clb_opins_used_locally, mst,
+-			  &Fc_clipped);
++			  &Fc_clipped, operation, FileNameOpts);
+ 
+ 	    if(Fc_clipped)
+ 		{
+@@ -198,6 +218,53 @@
+ 			("Warning: Fc_output was too high and was clipped to full (maximum) connectivity.\n");
+ 		}
+ 
++		/* EDDIE: For post-map insertion only */
++    	if (router_opts.inc_type != INC_NONE)
++    	{
++			/* If normal user circuit routing was successful */
++			if (success)
++			{
++				float T_crit;
++
++				/* Now load the post-routing timing slack */
++			    load_net_delay_from_routing(net_delay, clb_net, num_nets);
++			    load_timing_graph_net_delays(net_delay);
++		    	T_crit = load_net_slack(net_slack, 0);
++
++				/* Parse the trace_string */
++	        	num_trace_nets = inc_setup_trace(&trace_nets, &new_num_nets);
++				old_num_nets = num_nets;
++
++				/* And try to do some incremental tracing */
++				success = inc_trace(trace_nets,
++    			    		num_trace_nets,
++    			    		new_num_nets,
++							tb,
++							num_tb,
++    			    		&router_opts,
++    			    		det_routing_arch,
++    			    		timing_inf,
++    			      		FileNameOpts,
++    			    		clb_opins_used_locally,
++							net_slack,
++							T_crit);
++
++				/* The RRG has changed, re-create timing graph */
++				if(success && timing_inf.timing_analysis_enabled)
++				{
++				    assert(net_slack);
++				    free_timing_graph(net_slack);
++				    assert(net_delay);
++				    free_net_delay(net_delay, &net_delay_chunk_list_head);
++
++				    net_slack = alloc_and_load_timing_graph(timing_inf);
++				    net_delay = alloc_net_delay(&net_delay_chunk_list_head, clb_net, num_nets);
++				}
++
++				free(trace_nets);
++			}
++		}
++		
+ 	    if(success == FALSE)
+ 		{
+ 		    printf
+@@ -210,16 +277,18 @@
+ 
+ 	    else
+ 		{
++		    printf("\n");
+ 		    check_route(router_opts.route_type,
+ 				det_routing_arch.num_switch,
+ 				clb_opins_used_locally);
++		    printf("\n");
+ 		    get_serial_num();
+ 
+ 		    printf
+ 			("Circuit successfully routed with a channel width factor of %d.\n\n",
+ 			 width_fac);
+ 
+-			routing_stats(router_opts.full_stats, router_opts.route_type,
++		    routing_stats(router_opts.full_stats, router_opts.route_type,
+ 				  det_routing_arch.num_switch, segment_inf,
+ 				  det_routing_arch.num_segment,
+ 				  det_routing_arch.R_minW_nmos,
+@@ -228,8 +297,28 @@
+ 				  timing_inf.timing_analysis_enabled,
+ 				  net_slack, net_delay);
+ 
+-		    print_route(route_file);
++#ifdef PRINT_TIMING
++		    print_net_delay(net_delay, "before.net_delay", clb_net, num_nets);
++		    print_net_slack("before.net_slack", net_slack);
++		    print_critical_path("before.critical_path");
++		    print_critical_path_dot("before.critical_path.dot");
++		    print_timing_graph("before.timing_graph");
++#endif
+ 
++			/* If no incremental work done, output as normal*/
++    		if (router_opts.inc_type == INC_NONE)
++			{
++		    	print_route(FileNameOpts->RouteFile);
++			}
++			/* Otherwise if an match file was used, then output as
++			 * you would a normal incremental trace */
++			else if (router_opts.inc_match_file)
++			{
++				char fn[1024];
++				sprintf(fn, "%s_inc.route", FileNameOpts->CircuitName);
++				print_route(fn);
++			}
++
+ #ifdef CREATE_ECHO_FILES
+ 		    /*print_sink_delays("routing_sink_delays.echo"); */
+ #endif /* CREATE_ECHO_FILES */
+@@ -237,6 +326,7 @@
+ 		    sprintf(msg,
+ 			    "Routing succeeded with a channel width factor of %d.\n\n",
+ 			    width_fac);
++
+ 		}
+ 
+ 	    init_draw_coords(max_pins_per_clb);
+@@ -257,7 +347,16 @@
+ 		}
+ 
+ 	    free_route_structs(clb_opins_used_locally);
++
++		/* To prevent errors when cleaning up below,
++		 * revert num_nets back to its old value */
++   		if (router_opts.inc_type != INC_NONE)
++		{
++			num_nets = old_num_nets;
++		}
++
+ 	    fflush(stdout);
++
+ 	}
+ 	end = clock();
+ 	#ifdef CLOCKS_PER_SEC
+@@ -266,6 +365,11 @@
+ 		printf("Routing took %g seconds\n", (float)(end - begin) / CLK_PER_SEC);
+ 	#endif
+ 
++	if (router_opts.inc_type != INC_NONE)
++	{
++		free(tb);
++	}
++
+     /*WMF: cleaning up memory usage */
+     if(mst)
+ 	{
+@@ -286,10 +390,7 @@
+ 
+ static int
+ binary_search_place_and_route(struct s_placer_opts placer_opts,
+-			      char *place_file,
+-			      char *net_file,
+-			      char *arch_file,
+-			      char *route_file,
++			      struct s_file_name_opts *FileNameOpts,
+ 			      boolean full_stats,
+ 			      boolean verify_binary_search,
+ 			      struct s_annealing_sched annealing_sched,
+@@ -299,7 +400,7 @@
+ 			      t_timing_inf timing_inf,
+ 			      t_chan_width_dist chan_width_dist,
+ 			      t_mst_edge ** mst,
+-				  t_model *models)
++			          t_model *models)
+ {
+ 
+ /* This routine performs a binary search to find the minimum number of      *
+@@ -402,7 +503,6 @@
+ 
+     while(final == -1)
+ 	{
+-
+ 	    printf("low, high, current %d %d %d\n", low, high, current);
+ 	    fflush(stdout);
+ 
+@@ -446,21 +546,22 @@
+ 			      router_opts, det_routing_arch, segment_inf,
+ 			      timing_inf, &mst);
+ 		}
++
++	    free_rr_node_route_structs();
+ 	    success =
+ 		try_route(current, router_opts, det_routing_arch, segment_inf,
+ 			  timing_inf, net_slack, net_delay, chan_width_dist,
+-			  clb_opins_used_locally, mst, &Fc_clipped);
++			  clb_opins_used_locally, mst, &Fc_clipped, RUN_FLOW, FileNameOpts);
+ 	    attempt_count++;
+ 	    fflush(stdout);
+ #if 1
+ 	    if(success && (Fc_clipped == FALSE))
+-		{
+ #else
+ 	    if(success
+ 	       && (Fc_clipped == FALSE
+ 		   || det_routing_arch.Fc_type == FRACTIONAL))
++#endif
+ 		{
+-#endif
+ 			if(current == high) {
+ 				/* Can't go any lower */
+ 				final = current;
+@@ -589,7 +690,7 @@
+ 			try_route(current, router_opts, det_routing_arch,
+ 				  segment_inf, timing_inf, net_slack,
+ 				  net_delay, chan_width_dist,
+-				  clb_opins_used_locally, mst, &Fc_clipped);
++				  clb_opins_used_locally, mst, &Fc_clipped, RUN_FLOW, NULL);
+ 
+ 		    if(success && Fc_clipped == FALSE)
+ 			{
+@@ -599,8 +700,8 @@
+ 
+ 			    if(placer_opts.place_freq == PLACE_ALWAYS)
+ 				{
+-				    print_place(place_file, net_file,
+-						arch_file);
++				    print_place(FileNameOpts->PlaceFile, FileNameOpts->NetFile,
++						FileNameOpts->ArchFile);
+ 				}
+ 			}
+ 
+@@ -644,8 +745,12 @@
+ 
+     restore_routing(best_routing, clb_opins_used_locally,
+ 		    saved_clb_opins_used_locally);
++	recompute_occupancy_from_scratch_no_check(clb_opins_used_locally);
++
++    printf("\n");
+     check_route(router_opts.route_type, det_routing_arch.num_switch,
+ 		clb_opins_used_locally);
++    printf("\n");
+     get_serial_num();
+     if(Fc_clipped)
+ 	{
+@@ -661,9 +766,17 @@
+ 		  det_routing_arch.R_minW_pmos,
+ 		  det_routing_arch.directionality,
+ 		  timing_inf.timing_analysis_enabled, net_slack, net_delay);
++#ifdef PRINT_TIMING
++    print_net_delay(net_delay, "before.net_delay", clb_net, num_nets);
++    print_net_slack("before.net_slack", net_slack);
++    print_critical_path("before.critical_path");
++    print_critical_path_dot("before.critical_path.dot");
++    print_timing_graph("before.timing_graph");
++#endif
+ 
+-    print_route(route_file);
+ 
++    print_route(FileNameOpts->RouteFile);
++
+ #ifdef CREATE_ECHO_FILES
+     /* print_sink_delays("routing_sink_delays.echo"); */
+ #endif /* CREATE_ECHO_FILES */
+Index: vpr/SRC/base/ReadOptions.c
+===================================================================
+--- vpr/SRC/base/ReadOptions.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/ReadOptions.c	(.../branches/overlay_release)	(revision 2465)
+@@ -260,6 +260,26 @@
+ 		return ReadFloat(Args, &Options->max_criticality);
+ 	case OT_CRITICALITY_EXP:
+ 		return ReadFloat(Args, &Options->criticality_exp);
++
++	/* BEGIN Eddie */
++	case OT_INC_INSTRUMENT_TYPE:
++		return ReadString(Args, &Options->inc_instrument_type);
++	case OT_INC_ROUTE_FILE:
++		return ReadString(Args, &Options->inc_route_file);
++	case OT_INC_MATCH_FILE:
++		return ReadString(Args, &Options->inc_match_file);
++	case OT_INC_DUMP_NETS:
++		return Args;
++	case OT_INC_BEST_EFFORT:
++		return ReadOnOff(Args, &Options->inc_best_effort);
++	case OT_INC_LE_SYMMETRY:
++		return ReadOnOff(Args, &Options->inc_le_symmetry);
++	case OT_INC_CONNECTIVITY:
++	    return ReadInt(Args, &Options->inc_connectivity);
++	case OT_INC_ROUTER_ALGORITHM:
++	    return ReadRouterAlgorithm(Args, &Options->inc_RouterAlgorithm);
++	/* END Eddie */
++
+ 	default:
+ 	    ErrorOption(*PrevArgs);
+ 	}
+@@ -412,6 +432,9 @@
+ 	case OT_TIMING_DRIVEN:
+ 	    *Algo = TIMING_DRIVEN;
+ 	    break;
++	case OT_READ_ROUTE:
++	    *Algo = READ_ROUTE;
++		break;
+ 	default:
+ 	    Error(*PrevArgs);
+ 	}
+Index: vpr/SRC/base/CheckOptions.c
+===================================================================
+--- vpr/SRC/base/CheckOptions.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/CheckOptions.c	(.../branches/overlay_release)	(revision 2465)
+@@ -140,10 +140,10 @@
+ 		{
+ 		    if(Yes == Cur->Enum)
+ 			{
+-			    printf(ERRTAG
++			    printf(WARNTAG
+ 				   "Option '%s' is not allowed when placement is "
+-				   "not run.\n", Cur->Str);
+-			    exit(1);
++				   "not run. Ignoring.\n", Cur->Str);
++			    /*exit(1);*/
+ 			}
+ 		    ++Cur;
+ 		}
+Index: vpr/SRC/base/place_and_route.h
+===================================================================
+--- vpr/SRC/base/place_and_route.h	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/place_and_route.h	(.../branches/overlay_release)	(revision 2465)
+@@ -19,17 +19,17 @@
+ 
+ void place_and_route(enum e_operation operation,
+ 		     struct s_placer_opts placer_opts,
+-		     char *place_file,
+-		     char *net_file,
+-		     char *arch_file,
+-		     char *route_file,
++		     struct s_file_name_opts *FileNameOpts,
+ 		     struct s_annealing_sched annealing_sched,
+ 		     struct s_router_opts router_opts,
+ 		     struct s_det_routing_arch det_routing_arch,
+ 		     t_segment_inf * segment_inf,
+ 		     t_timing_inf timing_inf,
+ 		     t_chan_width_dist chan_width_dist,
+-			 struct s_model *models);
++		     struct s_model *models,
++		     /* BEGIN EH */
++		     t_arch *Arch);
++		     /* END EH */
+ 
+ void init_chan(int cfactor,
+ 	       t_chan_width_dist chan_width_dist);
+Index: vpr/SRC/base/ReadOptions.h
+===================================================================
+--- vpr/SRC/base/ReadOptions.h	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/ReadOptions.h	(.../branches/overlay_release)	(revision 2465)
+@@ -80,6 +80,16 @@
+ 	float max_criticality;
+ 	
+     int Count[OT_BASE_UNKNOWN];
++
++    /* BEGIN Eddie */
++    char *inc_instrument_type;
++    char *inc_route_file;
++    char *inc_match_file;
++    int inc_connectivity;
++	boolean inc_best_effort;
++	boolean inc_le_symmetry;
++    enum e_router_algorithm inc_RouterAlgorithm;
++    /* END Eddie */
+ };
+ 
+ void ReadOptions(INP int argc,
+Index: vpr/SRC/base/OptionTokens.c
+===================================================================
+--- vpr/SRC/base/OptionTokens.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/OptionTokens.c	(.../branches/overlay_release)	(revision 2465)
+@@ -71,6 +71,16 @@
+ 	{"packer_algorithm", OT_PACKER_ALGORITHM},
+     {"hack_no_legal_frac_lut", OT_HACK_NO_LEGAL_FRAC_LUT},
+ 	{"hack_safe_latch", OT_HACK_SAFE_LATCH},
++	/* BEGIN Eddie */
++	{"inc_instrument_type", OT_INC_INSTRUMENT_TYPE},
++	{"inc_connectivity", OT_INC_CONNECTIVITY},
++	{"inc_router_algorithm", OT_INC_ROUTER_ALGORITHM},
++	{"inc_le_symmetry", OT_INC_LE_SYMMETRY},
++	{"inc_best_effort", OT_INC_BEST_EFFORT},
++	{"inc_dump_all_nets", OT_INC_DUMP_NETS},
++	{"inc_route_file", OT_INC_ROUTE_FILE},
++	{"inc_match_file", OT_INC_MATCH_FILE},
++	/* END Eddie */
+     {NULL, OT_BASE_UNKNOWN}	/* End of list marker */
+ };
+ 
+@@ -87,6 +97,7 @@
+     {"breadth_first", OT_BREADTH_FIRST},
+     {"timing_driven", OT_TIMING_DRIVEN},
+     {"directed_search", OT_DIRECTED_SEARCH},
++	{"read_route", OT_READ_ROUTE},
+ 	{"intrinsic_delay", OT_INTRINSIC_DELAY},
+ 	{"delay_normalized", OT_DELAY_NORMALIZED},
+ 	{"demand_only", OT_DEMAND_ONLY},
+Index: vpr/SRC/base/OptionTokens.h
+===================================================================
+--- vpr/SRC/base/OptionTokens.h	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/OptionTokens.h	(.../branches/overlay_release)	(revision 2465)
+@@ -68,6 +68,16 @@
+ 	OT_PACKER_ALGORITHM,
+ 	OT_HACK_NO_LEGAL_FRAC_LUT,
+ 	OT_HACK_SAFE_LATCH,
++	/* BEGIN Eddie */
++	OT_INC_INSTRUMENT_TYPE,
++	OT_INC_CONNECTIVITY,
++	OT_INC_ROUTER_ALGORITHM,
++	OT_INC_LE_SYMMETRY,
++	OT_INC_BEST_EFFORT,
++	OT_INC_DUMP_NETS,
++	OT_INC_ROUTE_FILE,
++	OT_INC_MATCH_FILE,
++	/* END Eddie */
+     OT_BASE_UNKNOWN		/* Must be last since used for counting enum items */
+ };
+ 
+@@ -85,6 +95,7 @@
+     OT_BREADTH_FIRST,
+     OT_TIMING_DRIVEN,
+     OT_DIRECTED_SEARCH,
++    	OT_READ_ROUTE,
+ 	OT_INTRINSIC_DELAY,
+ 	OT_DELAY_NORMALIZED,
+ 	OT_DEMAND_ONLY,
+Index: vpr/SRC/base/read_place.c
+===================================================================
+--- vpr/SRC/base/read_place.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/read_place.c	(.../branches/overlay_release)	(revision 2465)
+@@ -68,19 +68,19 @@
+ 	}
+     if(0 != strcmp(tokens[2], arch_file))
+ 	{
+-	    printf(ERRTAG
++	    printf(/*ERR*/WARNTAG
+ 		   "'%s' - Architecture file that generated placement (%s) does "
+ 		   "not match current architecture file (%s)\n", place_file,
+ 		   tokens[2], arch_file);
+-	    exit(1);
++	    /*exit(1);*/
+ 	}
+     if(0 != strcmp(tokens[5], net_file))
+ 	{
+-	    printf(ERRTAG
++	    printf(/*ERR*/WARNTAG
+ 		   "'%s' - Netlist file that generated placement (%s) does "
+ 		   "not match current netlist file (%s)\n", place_file,
+ 		   tokens[5], net_file);
+-	    exit(1);
++	    /*exit(1);*/
+ 	}
+ 
+     /* Check array size in second line matches */
+@@ -134,10 +134,17 @@
+ 	    cur_blk = NULL;
+ 	    for(i = 0; i < num_blocks; ++i)
+ 		{
++			/* FIXME: HACK because all trace-buffers are called "unconn"!
++			 * Use the line number to figure out the block number */
++			if(0 == strcmp(tokens[0], "unconn"))
++			{
++				cur_blk = (block_list + line - 6);
++				break;
++			}
+ 		    if(0 == strcmp(block_list[i].name, tokens[0]))
+ 			{
++				assert(cur_blk == NULL);
+ 			    cur_blk = (block_list + i);
+-			    break;
+ 			}
+ 		}
+ 
+Index: vpr/SRC/base/SetupVPR.c
+===================================================================
+--- vpr/SRC/base/SetupVPR.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/SetupVPR.c	(.../branches/overlay_release)	(revision 2465)
+@@ -457,6 +457,98 @@
+ 		if(!Options.Count[OT_TIMING_ANALYZE_ONLY_WITH_NET_DELAY])
+ 			RouterOpts->doRouting = TRUE;
+ 	}
++
++	/* BEGIN Eddie */
++	RouterOpts->inc_type = INC_NONE;
++	if(Options.Count[OT_INC_INSTRUMENT_TYPE])
++	{
++		if (strcmp(Options.inc_instrument_type, "overlay") == 0)
++		{
++			if (RouterOpts->fixed_channel_width == NO_FIXED_CHANNEL_WIDTH)
++			{
++				printf(ERRTAG "Please specify --route_chan_width <int> for --inc_instrument_type overlay!\n");
++				exit(1);
++			}
++			RouterOpts->inc_type = INC_OVERLAY;
++		}
++		else
++		{
++			printf(ERRTAG "--inc_instrument_type \"%s\" not recognized!\n", Options.inc_instrument_type);
++			exit(1);
++		}
++	}
++
++	RouterOpts->inc_connectivity = 1;
++	if (Options.Count[OT_INC_CONNECTIVITY])
++	{
++		RouterOpts->inc_connectivity = Options.inc_connectivity;
++		if (RouterOpts->inc_connectivity <= 0)
++		{
++			printf(WARNTAG "--inc_connectivity <= 0: disabling incremental tracing!\n");
++			RouterOpts->inc_type = INC_NONE;
++		}
++	}
++
++	/* By default uses same router algorithm as for user circuit,
++	 * but if it's READ_ROUTE then do as above */
++	if (RouterOpts->router_algorithm == READ_ROUTE)
++	{
++	    RouterOpts->inc_router_algorithm = DIRECTED_SEARCH;
++    	if(TimingEnabled)
++		{
++		    RouterOpts->inc_router_algorithm = TIMING_DRIVEN;
++		}
++	}
++	else
++	{
++   		RouterOpts->inc_router_algorithm = RouterOpts->router_algorithm;
++	}
++
++	if(Options.Count[OT_INC_ROUTER_ALGORITHM])
++	{
++		RouterOpts->inc_router_algorithm = Options.inc_RouterAlgorithm;
++	}
++
++	RouterOpts->inc_match_file = NULL;
++	if (Options.Count[OT_INC_MATCH_FILE])
++	{
++		RouterOpts->inc_match_file = Options.inc_match_file;
++	}
++	else
++	{
++	}
++
++	RouterOpts->inc_route_file = NULL;
++	if (Options.Count[OT_INC_ROUTE_FILE])
++	{
++		if (RouterOpts->inc_router_algorithm != READ_ROUTE)
++		{
++			printf(WARNTAG "--inc_route_file specified, but --inc_router_algorithm not set to 'read_route'. Ignoring!\n");
++		}
++
++		RouterOpts->inc_route_file = Options.inc_route_file;
++	}
++	else
++	{
++		if (RouterOpts->inc_router_algorithm == READ_ROUTE)
++		{
++			printf(ERRTAG "--inc_router_algorithm read_route, but --inc_route_file not set!\n");
++			exit(1);
++		}
++	}
++
++	RouterOpts->inc_le_symmetry = TRUE;
++	if (Options.Count[OT_INC_LE_SYMMETRY])
++	{
++		RouterOpts->inc_le_symmetry = Options.inc_le_symmetry;
++	}
++
++	RouterOpts->inc_best_effort = TRUE;
++	if (Options.Count[OT_INC_BEST_EFFORT])
++	{
++		RouterOpts->inc_best_effort = Options.inc_best_effort;
++	}
++	/* END Eddie */
+     
+ }
+ 
+Index: vpr/SRC/base/vpr_types.h
+===================================================================
+--- vpr/SRC/base/vpr_types.h	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/vpr_types.h	(.../branches/overlay_release)	(revision 2465)
+@@ -513,9 +513,11 @@
+ enum e_route_type
+ { GLOBAL, DETAILED };
+ enum e_router_algorithm
+-{ BREADTH_FIRST, TIMING_DRIVEN, DIRECTED_SEARCH };
++{ BREADTH_FIRST, TIMING_DRIVEN, DIRECTED_SEARCH, READ_ROUTE };
+ enum e_base_cost_type
+ { INTRINSIC_DELAY, DELAY_NORMALIZED, DEMAND_ONLY };
++enum e_inc_type
++{ INC_NONE, INC_OVERLAY };
+ 
+ #define NO_FIXED_CHANNEL_WIDTH -1
+ 
+@@ -538,6 +540,15 @@
+ 	boolean verify_binary_search;
+ 	boolean full_stats;
+ 	boolean doRouting;
++	/* BEGIN Eddie */
++	enum e_inc_type inc_type;
++	enum e_router_algorithm inc_router_algorithm;
++	boolean inc_le_symmetry;
++	boolean inc_best_effort;
++	int inc_connectivity;
++	char *inc_route_file;
++	char *inc_match_file;
++	/* END Eddie */
+ };
+ 
+ /* All the parameters controlling the router's operation are in this        *
+@@ -728,8 +739,11 @@
+     short ptc_num;
+ 
+     short cost_index;
+-    short occ;
+-    short capacity;
++    unsigned short occ;
++    /* EH: The portion of occ (above) that is 
++     * being incrementally occupied */
++    unsigned short inc_occ;
++    unsigned short capacity;
+     short fan_in;
+     short num_edges;
+     t_rr_type type;
+Index: vpr/SRC/base/ShowSetup.c
+===================================================================
+--- vpr/SRC/base/ShowSetup.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/base/ShowSetup.c	(.../branches/overlay_release)	(revision 2465)
+@@ -219,6 +219,9 @@
+ 		case DIRECTED_SEARCH:
+ 		    printf("DIRECTED_SEARCH\n");
+ 		    break;
++		case READ_ROUTE:
++		    printf("READ_ROUTE\n");
++		    break;
+ 		default:
+ 		    printf("<Unknown>\n");
+ 		    exit(1);
+@@ -343,6 +346,46 @@
+ 		}
+ 	}
+     printf("\n");
++
++	/* BEGIN Eddie */
++	if (RouterOpts.inc_type != INC_NONE)
++	{
++		printf("RouterOpts.inc_type:             ");
++		switch(RouterOpts.inc_type)
++		{
++		case INC_OVERLAY: printf("INC_OVERLAY\n"); break;
++		default:
++		    printf("<Unknown>\n");
++		    exit(1);
++		}
++
++    	printf("RouterOpts.inc_router_algorithm:  ");
++    	switch (RouterOpts.inc_router_algorithm)
++		{
++		case BREADTH_FIRST:
++		    printf("BREADTH_FIRST\n");
++		    break;
++		case TIMING_DRIVEN:
++		    printf("TIMING_DRIVEN\n");
++		    break;
++		case DIRECTED_SEARCH:
++		    printf("DIRECTED_SEARCH\n");
++		    break;
++		case READ_ROUTE:
++		    printf("READ_ROUTE\n");
++		    break;
++		default:
++		    printf("<Unknown>\n");
++		    exit(1);
++		}
++
++    	printf("RouterOpts.inc_le_symmetry:   %s\n", RouterOpts.inc_le_symmetry?"TRUE":"FALSE");
++    	printf("RouterOpts.inc_best_effort:   %s\n", RouterOpts.inc_best_effort?"TRUE":"FALSE");
++    	printf("RouterOpts.inc_connectivity:  %d\n", RouterOpts.inc_connectivity);
++    	printf("RouterOpts.inc_match_file:    %s\n", RouterOpts.inc_match_file);
++	}
++    printf("\n");
++	/* END Eddie */
+ }
+ 
+ 
+Index: vpr/SRC/route/check_route.c
+===================================================================
+--- vpr/SRC/route/check_route.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/route/check_route.c	(.../branches/overlay_release)	(revision 2465)
+@@ -29,7 +29,6 @@
+ 				int chany_node);
+ static void reset_flags(int inet,
+ 			boolean * connected_to_route);
+-static void recompute_occupancy_from_scratch(t_ivec ** clb_opins_used_locally);
+ static void check_locally_used_clb_opins(t_ivec ** clb_opins_used_locally,
+ 					enum e_route_type route_type);
+ 
+@@ -54,7 +53,7 @@
+     struct s_trace *tptr;
+     boolean *pin_done;
+ 
+-    printf("\nChecking to ensure routing is legal ...\n");
++    printf("Checking to ensure routing is legal ...\n");
+ 
+ /* Recompute the occupancy from scratch and check for overuse of routing *
+  * resources.  This was already checked in order to determine that this  *
+@@ -665,11 +664,34 @@
+     return (num_adj);
+ }
+ 
+-
+-static void
++void
+ recompute_occupancy_from_scratch(t_ivec ** clb_opins_used_locally)
+ {
++	int inode;
++	int *occ;
+ 
++	occ = malloc(num_rr_nodes * sizeof(int));
++	for (inode = 0; inode < num_rr_nodes; inode++) 
++	{
++		occ[inode] = rr_node[inode].occ;
++	}
++
++	recompute_occupancy_from_scratch_no_check(clb_opins_used_locally);
++
++	for (inode = 0; inode < num_rr_nodes; inode++)
++	{
++		assert(rr_node[inode].occ == occ[inode]);
++	}
++	
++	free(occ);
++}
++
++
++void
++recompute_occupancy_from_scratch_no_check(t_ivec ** clb_opins_used_locally)
++{
++
++
+ /* This routine updates the occ field in the rr_node structure according to *
+  * the resource usage of the current routing.  It does a brute force        *
+  * recompute from scratch that is useful for sanity checking.               */
+@@ -680,7 +702,7 @@
+ /* First set the occupancy of everything to zero. */
+ 
+     for(inode = 0; inode < num_rr_nodes; inode++)
+-	rr_node[inode].occ = 0;
++		rr_node[inode].occ = 0;
+ 
+ /* Now go through each net and count the tracks and pins used everywhere */
+ 
+@@ -706,6 +728,7 @@
+ 				break;
+ 			}
+ 
++		    assert(tptr->next);
+ 		    tptr = tptr->next;
+ 		}
+ 	}
+Index: vpr/SRC/route/route_breadth_first.c
+===================================================================
+--- vpr/SRC/route/route_breadth_first.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/route/route_breadth_first.c	(.../branches/overlay_release)	(revision 2465)
+@@ -13,7 +13,7 @@
+ static boolean breadth_first_route_net(int inet,
+ 				       float bend_cost);
+ 
+-static void breadth_first_expand_trace_segment(struct s_trace *start_ptr,
++void breadth_first_expand_trace_segment(struct s_trace *start_ptr,
+ 					       int
+ 					       remaining_connections_to_sink);
+ 
+@@ -22,7 +22,7 @@
+ 					    int inet,
+ 					    float bend_cost);
+ 
+-static void breadth_first_add_source_to_heap(int inet);
++void breadth_first_add_source_to_heap(int inet);
+ 
+ 
+ /************************ Subroutine definitions ****************************/
+@@ -202,7 +202,7 @@
+ }
+ 
+ 
+-static void
++void
+ breadth_first_expand_trace_segment(struct s_trace *start_ptr,
+ 				   int remaining_connections_to_sink)
+ {
+@@ -335,7 +335,7 @@
+ }
+ 
+ 
+-static void
++void
+ breadth_first_add_source_to_heap(int inet)
+ {
+ 
+Index: vpr/SRC/route/check_route.h
+===================================================================
+--- vpr/SRC/route/check_route.h	(.../trunk)	(revision 2465)
++++ vpr/SRC/route/check_route.h	(.../branches/overlay_release)	(revision 2465)
+@@ -1,3 +1,6 @@
+ void check_route(enum e_route_type route_type,
+ 		 int num_switch,
+ 		 t_ivec ** clb_opins_used_locally);
++
++void recompute_occupancy_from_scratch_no_check(t_ivec ** clb_opins_used_locally);
++void recompute_occupancy_from_scratch(t_ivec ** clb_opins_used_locally);
+Index: vpr/SRC/route/check_rr_graph.c
+===================================================================
+--- vpr/SRC/route/check_rr_graph.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/route/check_rr_graph.c	(.../branches/overlay_release)	(revision 2465)
+@@ -396,10 +396,14 @@
+ 		}
+ 	    if(type->class_inf[ptc_num].num_pins != capacity)
+ 		{
+-		    printf
+-			("Error in check_node.  Inode %d (type %d) has a capacity\n"
+-			 "of %d.\n", inode, rr_type, capacity);
+-		    exit(1);
++			/* EH: Only error if not incrementally occupied */
++			if (rr_node[inode].inc_occ == 0)
++			{
++		    	printf
++				("Error in check_node.  Inode %d (type %d) has a capacity "
++				 "of %d.\n", inode, rr_type, capacity);
++		    	exit(1);
++			}
+ 		}
+ 	    break;
+ 
+@@ -434,10 +438,14 @@
+ 		}
+ 	    if(capacity != 1)
+ 		{
+-		    printf
+-			("Error in check_node:  Inode %d (type %d) has a capacity\n"
+-			 "of %d.\n", inode, rr_type, capacity);
+-		    exit(1);
++			/* EH: Only error if not incrementally occupied */
++			if (rr_node[inode].inc_occ == 0)
++			{
++		    	printf
++				("Error in check_node:  Inode %d (type %d) has a capacity "
++			 	"of %d.\n", inode, rr_type, capacity);
++		    	exit(1);
++			}
+ 		}
+ 	    break;
+ 
+@@ -463,10 +471,14 @@
+ 
+ 	    if(capacity != tracks_per_node)
+ 		{
+-		    printf
+-			("Error in check_node:  Inode %d (type %d) has a capacity\n"
+-			 "of %d.\n", inode, rr_type, capacity);
+-		    exit(1);
++			/* EH: Only error if not incrementally occupied */
++			if (rr_node[inode].inc_occ == 0)
++			{
++		    	printf
++				("Error in check_node:  Inode %d (type %d) has a capacity\n"
++				 "of %d.\n", inode, rr_type, capacity);
++		    	exit(1);
++			}
+ 		}
+ 	    break;
+ 
+@@ -492,10 +504,14 @@
+ 
+ 	    if(capacity != tracks_per_node)
+ 		{
+-		    printf
+-			("Error in check_node:  Inode %d (type %d) has a capacity\n"
+-			 "of %d.\n", inode, rr_type, capacity);
+-		    exit(1);
++			/* EH: Only error if not incrementally occupied */
++			if (rr_node[inode].inc_occ == 0)
++			{
++			    printf
++				("Error in check_node:  Inode %d (type %d) has a capacity\n"
++				 "of %d.\n", inode, rr_type, capacity);
++		    	exit(1);
++			}
+ 		}
+ 	    break;
+ 
+Index: vpr/SRC/route/route_breadth_first.h
+===================================================================
+--- vpr/SRC/route/route_breadth_first.h	(.../trunk)	(revision 2465)
++++ vpr/SRC/route/route_breadth_first.h	(.../branches/overlay_release)	(revision 2465)
+@@ -1,3 +1,7 @@
+ boolean try_breadth_first_route(struct s_router_opts router_opts,
+ 				t_ivec ** clb_opins_used_locally,
+ 				int width_fac);
++void breadth_first_add_source_to_heap(int inet);
++void breadth_first_expand_trace_segment(struct s_trace *start_ptr,
++					       int
++					       remaining_connections_to_sink);
+Index: vpr/SRC/route/route_export.h
+===================================================================
+--- vpr/SRC/route/route_export.h	(.../trunk)	(revision 2465)
++++ vpr/SRC/route/route_export.h	(.../branches/overlay_release)	(revision 2465)
+@@ -11,7 +11,9 @@
+ 		  t_chan_width_dist chan_width_dist,
+ 		  t_ivec ** clb_opins_used_locally,
+ 		  t_mst_edge ** mst,
+-		  boolean * Fc_clipped);
++		  boolean * Fc_clipped,
++		  enum e_operation operation,
++		  struct s_file_name_opts *FileNameOpts);
+ 
+ boolean feasible_routing(void);
+ 
+@@ -37,3 +39,7 @@
+ void get_serial_num(void);
+ 
+ void print_route(char *name);
++
++t_ivec **
++alloc_and_load_clb_opins_used_locally();
++
+Index: vpr/SRC/route/route_common.c
+===================================================================
+--- vpr/SRC/route/route_common.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/route/route_common.c	(.../branches/overlay_release)	(revision 2465)
+@@ -2,6 +2,10 @@
+ #include <stdio.h>
+ #include <assert.h>
+ #include <time.h>
++#include <signal.h>
++#include <limits.h>
++#include <string.h>
++
+ #include "util.h"
+ #include "vpr_types.h"
+ #include "vpr_utils.h"
+@@ -16,6 +20,9 @@
+ #include "place_and_route.h"
+ #include "rr_graph.h"
+ #include "read_xml_arch_file.h"
++#include "check_route.h"
++#include "rr_graph_util.h"
++#include "rr_graph2.h"
+ 
+ /***************** Variables shared only by route modules *******************/
+ 
+@@ -81,19 +88,20 @@
+ 
+ /******************** Subroutines local to route_common.c *******************/
+ 
+-static void free_trace_data(struct s_trace *tptr);
++void free_trace_data(struct s_trace *tptr);
+ static void load_route_bb(int bb_factor);
+ 
+-static struct s_trace *alloc_trace_data(void);
++struct s_trace *alloc_trace_data(void);
+ static void add_to_heap(struct s_heap *hptr);
+ static struct s_heap *alloc_heap_data(void);
+ static struct s_linked_f_pointer *alloc_linked_f_pointer(void);
+ 
+-static t_ivec **alloc_and_load_clb_opins_used_locally();
++t_ivec **alloc_and_load_clb_opins_used_locally();
+ static void adjust_one_rr_occ_and_pcost(int inode,
+ 					int add_or_sub,
+ 					float pres_fac);
+ 
++static boolean read_route(const char *route_file);
+ 
+ 
+ /************************** Subroutine definitions ***************************/
+@@ -257,7 +265,9 @@
+ 	  t_chan_width_dist chan_width_dist,
+ 	  t_ivec ** clb_opins_used_locally,
+ 	  t_mst_edge ** mst,
+-	  boolean * Fc_clipped)
++	  boolean * Fc_clipped,
++	  enum e_operation operation,
++	  struct s_file_name_opts *FileNameOpts)
+ {
+ 
+ /* Attempts a routing via an iterated maze router algorithm.  Width_fac *
+@@ -332,14 +342,29 @@
+ 		try_timing_driven_route(router_opts, net_slack, net_delay,
+ 					clb_opins_used_locally);
+ 	}
+-    else
++    else if (router_opts.router_algorithm == DIRECTED_SEARCH)
+ 	{			/* Directed Search Routability Driven */
+ 	    printf("Confirming Router Algorithm: DIRECTED_SEARCH.\n");
+ 	    success =
+ 		try_directed_search_route(router_opts, clb_opins_used_locally,
+ 					  width_fac, mst);
+ 	}
++    else if (router_opts.router_algorithm == READ_ROUTE)
++    {
++		int inet;
++	    printf("Confirming Router Algorithm: Reading from %s.\n", FileNameOpts->RouteFile);
++	    success = read_route(FileNameOpts->RouteFile);
+ 
++		for (inet = 0; inet < num_nets; inet++)
++		{
++			pathfinder_update_one_cost(trace_head[inet], 1, 0.0);
++		}
++
++		check_route(router_opts.route_type,
++				det_routing_arch.num_switch,
++				clb_opins_used_locally);
++    }
++
+     free_rr_node_route_structs();
+ 
+     return (success);
+@@ -365,7 +390,6 @@
+     return (TRUE);
+ }
+ 
+-
+ void
+ pathfinder_update_one_cost(struct s_trace *route_segment_start,
+ 			   int add_or_sub,
+@@ -387,11 +411,12 @@
+     if(tptr == NULL)		/* No routing yet. */
+ 	return;
+ 
+-    for(;;)
++    while(tptr)
+ 	{
+ 	    inode = tptr->index;
+ 
+ 	    occ = rr_node[inode].occ + add_or_sub;
++	    assert(occ >= 0 && occ <= USHRT_MAX);
+ 	    capacity = rr_node[inode].capacity;
+ 
+ 	    rr_node[inode].occ = occ;
+@@ -796,7 +821,7 @@
+ 
+ /* TODO: probably now this whole function can be removed, must check correctness of routing so I will leave everything as is
+ until I can golden check the routing before I do this massive code rewrite and performance optimizations */
+-static t_ivec **
++t_ivec **
+ alloc_and_load_clb_opins_used_locally()
+ {
+ 
+@@ -1153,7 +1178,6 @@
+     return (heap_head);
+ }
+ 
+-
+ void
+ empty_heap(void)
+ {
+@@ -1232,7 +1256,7 @@
+ }
+ 
+ 
+-static struct s_trace *
++struct s_trace *
+ alloc_trace_data(void)
+ {
+ 
+@@ -1262,7 +1286,7 @@
+ }
+ 
+ 
+-static void
++void
+ free_trace_data(struct s_trace *tptr)
+ {
+ 
+@@ -1314,7 +1338,129 @@
+     return (temp_ptr);
+ }
+ 
++static boolean
++read_route(const char *route_file)
++{
++	FILE *fp;
++	char line[1024], tmp[1024], *pline, name[1024];
++	int i, inet, inode, ipin, ilow, jlow, ptc_num;
++	int chanwidth;
++	t_rr_type rr_type;
++	char *name_type[] =
++		{ "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY", "INTRA_CLUSTER_EDGE" };
++	char type[7], c;
+ 
++	fp = my_fopen(route_file, "r", 0);
++	assert(fp);
++
++	assert(fscanf(fp, "Array size: %d x %d logic blocks.\n", &nx, &ny) == 2);
++	fscanf(fp, "Channel Width: %d.\n", &chanwidth);
++    	fscanf(fp, "\nRouting:");
++	c = fgetc(fp); assert(c == '\n');
++
++	while(!feof(fp))
++	{
++		c = fgetc(fp); assert(c == '\n');
++		assert(fgets(line, 1024, fp));
++		assert(sscanf(line, "Net %d %n", &inet, &i) == 1);
++		pline = line + i;
++		assert(inet < num_nets);
++		assert(sscanf(pline, "(%[^)])%n", name, &i) == 1);
++		pline += i;
++		assert(strcmp(clb_net[inet].name, name) == 0);
++		if (*pline == '\n') 
++		{
++    		struct s_trace **ptptr;
++			struct s_trace *tptr_prev;
++			assert(clb_net[inet].is_global == FALSE);
++			c = fgetc(fp); assert(c == '\n');
++			ptptr = &(trace_head[inet]);
++			tptr_prev = NULL;
++
++			while(fgets(line, 1024, fp) && line[0] != '\n')
++			{
++				assert(sscanf(line, "%6s (%d,%d) %n", type, &ilow, &jlow, &i) == 3);
++				pline = line + i;
++				for (i = 0; i < 7; i++)
++				{
++					if (strcmp(name_type[i], type) == 0)
++					{
++						rr_type = i;
++						break;
++					}
++				}
++				assert(i < 7);
++				assert(sscanf(pline, "%[^:]: %n", tmp, &i) == 1);
++				pline += i;
++				assert(sscanf(pline, "%d  %n", &ptc_num, &i) == 1);
++				pline += i;
++				inode = get_rr_node_index(ilow, jlow, rr_type, ptc_num, rr_node_indices);
++				
++				if (tptr_prev != NULL) {
++					int iedge;
++					int inode_prev;
++					inode_prev = tptr_prev->index;
++
++					for (iedge = 0; iedge < rr_node[inode_prev].num_edges; iedge++)
++					{
++						if (rr_node[inode_prev].edges[iedge] == inode) break;
++					}
++					assert(iedge < rr_node[inode_prev].num_edges);
++
++					tptr_prev->iswitch = rr_node[inode_prev].switches[iedge];
++				}
++
++				assert(rr_node[inode].type == rr_type);
++				assert(rr_node[inode].xlow == ilow);
++				assert(rr_node[inode].ylow == jlow);
++				assert(rr_node[inode].ptc_num == ptc_num);
++
++				*ptptr = alloc_trace_data();
++				(*ptptr)->index = inode;
++				trace_tail[inet] = *ptptr;
++				if (rr_node[inode].type == SINK)
++				{
++					(*ptptr)->iswitch = OPEN;
++					tptr_prev = NULL;
++				}
++				else
++					tptr_prev = *ptptr;
++				ptptr = &((*ptptr)->next);
++			}
++			*ptptr = NULL;
++		}
++		else if (*pline == ':')
++		{
++			assert(strcmp(pline, ": global net connecting:\n") == 0);
++			assert(clb_net[inet].is_global == TRUE);
++			c = fgetc(fp); assert(c == '\n');
++			ipin = 0;
++			while(fgets(line, 1024, fp) && line[0] != '\n')
++			{
++				int node_block_pin, bnum, x, y, iclass;
++				assert(ipin <= clb_net[inet].num_sinks);
++				assert(sscanf(line,
++				    "Block %s (#%d) at (%d, %d), Pin class %d.\n",
++				    name, &bnum, &x, &y, &iclass) == 5);
++				assert(clb_net[inet].node_block[ipin] == bnum);
++				node_block_pin = clb_net[inet].node_block_pin[ipin];
++				assert(iclass == block[bnum].type->pin_class[node_block_pin]);
++				assert(strcmp(name, block[bnum].name) == 0);
++				assert(block[bnum].x == x);
++				assert(block[bnum].y == y);
++
++				ipin++;
++			}
++		}
++		else
++		{
++			assert(*pline == '\n' || *pline == ':');
++		}
++	}
++	return (TRUE);
++}
++
++
+ void
+ print_route(char *route_file)
+ {
+@@ -1405,9 +1551,9 @@
+ 
+ 					fprintf(fp, "%d  ", rr_node[inode].ptc_num);
+ 
+-	/* Uncomment line below if you're debugging and want to see the switch types *
+-	 * used in the routing.                                                      */
+-	/*          fprintf (fp, "Switch: %d", tptr->iswitch);    */
++					/* Uncomment line below if you're debugging and want to see the switch types *
++					 * used in the routing.                                                      */
++					/* fprintf (fp, "Switch: %d", tptr->iswitch); */
+ 
+ 					fprintf(fp, "\n");
+ 
+Index: vpr/SRC/route/route_common.h
+===================================================================
+--- vpr/SRC/route/route_common.h	(.../trunk)	(revision 2465)
++++ vpr/SRC/route/route_common.h	(.../branches/overlay_release)	(revision 2465)
+@@ -128,3 +128,7 @@
+ void reserve_locally_used_opins(float pres_fac,
+ 				boolean rip_up_local_opins,
+ 				t_ivec ** clb_opins_used_locally);
++
++void free_trace_data(struct s_trace *tptr);
++
++struct s_trace *alloc_trace_data(void);
+Index: vpr/SRC/route/segment_stats.c
+===================================================================
+--- vpr/SRC/route/segment_stats.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/route/segment_stats.c	(.../branches/overlay_release)	(revision 2465)
+@@ -1,4 +1,5 @@
+ #include <stdio.h>
++#include <assert.h>
+ #include "util.h"
+ #include "vpr_types.h"
+ #include "globals.h"
+@@ -52,6 +53,7 @@
+ 	{
+ 	    if(rr_node[inode].type == CHANX || rr_node[inode].type == CHANY)
+ 		{
++			int occ, capacity;
+ 		    cost_index = rr_node[inode].cost_index;
+ 		    seg_type = rr_indexed_data[cost_index].seg_index;
+ 
+@@ -60,11 +62,23 @@
+ 		    else
+ 			length = LONGLINE;
+ 
+-		    seg_occ_by_length[length] += rr_node[inode].occ;
+-		    seg_cap_by_length[length] += rr_node[inode].capacity;
+-		    seg_occ_by_type[seg_type] += rr_node[inode].occ;
+-		    seg_cap_by_type[seg_type] += rr_node[inode].capacity;
++			capacity = rr_node[inode].capacity;
++			if (capacity > 1)
++			{
++				assert(rr_node[inode].inc_occ > 0);
++				occ = 1;
++				capacity = 1;
++			}
++			else
++			{
++				occ = rr_node[inode].occ;
++			}
+ 
++		    seg_occ_by_length[length] += occ;
++		    seg_cap_by_length[length] += capacity;
++		    seg_occ_by_type[seg_type] += occ;
++		    seg_cap_by_type[seg_type] += capacity;
++
+ 		}
+ 	}
+ 
+Index: vpr/SRC/place/place.c
+===================================================================
+--- vpr/SRC/place/place.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/place/place.c	(.../branches/overlay_release)	(revision 2465)
+@@ -1687,6 +1687,7 @@
+     min_x = max(1, x_from - rlx);
+     max_x = min(nx, x_from + rlx);
+     min_y = max(1, y_from - rly);
++	/* EH: Fix for off-by-one bug: #51 */
+     max_y = min(ny, y_from + rly);
+ 
+     num_col_same_type = 0;
+@@ -1704,7 +1705,7 @@
+ 		}
+ 	    assert(num_col_same_type != 0);
+ 	    if(num_col_same_type == 1 &&
+-	       ((((max_y - min_y) / type->height) - 1) <= 0
++	       (((max_y-y_from)/type->height + (y_from-min_y)/type->height) <= 0
+ 		|| type->height > (ny / 2)))
+ 		return FALSE;
+ 	}
+@@ -1831,13 +1832,19 @@
+ 		}		/* end type if */
+ 	    else
+ 		{
++#if 0
+ 			if(nx == 1 && ny == 1) {
+ 				return FALSE;
+ 			}
++#endif
+ 		    x_rel = my_irand(num_col_same_type - 1);
+ 		    y_rel =
++			/*
+ 			my_irand(max
+-				 (0, ((max_y - min_y) / type->height) - 1));
++			 (0, ((max_y - min_y) / type->height) - 1));
++			*/
++			my_irand((max_y-y_from)/type->height + (y_from-min_y)/type->height);
++
+ 		    *x_to = x_lookup[x_rel];
+ 		    *y_to = min_y + y_rel * type->height;
+ 		    *y_to = (*y_to) - grid[*x_to][*y_to].offset;	/* align it */
+@@ -1845,7 +1852,7 @@
+ 		    assert(*y_to >= 1 && *y_to <= ny);			
+ 		}
+ 	}
+-    while((x_from == *x_to) && (y_from == *y_to));
++    while((x_from == *x_to) && (y_from == *y_to) || (grid[*x_to][*y_to].type != type));
+ 
+ #ifdef DEBUG
+     if(*x_to < 0 || *x_to > nx + 1 || *y_to < 0 || *y_to > ny + 1)
+Index: vpr/SRC/main.c
+===================================================================
+--- vpr/SRC/main.c	(.../trunk)	(revision 2465)
++++ vpr/SRC/main.c	(.../branches/overlay_release)	(revision 2465)
+@@ -201,16 +201,10 @@
+ 	       RoutingArch, Segments, Timing, Arch.Chans);
+ 	fflush(stdout);
+     
++	begin = clock();
+ 	/* Packing stage */
+ 	if(PackerOpts.doPacking) {
+-		begin = clock();
+ 		try_pack(&PackerOpts, &Arch, user_models, library_models);
+-		end = clock();
+-		#ifdef CLOCKS_PER_SEC
+-			printf("Packing took %g seconds\n", (float)(end - begin) / CLOCKS_PER_SEC);
+-		#else
+-			printf("Packing took %g seconds\n", (float)(end - begin) / CLK_PER_SEC);
+-		#endif
+ 
+ 		/* Free logical blocks and nets */
+ 		if(logical_block != NULL) {
+@@ -231,6 +225,12 @@
+ 	    /* This is done so that all blocks have subblocks and can be treated the same */
+ 	    check_netlist();
+ 	}
++    end = clock();
++#ifdef CLOCKS_PER_SEC
++    printf("Packing took %g seconds\n", (float)(end - begin) / CLOCKS_PER_SEC);
++#else
++    printf("Packing took %g seconds\n", (float)(end - begin) / CLK_PER_SEC);
++#endif
+ 
+ 	/* Output the current settings to console. */
+     ShowSetup(Options, Arch, TimingEnabled, Operation, FileNameOpts, PlacerOpts,
+@@ -256,11 +256,18 @@
+ 	}
+ 
+     /* Do placement and routing */
+-    place_and_route(Operation, PlacerOpts, FileNameOpts.PlaceFile,
+-		    FileNameOpts.NetFile, FileNameOpts.ArchFile, FileNameOpts.RouteFile,
++    place_and_route(Operation, PlacerOpts, &FileNameOpts,
+ 		    AnnealSched, RouterOpts, RoutingArch,
+-			Segments, Timing, Arch.Chans, Arch.models);
++		    Segments, Timing, Arch.Chans, Arch.models, 
++		    /* BEGIN Eddie */
++		    &Arch);
++    		/* END Eddie */
+ 
++	/* Write out the net name -> vnet mapping 
++	 * into <circuitname>.map */
++	if (Options.Count[OT_INC_DUMP_NETS])
++		inc_dump_nets(&FileNameOpts);
++
+ 	fflush(stdout);
+ 
+     /* Close down X Display */
+@@ -335,13 +342,20 @@
+     puts("\t[--acc_fac <float>] [--first_iter_pres_fac <float>]");
+     puts("\t[--bend_cost <float>] [--route_type global | detailed]");
+     puts("\t[--verify_binary_search] [--route_chan_width <int>]");
+-    puts("\t[--router_algorithm breadth_first | timing_driven | directed_search]");
++    puts("\t[--router_algorithm breadth_first | timing_driven | directed_search | read_route]");
+     puts("\t[--base_cost_type intrinsic_delay | delay_normalized | demand_only]");
+     puts("");
+     puts("Routing options valid only for timing-driven routing:");
+     puts("\t[--astar_fac <float>] [--max_criticality <float>]");
+     puts("\t[--criticality_exp <float>]");
+     puts("");
++    puts("OVERLAY NETWORK options:");
++    puts("\t[--inc_instrument_type overlay]");
++    puts("\t[--inc_router_algorithm breadth_first | timing_driven | directed_search | read_route]");
++    puts("\t[--inc_route_file <file>.route]"); 
++    puts("\t[--inc_match_file <file>.match]"); 
++    puts("\t[--inc_le_symmetry on|off] [--inc_best_effort on|off] [--inc_dump_all_nets]");
++    puts("");
+ }
+ 
+ 
+Index: vpr/Makefile
+===================================================================
+--- vpr/Makefile	(.../trunk)	(revision 2465)
++++ vpr/Makefile	(.../branches/overlay_release)	(revision 2465)
+@@ -2,33 +2,44 @@
+ 
+ CC = gcc
+ LIB_DIR = -L/usr/lib/X11 -L../libvpr
+-#LIB = -lm -lX11 -lvpr_6
+-LIB = -lm -lvpr_6
++LIB = -lm -lX11 -lvpr_6
++#LIB = -lm -lvpr_6
+ SRC_DIR = SRC
+ OBJ_DIR = OBJ
+-OTHER_DIR = -ISRC/util -ISRC/timing -ISRC/pack -ISRC/place -ISRC/base -ISRC/route
++OBJ_DEBUG_DIR = OBJ_DEBUG
++OTHER_DIR = -ISRC/util -ISRC/timing -ISRC/pack -ISRC/place -ISRC/base -ISRC/route -ISRC/inc
+ 
+-WARN_FLAGS = -Wall -Wpointer-arith -Wcast-qual -Wstrict-prototypes -O -D__USE_FIXED_PROTOTYPES__ -ansi -pedantic -Wmissing-prototypes -Wshadow -Wcast-align -D_POSIX_SOURCE
++WARN_FLAGS = -Wall -Wpointer-arith -Wcast-qual -Wstrict-prototypes -D__USE_FIXED_PROTOTYPES__ -ansi -pedantic -Wmissing-prototypes -Wshadow -Wcast-align -D_POSIX_SOURCE
+ DEBUG_FLAGS = -g 
+ OPT_FLAGS = -O3
+ INC_FLAGS = -I../libvpr/include
+ 
+ #FLAGS = $(WARN_FLAGS) -D EZXML_NOMMAP  -D_POSIX_C_SOURCE
+-FLAGS = $(OPT_FLAGS) $(INC_FLAGS) -D EZXML_NOMMAP -DNO_GRAPHICS -D_POSIX_C_SOURCE
++FLAGS = $(OPT_FLAGS) $(INC_FLAGS) -D EZXML_NOMMAP -D_POSIX_C_SOURCE
+ #FLAGS = $(OPT_FLAGS) $(INC_FLAGS) -D EZXML_NOMMAP -D_POSIX_C_SOURCE
+ #FLAGS = $(DEBUG_FLAGS) $(INC_FLAGS) -pedantic  -D EZXML_NOMMAP  -D_POSIX_C_SOURCE
+ #FLAGS = $(DEBUG_FLAGS) -pedantic -D EZXML_NOMMAP -Wall -D_POSIX_C_SOURCE
+-#FLAGS = $(DEBUG_FLAGS) $(INC_FLAGS) -pedantic  -D EZXML_NOMMAP -DNO_GRAPHICS -D_POSIX_C_SOURCE
++FLAGS_DEBUG = $(DEBUG_FLAGS) $(WARN_FLAGS) $(INC_FLAGS) -pedantic  -D EZXML_NOMMAP -DNO_GRAPHICS -D_POSIX_C_SOURCE
+ 
+ EXE = vpr
++EXE_DEBUG = vpr_debug
+ 
+ OBJ = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/*/*.c))
+ OBJ_DIRS=$(sort $(dir $(OBJ)))
+ DEP := $(OBJ:.o=.d)
+ 
++OBJ_DEBUG = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DEBUG_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/*/*.c))
++OBJ_DEBUG_DIRS=$(sort $(dir $(OBJ_DEBUG)))
++DEP_DEBUG := $(OBJ_DEBUG:.o=.d)
++
++all: $(EXE) $(EXE_DEBUG)
++
+ $(EXE): $(OBJ) Makefile ../libvpr/libvpr_6.a
+ 	$(CC) $(FLAGS) $(OBJ) -o $(EXE) $(LIB_DIR) $(LIB)
+ 
++$(EXE_DEBUG): $(OBJ_DEBUG) Makefile ../libvpr/libvpr_6.a
++	$(CC) $(FLAGS_DEBUG) $(OBJ_DEBUG) -o $(EXE_DEBUG) $(LIB_DIR) $(LIB)
++
+ # Enable a second round of expansion so that we may include
+ # the target directory as a prerequisite of the object file.
+ .SECONDEXPANSION:
+@@ -40,15 +51,22 @@
+ $(OBJ): OBJ/%.o:$(SRC_DIR)/%.c | $$(dir $$@D)
+ 	$(CC) $(FLAGS) -MD -MP $(X11_INCLUDE) -I$(OTHER_DIR) -ISRC/util -c $< -o $@
+ 
++$(OBJ_DEBUG): OBJ_DEBUG/%.o:$(SRC_DIR)/%.c | $$(dir $$@D)
++	$(CC) $(FLAGS_DEBUG) -MD -MP $(X11_INCLUDE) -I$(OTHER_DIR) -ISRC/util -c $< -o $@
+ 
++
+ # Silently create target directories as need
+ $(OBJ_DIRS):
+ 	@ mkdir -p $@
+ 
+--include $(DEP)
++$(OBJ_DEBUG_DIRS):
++	@ mkdir -p $@
+ 
++
++-include $(DEP) $(DEP_DEBUG)
++
+ clean:
+-	rm -f $(EXE) $(OBJ) $(DEP)
++	rm -f $(EXE) $(EXE_DEBUG) $(OBJ) $(OBJ_DEBUG) $(DEP) $(DEP_DEBUG)
+ 	
+ clean_coverage: clean
+ 	rm -rf ./usr
+Index: ODIN_II/Makefile
+===================================================================
+--- ODIN_II/Makefile	(.../trunk)	(revision 2465)
++++ ODIN_II/Makefile	(.../branches/overlay_release)	(revision 2465)
+@@ -82,7 +82,7 @@
+ 
+ DEP = $(OBJ:.o=.d)
+ 
+-all: CTAGS $(EXEO)
++all: $(EXEO)
+ 
+ $(EXEO): $(OBJ)
+ 	$(CC) $(C_FLAGS) $(FLAGS) $(OBJ) -o $(EXEO) $(LIB)
+Index: Makefile
+===================================================================
+--- Makefile	(.../trunk)	(revision 2465)
++++ Makefile	(.../branches/overlay_release)	(revision 2465)
+@@ -2,7 +2,7 @@
+ # Makefile to build CAD tools in Verilog-to-Routing (VTR) Framework
+ ####################################################################
+ 
+-all: ODIN_II/odin_II.exe abc_with_bb_support/abc vpr/vpr
++all: ODIN_II/odin_II.exe abc_with_bb_support/abc vpr/vpr mwbm
+ 
+ ODIN_II/odin_II.exe: libvpr/libvpr_6.a
+ 	cd ODIN_II && make
+@@ -21,4 +21,15 @@
+ 	cd abc_with_bb_support && make clean
+ 	cd vpr && make clean
+ 	cd libvpr && make clean
++	make -C mwbm $@
++	make -C lemon-1.3 $@
+ 
++.PHONY: mwbm
++mwbm: lemon-1.3/build/lemon/config.h
++	make -C $@
++
++lemon-1.3/build/lemon/config.h: | lemon-1.3
++	cd lemon-1.3 && mkdir build && cd build && cmake .. && make
++
++lemon-1.3:
++	$(error Please download lemon-1.3 from http://lemon.cs.elte.hu/trac/lemon and extract it into this directory)
+
+

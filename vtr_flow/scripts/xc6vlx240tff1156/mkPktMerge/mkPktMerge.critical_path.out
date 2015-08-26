@@ -1,0 +1,43 @@
+Node: 4830  TN_FF_SOURCE Block #3 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~2) at (36,71)
+Pin: memory_slice.out1[0] pb (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~133)
+T_arr: 0  T_req: -6.992e-09  Tdel: 2.073e-09
+Internal Net: #656 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~133).  Pins on net: 2.
+
+Node: 4829  TN_FF_OPIN Block #3 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~2) at (36,71)
+Pin: memory_slice.out1[0] pb (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~133)
+T_arr: 2.073e-09  T_req: -4.919e-09  Tdel: 0
+Internal Net: #656 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~133).  Pins on net: 2.
+
+Node: 4344  TN_INTERMEDIATE_NODE Block #3 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~2) at (36,71)
+Pin: RAMB18E1_1024x18_dp.out1[17] pb (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~133)
+T_arr: 2.073e-09  T_req: -4.919e-09  Tdel: 0
+Internal Net: #656 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~133).  Pins on net: 2.
+
+Node: 4279  TN_INTERMEDIATE_NODE Block #3 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~2) at (36,71)
+Pin: RAMB18E1.DOPADOP[1] pb (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~133)
+T_arr: 2.073e-09  T_req: -4.919e-09  Tdel: 0
+Internal Net: #656 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~133).  Pins on net: 2.
+
+Node: 4195  TN_CB_OPIN Block #3 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~2) at (36,71)
+Pin: RAMB36E1.s0_DOPADOP[1] pb (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out2~2)
+T_arr: 2.073e-09  T_req: -4.919e-09  Tdel: 2.57e-09
+External-to-Block Net: #280 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~133).  Pins on net: 2.
+
+Node: 20121  TN_CB_IPIN Block #72 (out:top^oport_get~133) at (41,21)
+Pin: IOB.O[0] pb (out:top^oport_get~133)
+T_arr: 4.643e-09  T_req: -2.349e-09  Tdel: 2.349e-09
+Internal Net: #656 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~133).  Pins on net: 2.
+
+Node: 20122  TN_OUTPAD_IPIN Block #72 (out:top^oport_get~133) at (41,21)
+Pin: obuf.o[0] pb (out:top^oport_get~133)
+T_arr: 6.992e-09  T_req: 0  Tdel: 0
+Internal Net: #656 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~133).  Pins on net: 2.
+
+Node: 20123  TN_OUTPAD_SINK Block #72 (out:top^oport_get~133) at (41,21)
+Pin: obuf.o[0] pb (out:top^oport_get~133)T_arr: 6.992e-09  T_req: 0  
+Internal Net: #656 (top.arSRLFIFO_c+fo.generic_fifo_sc_c+fifo_1.dual_port_ram+ram1^out1~133).  Pins on net: 2.
+
+
+Tnodes on critical path: 8  Non-global nets on critical path: 1.
+Global nets on critical path: 0.
+Total logic delay: 4.422e-09 (s)  Total net delay: 2.57e-09 (s)
