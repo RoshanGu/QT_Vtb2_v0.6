@@ -95,20 +95,22 @@ inc_infer_vpack_blocks_and_pins(void)
 					//}
 					//printf(" yehi number hai %d \n", vpack_net[inet].num_sinks);
 					
-					if (vpack_net[inet].node_block[0] != iblk)
+					/*if (vpack_net[inet].node_block[0] != iblk)
 					{
 						//printf(" whats here: %d \n", vpack_net[inet].node_block[4]);
 						//printf("and here; %d \n", vpack_net[inet].node_block_pin[4]);
 						
 						assert(vpack_net[inet].node_block[0] == OPEN);
 						vpack_net[inet].node_block[0] = iblk;
-					}
+					}*/
+					assert(vpack_net[inet].node_block[0] != OPEN);
 
-					if (vpack_net[inet].node_block_pin[0] != ptc)
+					/*if (vpack_net[inet].node_block_pin[0] != ptc)
 					{
 						assert(vpack_net[inet].node_block_pin[0] == OPEN);
 						vpack_net[inet].node_block_pin[0] = ptc;
-					}
+					}*/
+					assert(vpack_net[inet].node_block_pin[0] != OPEN);
 				}
 			}
 		}
