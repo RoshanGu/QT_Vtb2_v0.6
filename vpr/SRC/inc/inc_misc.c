@@ -60,54 +60,84 @@ inc_infer_vpack_blocks_and_pins(void)
 			assert(block[iblk].pb->pb_graph_node->pb_type->num_pb == 1);
 			//printf(" num_modes_actually : %d \n", block[iblk].pb->pb_graph_node->pb_type->num_modes );
 			assert(block[iblk].pb->pb_graph_node->pb_type->num_modes == 3); //change 1 -> 3
+			
 			//printf(" num_pb_type_children mode 0 actually : %d \n", block[iblk].pb->pb_graph_node->pb_type->modes[0].num_pb_type_children );
+			assert(block[iblk].pb->pb_graph_node->pb_type->modes[0].num_pb_type_children == 2);
 			//printf(" num_pb_type_children mode 1 actually : %d \n", block[iblk].pb->pb_graph_node->pb_type->modes[1].num_pb_type_children );
+			assert(block[iblk].pb->pb_graph_node->pb_type->modes[1].num_pb_type_children == 1);
 			//printf(" num_pb_type_children mode 2 actually : %d \n", block[iblk].pb->pb_graph_node->pb_type->modes[2].num_pb_type_children );
-			assert(block[iblk].pb->pb_graph_node->pb_type->modes[0].num_pb_type_children == 2); //change 1- 2
-			nbles = block[iblk].pb->pb_graph_node->pb_type->modes[0].pb_type_children[0].num_pb;
-			for (ible = 0; ible < nbles; ible++)
+			assert(block[iblk].pb->pb_graph_node->pb_type->modes[2].num_pb_type_children == 1); //to make sure that all modes are dealt properly
+			
+			int num_modes_clb = block[iblk].pb->pb_graph_node->pb_type->num_modes; 
+			for(int a_mode = 0; a_mode < num_modes_clb; a_mode++ )
 			{
-				int ipin, npins;
-				//printf(" num_output_ports : %d \n", block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_ports );
-				//printf(" name of child_pbs : %s \n", block[iblk].pb->child_pbs[0][ible].name );
-				//printf(" num_output_ports here should be: %d and name: %s \n", block[iblk].pb->pb_graph_node->num_output_ports, block[iblk].pb->name );
-				assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_ports == 4); //change 1 -> 4
-				npins = block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_pins[0];
-				for (ipin = 0; ipin < npins; ipin++)
+			
+				//assert(block[iblk].pb->pb_graph_node->pb_type->modes[0].num_pb_type_children == 2); //change 1- 2  NOT CHECKING HERE BEcause checked above
+				nbles = block[iblk].pb->pb_graph_node->pb_type->modes[a_mode].pb_type_children[0].num_pb;
+				printf("-->>>>  %d \n", block[iblk].pb->pb_graph_node->pb_type->modes[a_mode].pb_type_children[0].num_pb);
+			
+				for (ible = 0; ible < nbles; ible++)
 				{
-					int ptc, inet;
-					/*assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_pins[0] == 1);*/
-					/* BLE OPIN ptc */
-					ptc = block[iblk].pb->child_pbs[0][ible].pb_graph_node->output_pins[0][ipin]
-						.pin_count_in_cluster;
-					inet = block[iblk].pb->rr_graph[ptc].net_num;
-					if (inet == OPEN) continue;
-
+					int ipin, npins, num_port_ble;
+					//printf(" num_output_ports : %d \n", block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_ports );
+					//printf(" name of child_pbs : %s \n", block[iblk].pb->child_pbs[0][ible].name );
 					//printf(" num_output_ports here should be: %d and name: %s \n", block[iblk].pb->pb_graph_node->num_output_ports, block[iblk].pb->name );
-					assert(block[iblk].pb->pb_graph_node->num_output_ports == 15); //change from 1 - 15
-					/*assert(block[iblk].pb->pb_graph_node->num_output_pins[0] == 10);*/
-					/* CLB OPIN */
-					ptc = block[iblk].pb->pb_graph_node->output_pins[0][ible*npins+ipin].pin_count_in_cluster;
-					
-					//if(strcmp(vpack_net[inet].name, "top^MULTI_PORT_MUX~1660^MUX_2~2527") == 0)
-					//{
-					 //  printf(" yehi number hai hai %d \n", vpack_net[inet].num_sinks);	
-					//}
-					//printf(" yehi number hai %d \n", vpack_net[inet].num_sinks);
-					
-					if (vpack_net[inet].node_block[0] != iblk)
+					//assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_ports == 4); //change 1 -> 4
+				
+					num_port_ble = block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_ports;
+					for(int bk = 0; bk < num_port_ble; bk++)
 					{
-						//printf(" whats here: %d \n", vpack_net[inet].node_block[4]);
-						//printf("and here; %d \n", vpack_net[inet].node_block_pin[4]);
-						
-						assert(vpack_net[inet].node_block[0] == OPEN);
-						vpack_net[inet].node_block[0] = iblk;
-					}
+							npins = block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_pins[bk];
+							for (ipin = 0; ipin < npins; ipin++)
+							{
+								int ptc, inet;
+								/*assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_pins[0] == 1);*/
+								/* BLE OPIN ptc */
+								ptc = block[iblk].pb->child_pbs[0][ible].pb_graph_node->output_pins[bk][ipin]
+										.pin_count_in_cluster;
+								inet = block[iblk].pb->rr_graph[ptc].net_num;
+								if (inet == OPEN) continue;
 
-					if (vpack_net[inet].node_block_pin[0] != ptc)
-					{
-						assert(vpack_net[inet].node_block_pin[0] == OPEN);
-						vpack_net[inet].node_block_pin[0] = ptc;
+								//printf(" num_output_ports here should be: %d and name: %s \n", block[iblk].pb->pb_graph_node->num_output_ports, block[iblk].pb->name );
+								assert(block[iblk].pb->pb_graph_node->num_output_ports == 15); //change from 1 - 15
+								/*assert(block[iblk].pb->pb_graph_node->num_output_pins[0] == 10);*/
+								/* CLB OPIN */
+								
+								int clb_op_port = block[iblk].pb->pb_graph_node->num_output_ports;
+								for(int dk =0; dk < clb_op_port; dk++)
+								{
+									ptc = block[iblk].pb->pb_graph_node->output_pins[dk][ible*npins+ipin].pin_count_in_cluster;
+								
+									if (vpack_net[inet].node_block[0] != iblk)       
+										/* .node_block[] holds the source and sink. 
+											size of array = number of sinks
+											.node_block[0] = source node
+											.node_block[1 to n] = sink nodes
+											if condition checks if iblk is the source block (int value). 
+											allowed values of the iblk/.node_block[] : 0 to 540 (for this case)
+											if .node_block[0] (i.e. source) is not the current block, then proceed within the block
+									*/
+									{
+										printf(" vpack_net[inet].node_block[0]:  %d \n", vpack_net[inet].node_block[0]);
+										printf(" iblk :  %d \n", iblk);
+										//printf("and here; %d \n", vpack_net[inet].node_block_pin[4]);
+						
+										assert(vpack_net[inet].node_block[0] == OPEN);
+										/*
+											assertion is checking if the .node_block[0] have -1 as the value. However, it can only take 0 to 540 as a value  
+											-1 is possible only if it has been  assigned a value -1 during initialization (or some phase earlier)
+										*/
+										
+										vpack_net[inet].node_block[0] = iblk;
+									}
+
+									if (vpack_net[inet].node_block_pin[0] != ptc)
+									{
+										assert(vpack_net[inet].node_block_pin[0] == OPEN);
+										vpack_net[inet].node_block_pin[0] = ptc;
+									}
+								}
+							}
 					}
 				}
 			}
