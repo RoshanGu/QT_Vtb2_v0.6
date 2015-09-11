@@ -77,13 +77,13 @@ inc_infer_vpack_blocks_and_pins(void)
 						assert(block[iblk].pb->pb_graph_node->child_pb_graph_nodes[2][0][0]->num_output_ports == 2);
 				
 				
-						num_ble_op_port = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[num_clb_modes][0][ible]->num_output_ports;
+						num_ble_op_port = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[cmode][0][ible]->num_output_ports;
 						/*  Now, Iterating over each BLE's output pins as per it's number of output ports to determine total pin
 						in one such output port, for npin [mode][0][each ble instance] - 0 because looking at 0th child in each mode of 
 						one level up SLICEL */
 						for (int cport = 0; cport < num_ble_op_port; cport++)
 							{
-								npins = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[num_clb_modes][0][ible]->num_output_pins[cport];
+								npins = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[cmode][0][ible]->num_output_pins[cport];
 								for (ipin = 0; ipin < npins; ipin++)
 									{
 										int ptc, inet;
@@ -92,7 +92,7 @@ inc_infer_vpack_blocks_and_pins(void)
 							
 										/* So, here ptc assigned as per - going through - in every mode of SLICEL, look for every instance of BLE,
 										and for every output port of BLE, look for it's pin and get the pin_count_in_cluster*/
-										ptc = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[num_clb_modes][0][ible]->output_pins[cport][ipin]
+										ptc = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[cmode][0][ible]->output_pins[cport][ipin]
 										.pin_count_in_cluster;
 							
 										inet = block[iblk].pb->rr_graph[ptc].net_num; /* Till here seems fine */
