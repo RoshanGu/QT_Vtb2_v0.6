@@ -331,6 +331,9 @@ boolean try_route(int width_fac, struct s_router_opts router_opts,
 		vpr_printf(TIO_MESSAGE_INFO, "Confirming Router Algorithm: Reading from %s.\n", FileNameOpts->RouteFile);
         success = read_route(FileNameOpts->RouteFile);
 		
+		/* For updating the clb_opins list */
+		reserve_locally_used_opins(router_opts.first_iter_pres_fac, FALSE, clb_opins_used_locally);
+		
 		for(inet = 0; inet <num_nets; inet++){
 			
 			pathfinder_update_one_cost(trace_head[inet], 1, 0.0);
