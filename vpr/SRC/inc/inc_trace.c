@@ -933,7 +933,16 @@ inc_setup_trace(int **trace_nets, int *new_num_nets)
 
 		if ((inet != OPEN && clb_net[inet].is_global) || iblk == OPEN)
 			continue;
-
+		
+		/* Below code snippet take care of the problem where iblk exceeds num_blocks
+		and enters num_logical_blocks range - there is some change in assigning the vpack_net from read_netlist
+		in VTR7 which changes the behaviour for the inc_add_clb_net func() - It's a fix */
+		
+		sblk = vpack_net[vnet].node_block[0];
+		if((vpack_to_clb_net_mapping[vnet] == OPEN ) && sblk > num_blocks )
+			continue;
+		
+		
 		/* If net is local, make it global */
 		if (vpack_to_clb_net_mapping[vnet] == OPEN)
 		{

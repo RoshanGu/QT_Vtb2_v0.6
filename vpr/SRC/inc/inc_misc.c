@@ -100,15 +100,15 @@ inc_infer_vpack_blocks_and_pins(void)
 						gets  evaluated because it's connected to slicel opin (see in 'Interconnect' tag)*/
 						ptc = block[iblk].pb->pb_graph_node->output_pins[(ible*3) + cport ][0].pin_count_in_cluster;
 						
-						if (vpack_net[inet].node_block[0] != iblk)
+						if (vpack_net[inet].node_block[0] != OPEN)
 						{
-							assert(vpack_net[inet].node_block[0] == OPEN);
+							//assert(vpack_net[inet].node_block[0] == OPEN);
 							vpack_net[inet].node_block[0] = iblk;
 						}
 						
-						if (vpack_net[inet].node_block_pin[0] != ptc)
+						if (vpack_net[inet].node_block_pin[0] != OPEN)
 						{
-							assert(vpack_net[inet].node_block_pin[0] == OPEN);
+							//assert(vpack_net[inet].node_block_pin[0] == OPEN);
 							vpack_net[inet].node_block_pin[0] = ptc;
 						}
 					}
