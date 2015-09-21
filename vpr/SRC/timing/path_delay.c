@@ -3022,6 +3022,12 @@ Marks unconstrained I/Os with a dummy clock domain (-1). */
 
 	/* Third, visit all TN_FF_SOURCE and TN_FF_SINK tnodes, and transfer the clock domain and skew from their corresponding TN_FF_CLOCK tnodes*/
 	for (inode = 0; inode < num_tnodes; inode++) {
+		
+		int tblk = tnode[inode].block;
+		/* Skipping all the TBs as they have there corresponding tnode as NULL */
+		if(block[tblk].name == NULL)
+			continue;
+		
 		if (tnode[inode].type == TN_FF_SOURCE || tnode[inode].type == TN_FF_SINK) {
 			clock_node = find_ff_clock_tnode(inode, is_prepacked);
 			tnode[inode].clock_domain = clock_node->clock_domain;
