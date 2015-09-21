@@ -58,72 +58,66 @@ inc_infer_vpack_blocks_and_pins(void)
 			assert(block[iblk].pb->pb_graph_node->pb_type->num_modes == 3);
 			assert(block[iblk].pb->pb_graph_node->pb_type->modes[0].num_pb_type_children == 2);
 			
-			num_clb_modes = block[iblk].pb->pb_graph_node->pb_type->num_modes; /* num of modes at CLB level i.e. for SLICEL */
+			/* 1. Since, from netfile, I see that only 0th mode of SLICEL is used, hence looking at the BLEs of 
+			 of 0th mode only and extracting there number of instances. 2. modes[0].pb_type_children[0], 
+			 Iterating over the 1st pb_type_children only hence pb_type_chilren[0], because 1st child is only BLE 
+			 and need their instances(num_pb) only */
+			nbles = block[iblk].pb->pb_graph_node->pb_type->modes[0].pb_type_children[0].num_pb;
 			
-			/* Iterating over the 1st pb_type_children only in every mode hence pb_type_chilren[0], 
-			because 1st child is only BLE and need their instances(num_pb) only */
-			for (int cmode = 0; cmode < num_clb_modes; cmode++)
+			for (ible = 0; ible < nbles; ible++)
 			{
+				int ipin, npins, num_ble_op_port;
+				assert(block[iblk].pb->pb_graph_node->child_pb_graph_nodes[0][0][0]->num_output_ports == 4);
 				
-				nbles = block[iblk].pb->pb_graph_node->pb_type->modes[cmode].pb_type_children[0].num_pb;
-
-				for (ible = 0; ible < nbles; ible++)
+				/*  Now, Iterating over each BLE's output pins as per it's number of output ports to determine total pin
+				in one such output port, for npin [0][0][each ble instance] - 0 because looking at 0th mode's 0th child in 
+				one level up SLICEL */
+				num_ble_op_port = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[0][0][ible]->num_output_ports;
+				for (int cport = 0; cport < num_ble_op_port; cport++)
+				{
+					npins = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[0][0][ible]->num_output_pins[cport];
+					for (ipin = 0; ipin < npins; ipin++)
 					{
-						int ipin, npins, num_ble_op_port;
-				
-						assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_ports == 1);
-						assert(block[iblk].pb->pb_graph_node->child_pb_graph_nodes[0][0][0]->num_output_ports == 4);
-						assert(block[iblk].pb->pb_graph_node->child_pb_graph_nodes[1][0][0]->num_output_ports == 2);
-						assert(block[iblk].pb->pb_graph_node->child_pb_graph_nodes[2][0][0]->num_output_ports == 2);
-				
-				
-						num_ble_op_port = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[cmode][0][ible]->num_output_ports;
-						/*  Now, Iterating over each BLE's output pins as per it's number of output ports to determine total pin
-						in one such output port, for npin [mode][0][each ble instance] - 0 because looking at 0th child in each mode of 
-						one level up SLICEL */
-						for (int cport = 0; cport < num_ble_op_port; cport++)
-							{
-								npins = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[cmode][0][ible]->num_output_pins[cport];
-								for (ipin = 0; ipin < npins; ipin++)
-									{
-										int ptc, inet;
-										/*assert(block[iblk].pb->child_pbs[0][ible].pb_graph_node->num_output_pins[0] == 1);*/
-										/* BLE OPIN ptc */
-							
-										/* So, here ptc assigned as per - going through - in every mode of SLICEL, look for every instance of BLE,
-										and for every output port of BLE, look for it's pin and get the pin_count_in_cluster*/
-										ptc = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[cmode][0][ible]->output_pins[cport][ipin]
+						int ptc, inet;
+						/* BLE OPIN ptc */
+						
+						/* So, here ptc assigned as per - going through - in 0th mode of SLICEL, look for every instance of BLE,
+						and look for every output port of one such BLE, for it's pin and get the pin_count_in_cluster*/
+						ptc = block[iblk].pb->pb_graph_node->child_pb_graph_nodes[0][0][ible]->output_pins[cport][ipin]
 										.pin_count_in_cluster;
-							
-										inet = block[iblk].pb->rr_graph[ptc].net_num; /* Till here seems fine */
-										if (inet == OPEN)
-										continue;
-							
-										assert(block[iblk].pb->pb_graph_node->num_output_ports == 15);
-										/*assert(block[iblk].pb->pb_graph_node->num_output_pins[0] == 10);*/
-										/* CLB OPIN */
-							
-										/* This ptc needs to be fixed */
-										ptc = block[iblk].pb->pb_graph_node->output_pins[ /*What Will be here*/ ][0].pin_count_in_cluster; 
-							
-										if (vpack_net[inet].node_block[0] != iblk)
-										{
-											assert(vpack_net[inet].node_block[0] == OPEN);
-											vpack_net[inet].node_block[0] = iblk;
-										}
-							
-										if (vpack_net[inet].node_block_pin[0] != ptc)
-										{
-											assert(vpack_net[inet].node_block_pin[0] == OPEN);
-											vpack_net[inet].node_block_pin[0] = ptc;
-										}
-							
-									}
-							}
-				
+						
+						inet = block[iblk].pb->rr_graph[ptc].net_num;
+						if(inet == OPEN)
+							continue;
+						
+						assert(block[iblk].pb->pb_graph_node->num_output_ports == 15);
+						/* CLB OPIN */
+						
+						if((!(ible == 3)) && (cport == 3) )
+							continue;
+						/* the above IF condition - to make sure that the carry chain 'cout' port/pin of 1st 3 instances of BLE 
+						which do not connect to SLICEL opin, doesn't cause miss read of ptc and only last BLE instance 'cout' port 
+						gets  evaluated because it's connected to slicel opin (see in 'Interconnect' tag)*/
+						ptc = block[iblk].pb->pb_graph_node->output_pins[(ible*3) + cport ][0].pin_count_in_cluster;
+						
+						if (vpack_net[inet].node_block[0] != iblk)
+						{
+							assert(vpack_net[inet].node_block[0] == OPEN);
+							vpack_net[inet].node_block[0] = iblk;
+						}
+						
+						if (vpack_net[inet].node_block_pin[0] != ptc)
+						{
+							assert(vpack_net[inet].node_block_pin[0] == OPEN);
+							vpack_net[inet].node_block_pin[0] = ptc;
+						}
 					}
-			
+					
+				}
+				
+				
 			}
+			
 		}
 	}
 }
