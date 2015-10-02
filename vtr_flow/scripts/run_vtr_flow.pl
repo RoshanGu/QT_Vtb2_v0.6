@@ -347,17 +347,16 @@ if ( !-e $sdc_file_path ) {
 }
 
 my $vpr_path;
-if ( $stage_idx_vpr >= $starting_stage and $stage_idx_vpr <= $ending_stage ) {
-	$vpr_path = "$vtr_flow_path/../vpr/vpr";
-	( -r $vpr_path or -r "${vpr_path}.exe" )
-	  or die "Cannot find vpr exectuable ($vpr_path)";
+#if ( $stage_idx_vpr >= $starting_stage and $stage_idx_vpr <= $ending_stage ) {
+$vpr_path = "$vtr_flow_path/../vpr/vpr";
+( -r $vpr_path or -r "${vpr_path}.exe" ) or die "Cannot find vpr exectuable ($vpr_path)";
 
-  	if ($vpr_fix_pins ne "random") {
-		( -r $vpr_fix_pins ) or die "Cannot find $vpr_fix_pins!";
-		copy($vpr_fix_pins, $temp_dir);
-		$vpr_fix_pins = basename($vpr_fix_pins);
-	}
+if ($vpr_fix_pins ne "random") {
+	( -r $vpr_fix_pins ) or die "Cannot find $vpr_fix_pins!";
+	copy($vpr_fix_pins, $temp_dir);
+	$vpr_fix_pins = basename($vpr_fix_pins);
 }
+#}
 
 my $odin2_path;
 my $odin_config_file_name;
@@ -1160,7 +1159,7 @@ if ($ending_stage >= $stage_idx_bitstream and ! $error_code)
 	(-e "$prevpr_output_file_path") or die("$prevpr_output_file_path does not exist!");
 	(-e "$temp_dir$benchmark_name.net") or die("$temp_dir$benchmark_name.net does not exist!");
 	(-e "$temp_dir$benchmark_name.place") or die("$temp_dir$benchmark_name.place does not exist!");
-	(-e "$temp_dir$benchmark_name.route") or die("$temp_dir$benchmark_name.route does not exist!");
+	(-e "$temp_dir${benchmark_name}_inc.route") or die("$temp_dir${benchmark_name}_inc.route does not exist!");
 
 	unlink "$temp_dir$benchmark_name".".xdl"; 
 	$q = &system_with_timeout($bitstream_path, 
