@@ -12,9 +12,9 @@ using namespace lemon;
 // (so that writing trace data does not affect trigger lookup)
 #define RAM_DOUT_MASK 	1
 // The data width of each RAM
-#define RAM_DATA_WIDTH 	72
+#define RAM_DATA_WIDTH 4	
 // The address width of each RAM
-#define RAM_ADDR_WIDTH 	11
+#define RAM_ADDR_WIDTH 	14
 
 typedef SmartBpGraph BpGraph;
 
@@ -98,7 +98,8 @@ int main (int argc, char * const argv[])
 	vnets_pop.reserve(total_vnets);
 	std::vector< std::map<int,int> > iram2ipins(total_ipins/RAM_DATA_WIDTH);
 	std::vector<BpGraph::IncEdgeIt> triggerIt(trigger_width);
-	std::cerr << "# Maximum Weighted Bipartite Matching" << std::endl;
+	
+	std::cout << " \033[1;31m ***** Maximum Weighted Bipartite Matching ***** \033[0m" << std::endl;
 	std::cerr << "# Total RAMs: " << iram2ipins.size() << std::endl;
 	const int trace_capacity = total_ipins*(RAM_DATA_WIDTH-RAM_DOUT_MASK)/RAM_DATA_WIDTH;
 	const int trace_width = trace_capacity*trace_fraction;
@@ -253,6 +254,7 @@ int main (int argc, char * const argv[])
 	std::cout << numTrig << "," << numTrace << "," << invalidTrace << "," << t.userTime() << std::endl;
 	assert(matched == numTrace+numTrig);
 	fs.close();
+	std::cout << " \033[1;31m Map Stage Ended \033[0m" << std::endl;
 
 	return 0;
 }
