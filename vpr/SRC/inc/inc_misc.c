@@ -349,4 +349,223 @@ inc_print_route(char *route_file, struct s_trace **old_trace_tail)
     fclose(fp);
 }
 
+void 
+inc_print_collapse_route(char *route_file, struct s_trace **old_trace_tail)
+{
+	int inet, inode, ilow, jlow, ipin, bnum, node_block_pin, iclass;
+	t_rr_type rr_type;
+	struct s_trace *tptr;
+	const char *name_type[] = { "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY", "INTRA_CLUSTER_EDGE"};
+	
+	FILE *fp;
+	
+	fp = fopen(route_file, "w");
+	
+	fprintf(fp, "Array size: %d x %d logic blocks.\n", nx, ny);
+    fprintf(fp, "\nRouting:");
+	
+	for(inet = 0; inet < num_nets; inet++)
+	{
+		if (clb_net[inet].is_global == FALSE)
+		{
+			if (old_trace_tail[inet])
+				tptr = old_trace_tail[inet]->next;
+			else
+				tptr = trace_head[inet];
+			
+			if(!tptr || !tptr->next)
+				continue;
+			
+			fprintf(fp, "\n\nNet %d (%s)\n\n", inet, clb_net[inet].name);
+			
+			while(tptr != NULL)
+			{
+				inode = tptr->index;
+				rr_type = rr_node[inode].type;
+				ilow = rr_node[inode].xlow;
+				jlow = rr_node[inode].ylow;
+				
+				fprintf(fp, "Node:\t%d\t%6s (%d,%d) ", inode, name_type[rr_type], ilow, jlow);
+				
+				if ((ilow != rr_node[inode].xhigh) || (jlow != rr_node[inode].yhigh))
+					fprintf(fp, "to (%d,%d) ", rr_node[inode].xhigh, rr_node[inode].yhigh);
+				
+				switch(rr_type)
+				{
+					case IPIN:
+					case OPIN:
+						if (grid[ilow][jlow].type == IO_TYPE)
+						{
+							fprintf(fp, " Pad: ");
+						}
+						else{ /* IO Pad. */
+							fprintf(fp, " Pin: ");
+						}
+						break;
+						
+					case CHANX:
+					case CHANY:
+						fprintf(fp, " Track: ");
+						break;
+					
+					case SOURCE:
+					case SINK:
+						if(grid[ilow][jlow].type == IO_TYPE){
+							fprintf(fp, " Pad: ");
+						} else{ /* IO Pad */
+							fprintf(fp, " Class: ");
+						}
+						break;
+					default:
+						vpr_printf(TIO_MESSAGE_ERROR, "in print_route: Unexpected traceback
+						element type: %d (%s).\n", rr_type, name_type[rr_type]);
+						exit(1);
+						break;
+						
+				}
+				fprintf(fp, "%d  ", rr_node[inode].ptc_num);
+				/* Uncomment line below if you're debugging and want to see the switch types *
+				* used in the routing. */
+				/*   fprintf (fp, "Switch: %d", tptr->iswitch);    */
+				fprintf(fp, "\n");
+				
+				tptr = tptr->next;
+			}
+		}
+		else{ /* Global net.  Never routed. */
+			fprintf(fp, "\n\nNet %d (%s): global net connecting:\n\n", inet, clb_net[inet].name);
+			
+			for(ipin = 0; ipin <= clb_net[inet].num_sinks; ipin++)
+			{
+				bnum = clb_net[inet].node_block[ipin];
+				if(bnum == OPEN){
+					assert(ipin == 0);
+					continue;
+				}
+				
+				node_block_pin = clb_net[inet].node_block_pin[ipin];
+				iclass = block[bnum].type->pin_class[node_block_pin];
+				
+				fprintf(fp, "Block %s (#%d) at (%d, %d), Pin class %d.\n",
+						block[bnum].name, bnum, block[bnum].x, block[bnum].y,iclass);
+						
+			}
+		}
+	}
+	fclose(fp);
+	
+}
+
+void 
+inc_print_collapse_only_tptr_route(char *route_file, struct s_trace **old_trace_tail)
+{
+	int inet, inode, ipin, bnum, ilow, jlow, node_block_pin, iclass;
+	t_rr_type rr_type;
+	struct s_trace *tptr;
+	const char *name_type[] = { "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY",
+			"INTRA_CLUSTER_EDGE" };
+	FILE *fp;
+
+	fp = fopen(route_file, "w");
+
+	fprintf(fp, "Array size: %d x %d logic blocks.\n", nx, ny);
+	fprintf(fp, "\nRouting:");
+	
+	for (inet = 0; inet < num_nets; inet++)
+	{
+		if (clb_net[inet].is_global == FALSE)
+		{
+			if (clb_net[inet].num_sinks == FALSE)
+			{
+				fprintf(fp, "\n\nNet %d (%s)\n\n", inet, clb_net[inet].name);
+				fprintf(fp, "\n\nUsed in local cluster only, reserved one CLB pin\n\n");
+			}
+			else{
+				//if (old_trace_tail[inet])
+					//tptr = old_trace_tail[inet]->next;
+				//else
+					tptr = trace_head[inet];
+				//if (!tptr || !tptr->next)
+					//continue;
+				
+				fprintf(fp, "\n\nNet %d (%s)\n\n", inet, clb_net[inet].name);
+				
+				while (tptr != NULL){
+					inode = tptr->index;
+					rr_type = rr_node[inode].type;
+					ilow = rr_node[inode].xlow;
+					jlow = rr_node[inode].ylow;
+
+					fprintf(fp, "Node:\t%d\t%6s (%d,%d) ", inode, name_type[rr_type], ilow, jlow);
+					
+					if ((ilow != rr_node[inode].xhigh)
+							|| (jlow != rr_node[inode].yhigh))
+						fprintf(fp, "to (%d,%d) ", rr_node[inode].xhigh,
+								rr_node[inode].yhigh);
+					
+					switch (rr_type){
+						case IPIN:
+						case OPIN:
+						if (grid[ilow][jlow].type == IO_TYPE) {
+							fprintf(fp, " Pad: ");
+						} else { /* IO Pad. */
+							fprintf(fp, " Pin: ");
+						}
+						break;
+
+						case CHANX:
+						case CHANY:
+						fprintf(fp, " Track: ");
+						break;
+
+						case SOURCE:
+						case SINK:
+						if (grid[ilow][jlow].type == IO_TYPE) {
+							fprintf(fp, " Pad: ");
+						} else { /* IO Pad. */
+							fprintf(fp, " Class: ");
+						}
+						break;
+
+						default:
+						vpr_printf(TIO_MESSAGE_ERROR, "in print_route: Unexpected traceback element type: %d (%s).\n", 
+								rr_type, name_type[rr_type]);
+						exit(1);
+						break;
+					}
+					
+					fprintf(fp, "%d  ", rr_node[inode].ptc_num);
+					/* Uncomment line below if you're debugging and want to see the switch types *
+					 * used in the routing.                                                      */
+					/*          fprintf (fp, "Switch: %d", tptr->iswitch);    */
+
+					fprintf(fp, "\n");
+
+					tptr = tptr->next;
+				}
+				
+			}
+		}
+		else{ /* Global net.  Never routed. */
+			
+			fprintf(fp, "\n\nNet %d (%s): global net connecting:\n\n", inet,
+					clb_net[inet].name);
+			for (ipin = 0; ipin <= clb_net[inet].num_sinks; ipin++){
+				bnum = clb_net[inet].node_block[ipin];
+				if (bnum == OPEN){
+					assert(ipin == 0);
+					continue;
+				}
+				node_block_pin = clb_net[inet].node_block_pin[ipin];
+				iclass = block[bnum].type->pin_class[node_block_pin];
+
+				fprintf(fp, "Block %s (#%d) at (%d, %d), Pin class %d.\n",
+						block[bnum].name, bnum, block[bnum].x, block[bnum].y,
+						iclass);
+				
+			}
+		}
+	}
+	fclose(fp);
+}
 
