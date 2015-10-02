@@ -173,7 +173,9 @@ inc_read_route(const char *route_file)
 
 			while(fgets(line, 1024, fp) && line[0] != '\n')
 			{
-				assert(sscanf(line, "%6s (%d,%d) %n", type, &ilow, &jlow, &i) == 3);
+				/* Fetch Inode From the file Itself */
+				assert(sscanf(line, "Node:\t%d\t%6s (%d,%d) %n", &inode, type, &ilow, &jlow, &i) == 4);
+				
 				pline = line + i;
 				for (i = 0; i < 7; i++)
 				{
@@ -188,7 +190,7 @@ inc_read_route(const char *route_file)
 				pline += i;
 				assert(sscanf(pline, "%d  %n", &ptc_num, &i) == 1);
 				pline += i;
-				inode = get_rr_node_index(ilow, jlow, rr_type, ptc_num, rr_node_indices);
+				/*Reading from above - inode = get_rr_node_index(ilow, jlow, rr_type, ptc_num, rr_node_indices);*/
 				
 				if (tptr_prev != NULL) {
 					int iedge;
@@ -236,7 +238,9 @@ inc_read_route(const char *route_file)
 }
 
 /** 
- * Prints out just the overlay routing to file route_file.  
+ * Prints out just the overlay routing to file route_file. 
+   Also Prints out %s.overlay.route and %s.overlay.route_rewrite.
+   This routine is called Everytime to print diffrent overlay file.
  */
 void 
 inc_print_route(char *route_file, struct s_trace **old_trace_tail)
@@ -274,9 +278,12 @@ inc_print_route(char *route_file, struct s_trace **old_trace_tail)
 			rr_type = rr_node[inode].type;
 			ilow = rr_node[inode].xlow;
 			jlow = rr_node[inode].ylow;
+			
+			/* Print out Node as well, to make sure node fetching is correct in inc_read_route(). */
+			fprintf(fp, "Node:\t%d\t%6s (%d,%d) ", inode, name_type[rr_type], ilow, jlow);
 
-			fprintf(fp, "%6s (%d,%d) ", name_type[rr_type],
-				ilow, jlow);
+			/*fprintf(fp, "%6s (%d,%d) ", name_type[rr_type],
+				ilow, jlow);*/
 
 			if((ilow != rr_node[inode].xhigh) || (jlow !=
 							  rr_node
